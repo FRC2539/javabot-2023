@@ -23,14 +23,14 @@ public class Robot extends TimesliceRobot {
     public void robotInit() {
         robotContainer = new RobotContainer(this);
 
+        // Prevents the logging of many errors with our controllers
+        DriverStation.silenceJoystickConnectionWarning(true);
+
         // Begin logging networktables, controller inputs, and more
         if (isReal()) {
             DataLogManager.logNetworkTables(false); // We have a custom implementation for better NT logging
             DriverStation.startDataLog(DataLogManager.getLog());
-        } else {
-            // Prevents the logging of many errors with our controllers
-            DriverStation.silenceJoystickConnectionWarning(true);
-        }
+        } 
     }
 
     @Override
