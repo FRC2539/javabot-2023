@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -8,7 +7,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggablePose;
 import frc.robot.Constants.FieldConstants;
-
 import java.util.Optional;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -18,16 +16,17 @@ public class VisionSubsystem extends SubsystemBase {
 
     PhotonCamera camera = new PhotonCamera(GLOBAL_SHUTTER_CAMERA);
 
-    boolean hasTargets = false;
     PhotonTrackedTarget currentTarget = null;
+    Pose3d globalRobotPose = new Pose3d();
+    Pose3d robotRelativePose = new Pose3d();
+    boolean hasTargets = false;
     int fiducialId = -1;
     double ambiguity = 0.0;
     double timestamp = 0.0;
-    Pose2d estimatedRobotPose = new Pose2d();
 
     LoggablePose poseEstimateLogger = new LoggablePose("/VisionSubsystem/Pose");
 
-    public boolean hasTarget() {
+    public boolean hasTargets() {
         return hasTargets;
     }
 
@@ -35,8 +34,12 @@ public class VisionSubsystem extends SubsystemBase {
         return timestamp;
     }
 
-    public Pose2d getPoseEstimate() {
-        return estimatedRobotPose;
+    public Pose3d getGlobalPoseEstimate() {
+        return globalRobotPose;
+    }
+
+    public Pose3d getRelativePoseEstimate() {
+        return robotRelativePose;
     }
 
     @Override
@@ -53,6 +56,9 @@ public class VisionSubsystem extends SubsystemBase {
         timestamp = latestResult.getTimestampSeconds();
 
         Transform3d targetTransform = currentTarget.getBestCameraToTarget();
+
+        robotRelativePose = new Pose3d().transformBy(targetTransform);
+
         Optional<Pose3d> currentTargetFieldPose = FieldConstants.APRIL_TAG_FIELD_LAYOUT.getTagPose(fiducialId);
 
         if (currentTargetFieldPose.isPresent()) {
@@ -60,12 +66,9 @@ public class VisionSubsystem extends SubsystemBase {
             Transform3d correctedTransform = new Transform3d(
                     new Translation3d(targetTransform.getY(), targetTransform.getX(), targetTransform.getZ()),
                     new Rotation3d());
-            estimatedRobotPose = currentTargetFieldPose
-                    .get()
-                    .transformBy(correctedTransform.inverse())
-                    .toPose2d();
+            globalRobotPose = currentTargetFieldPose.get().transformBy(correctedTransform.inverse());
 
-            poseEstimateLogger.set(estimatedRobotPose);
+            poseEstimateLogger.set(globalRobotPose);
         }
     }
 }

@@ -1,15 +1,16 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.sensors.Pigeon2;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.controller.Axis;
@@ -23,7 +24,6 @@ import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
 import frc.robot.Constants.SwerveConstants;
-import frc.robot.Constants.TimesliceConstants;
 
 public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     private final SwerveDrivePoseEstimator swervePoseEstimator;
@@ -37,13 +37,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     private final Pigeon2 gyro = new Pigeon2(SwerveConstants.PIGEON_PORT);
 
-    // Create a PID controller and heading tracker for maintaining desired heading
-    private final PIDController headingController = new PIDController(0.3, 0, 0, TimesliceConstants.CONTROLLER_PERIOD);
-    private Rotation2d desiredHeading = null;
-    private SwerveDriveSignal previousDriveSignal = new SwerveDriveSignal();
-
     LoggableDouble gyroLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro");
-    LoggablePose poseLogger = new LoggablePose("/SwerveDriveSubsystem/Pose", pose, true);
+    LoggablePose poseLogger = new LoggablePose("/SwerveDriveSubsystem/Pose", true);
     LoggableChassisSpeeds velocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Velocity");
     LoggableDoubleArray desiredVelocityLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Desired Velocity");
     LoggableDoubleArray wheelAnglesLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Wheel Angles");
@@ -116,6 +111,13 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         return pose.getRotation();
     }
 
+    public Rotation3d getGyroRotation3d() {
+        return new Rotation3d(
+                Units.degreesToRadians(gyro.getRoll()),
+                Units.degreesToRadians(gyro.getPitch()),
+                Units.degreesToRadians(gyro.getYaw()));
+    }
+
     public void setRotation(Rotation2d angle) {
         setPose(new Pose2d(getPose().getX(), getPose().getY(), angle));
     }
@@ -171,26 +173,10 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
             chassisVelocity = (ChassisSpeeds) driveSignal;
         }
 
-        // Store the current heading as desired if we are no longer turning
-        if (driveSignal.omegaRadiansPerSecond == 0 && previousDriveSignal.omegaRadiansPerSecond != 0) {
-            desiredHeading = getGyroRotation();
-        } else if (driveSignal.omegaRadiansPerSecond != 0) {
-            desiredHeading = null;
-        }
-
-        // Use a PID controller to maintain the current heading (as long as we are in teleop)
-        if (desiredHeading != null && driveSignal.isOpenLoop()) {
-            chassisVelocity.omegaRadiansPerSecond =
-                    -headingController.calculate(getGyroRotation().getDegrees(), desiredHeading.getDegrees());
-        }
-
         SwerveModuleState[] moduleStates =
                 Constants.SwerveConstants.swerveKinematics.toSwerveModuleStates(chassisVelocity);
 
         setModuleStates(moduleStates, isDriveSignalStopped(driveSignal) ? true : driveSignal.isOpenLoop());
-
-        // Store the current drive signal for the next loop
-        previousDriveSignal = driveSignal;
     }
 
     private void setModuleStates(SwerveModuleState[] desiredStates, boolean isOpenLoop) {

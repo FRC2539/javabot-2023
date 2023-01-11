@@ -10,32 +10,20 @@ import frc.robot.Constants;
 public class LoggableChassisSpeeds {
     DoubleArrayPublisher publisher;
     DoubleArrayLogEntry logger;
-    LoggableDoubleArray defaultValue;
     boolean override;
 
     /**
      * @param path The full name of the double, e.g. "/MySubsystem/MyThing"
-     * @param defaultValue
      * @param override
      */
-    public LoggableChassisSpeeds(String path, ChassisSpeeds defaultValue, boolean override) {
-        this.defaultValue = new LoggableDoubleArray(path, toDoubleArray(defaultValue));
-
+    public LoggableChassisSpeeds(String path, boolean override) {
         publisher = NetworkTableInstance.getDefault().getDoubleArrayTopic(path).publish();
         logger = new DoubleArrayLogEntry(DataLogManager.getLog(), path);
         this.override = override;
     }
 
-    public LoggableChassisSpeeds(String path, ChassisSpeeds defaultValue) {
-        this(path, defaultValue, !Constants.competitionMode);
-    }
-
-    public LoggableChassisSpeeds(String path, boolean override) {
-        this(path, new ChassisSpeeds(), override);
-    }
-
     public LoggableChassisSpeeds(String path) {
-        this(path, new ChassisSpeeds(), !Constants.competitionMode);
+        this(path, !Constants.competitionMode);
     }
 
     public void set(ChassisSpeeds value) {

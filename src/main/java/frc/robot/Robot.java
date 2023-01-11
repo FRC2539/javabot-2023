@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.TimesliceRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.lib.swerve.CTREConfigs;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.TimesliceConstants;
 
 public class Robot extends TimesliceRobot {
@@ -30,7 +31,7 @@ public class Robot extends TimesliceRobot {
         if (isReal()) {
             DataLogManager.logNetworkTables(false); // We have a custom implementation for better NT logging
             DriverStation.startDataLog(DataLogManager.getLog());
-        } 
+        }
     }
 
     @Override
@@ -40,6 +41,9 @@ public class Robot extends TimesliceRobot {
 
     @Override
     public void autonomousInit() {
+        // Set april tags to use the correct origin (red or blue corner)
+        FieldConstants.setAprilTagOrigin();
+        
         autonomousCommand = robotContainer.getAutonomousCommand();
 
         // Schedule the chosen autonomous command
@@ -51,6 +55,9 @@ public class Robot extends TimesliceRobot {
 
     @Override
     public void teleopInit() {
+        // Set april tags to use the correct origin (red or blue corner)
+        FieldConstants.setAprilTagOrigin();
+        
         // Prevent any autonomous code from overrunning into teleop
         if (autonomousCommand != null) autonomousCommand.cancel();
     }

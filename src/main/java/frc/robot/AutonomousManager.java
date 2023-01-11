@@ -5,18 +5,15 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
 import com.pathplanner.lib.PathPlannerTrajectory;
-import com.pathplanner.lib.PathPoint;
 import com.pathplanner.lib.auto.PIDConstants;
 import com.pathplanner.lib.auto.SwerveAutoBuilder;
 import com.pathplanner.lib.server.PathPlannerServer;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.HashMap;
@@ -83,43 +80,9 @@ public class AutonomousManager {
         return autoBuilder.fullAuto(pathGroup).andThen(reversePoseCommand());
     }
 
-    private Command pathFollowCommand(PathPlannerTrajectory path) {
-        return autoBuilder.followPath(path).andThen(reversePoseCommand());
-    }
-
     private Command reversePoseCommand() {
         return runOnce(() -> swerveDriveSubsystem.setRotation(
                 swerveDriveSubsystem.getRotation().rotateBy(Rotation2d.fromDegrees(180))));
-    }
-
-    /**
-     * Currently only drives to the correct coordinate, angle is not guaranteed.
-     * @param targetPose
-     * @return A command that will drive to the specified pose
-     */
-    public Command driveToPoseCommand(Pose2d targetPose) {
-        return new ProxyCommand(() -> generateDriveToPoseCommand(targetPose));
-    }
-
-    private Command generateDriveToPoseCommand(Pose2d targetPose) {
-        var initialPose = swerveDriveSubsystem.getPose();
-        var initialRotation = initialPose.getRotation().rotateBy(Rotation2d.fromDegrees(180));
-        var targetRotation = targetPose.getRotation().rotateBy(Rotation2d.fromDegrees(180));
-        var currentVelocityDirection = swerveDriveSubsystem.getVelocityRotation();
-
-        var path = PathPlanner.generatePath(
-                new PathConstraints(2.5, 5),
-                new PathPoint(
-                        initialPose.getTranslation(),
-                        currentVelocityDirection,
-                        initialRotation,
-                        swerveDriveSubsystem.getVelocityMagnitude()),
-                new PathPoint(
-                        targetPose.getTranslation(),
-                        targetRotation,
-                        targetPose.getRotation().rotateBy(Rotation2d.fromDegrees(180))));
-
-        return pathFollowCommand(path).andThen(reversePoseCommand());
     }
 
     private void initializeNetworkTablesValues() {

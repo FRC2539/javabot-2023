@@ -3,11 +3,14 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.lib.swerve.SwerveModuleConstants;
 import java.util.List;
 
@@ -108,6 +111,13 @@ public final class Constants {
         public static final AprilTagFieldLayout APRIL_TAG_FIELD_LAYOUT =
                 new AprilTagFieldLayout(aprilTags, fieldLength, fieldWidth);
 
+        public static void setAprilTagOrigin() {
+            APRIL_TAG_FIELD_LAYOUT.setOrigin(
+                    DriverStation.getAlliance() == Alliance.Red
+                            ? OriginPosition.kRedAllianceWallRightSide
+                            : OriginPosition.kBlueAllianceWallRightSide);
+        }
+
         // TODO load in the field correctly once the next WPILIB version is released
     }
 
@@ -188,7 +198,7 @@ public final class Constants {
             public static final int angleMotorID = 4;
             public static final int canCoderID = 24;
             public static final double angleOffset = 241.179;
-        //     public static final String canivoreName = "CANivore";
+            //     public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset);
         }
@@ -199,7 +209,7 @@ public final class Constants {
             public static final int angleMotorID = 6;
             public static final int canCoderID = 26;
             public static final double angleOffset = 167.432; // 348.135;
-        //     public static final String canivoreName = "CANivore";
+            //     public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset);
         }
@@ -210,7 +220,7 @@ public final class Constants {
             public static final int angleMotorID = 5;
             public static final int canCoderID = 25;
             public static final double angleOffset = 159.609;
-        //     public static final String canivoreName = "CANivore";
+            //     public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset);
         }
@@ -221,7 +231,7 @@ public final class Constants {
             public static final int angleMotorID = 7;
             public static final int canCoderID = 27;
             public static final double angleOffset = 268.506; // 94.043;
-        //     public static final String canivoreName = "CANivore";
+            //     public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset);
         }
