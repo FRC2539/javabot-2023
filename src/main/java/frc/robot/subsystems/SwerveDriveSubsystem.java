@@ -11,7 +11,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.controller.Axis;
 import frc.lib.interpolation.MovingAverageVelocity;
@@ -70,7 +70,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 SwerveConstants.swerveKinematics, getGyroRotation(), getModulePositions(), new Pose2d());
     }
 
-    public CommandBase driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
+    public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
         return runEnd(
                         () -> setVelocity(
                                 new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)),
@@ -79,7 +79,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 .withName("Drive");
     }
 
-    public CommandBase characterizeCommand(boolean forwards) {
+    public Command characterizeCommand(boolean forwards) {
         Consumer<Double> voltageConsumer = (Double voltage) -> {
             for (SwerveModule module : modules) {
                 module.setCharacterizationVoltage(voltage);

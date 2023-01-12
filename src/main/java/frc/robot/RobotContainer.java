@@ -24,6 +24,7 @@ public class RobotContainer {
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     // private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
     private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+    private final ArmSubsystem armSubsystem = new ArmSubsystem();
 
     private AutonomousManager autonomousManager;
     private UpdateManager updateManager;
@@ -32,9 +33,8 @@ public class RobotContainer {
         updateManager = new UpdateManager(robot);
         autonomousManager = new AutonomousManager(this);
 
+        // Allocate timeslices
         updateManager.schedule(swerveDriveSubsystem, TimesliceConstants.DRIVETRAIN_PERIOD);
-        // updateManager.schedule(lightsSubsystem);
-        updateManager.schedule(visionSubsystem);
 
         configureBindings();
     }
@@ -76,7 +76,6 @@ public class RobotContainer {
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
 
         // Set operator controller bindings
-        
 
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();
@@ -109,5 +108,9 @@ public class RobotContainer {
 
     public VisionSubsystem getVisionSubsystem() {
         return visionSubsystem;
+    }
+
+    public ArmSubsystem getArmSubsystem() {
+        return armSubsystem;
     }
 }

@@ -114,6 +114,7 @@ public class SwerveModule {
         driveMotor.setSelectedSensorPosition(0);
         driveMotor.enableVoltageCompensation(true);
         driveMotor.setInverted(Constants.SwerveConstants.driveMotorInvert);
+        driveMotor.setSensorPhase(Constants.SwerveConstants.driveEncoderInvert);
     }
 
     public Rotation2d getCanCoder() {

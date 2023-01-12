@@ -183,7 +183,10 @@ public final class Constants {
         public static final NeutralMode driveNeutralMode = NeutralMode.Brake;
 
         /* Drive Motor Inverts */
-        public static final boolean driveMotorInvert = false;
+        public static final boolean driveMotorInvert = true;
+
+        /* Drive Encoder Inverts */
+        public static final boolean driveEncoderInvert = true;
 
         /* Angle Motor Inverts */
         public static final boolean angleMotorInvert = false;
@@ -298,6 +301,9 @@ public final class Constants {
 
         /* Drive Motor Inverts */
         public static final boolean driveMotorInvert = false;
+
+        /* Drive Encoder Inverts */
+        public static final boolean driveEncoderInvert = false;
 
         /* Angle Motor Inverts */
         public static final boolean angleMotorInvert = false;

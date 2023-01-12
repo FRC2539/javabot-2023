@@ -56,6 +56,8 @@ public class VisionSubsystem extends SubsystemBase {
     private void updateUsingLimelight() {
         hasTargets = getEntry("tv").getInteger(0) == 1;
 
+        if (!hasTargets) return;
+
         fiducialId = (int) getEntry("fid").getInteger(0);
         timestamp = Timer.getFPGATimestamp() - 0.001 * getEntry("tl").getInteger(0);
 

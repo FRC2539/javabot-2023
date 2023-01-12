@@ -12,7 +12,7 @@ import com.ctre.phoenix.led.LarsonAnimation.BounceMode;
 import com.ctre.phoenix.led.RainbowAnimation;
 import com.ctre.phoenix.led.SingleFadeAnimation;
 import com.ctre.phoenix.led.StrobeAnimation;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LightsConstants;
 
@@ -36,13 +36,13 @@ public class LightsSubsystem extends SubsystemBase {
         candle.configBrightnessScalar(percent, 100);
     }
 
-    public CommandBase defaultCommand() {
+    public Command defaultCommand() {
         return runOnce(() -> {
             LEDSegment.MainStrip.setFlowAnimation(orange, 1);
         });
     }
 
-    public CommandBase clearSegmentCommand(LEDSegment segment) {
+    public Command clearSegmentCommand(LEDSegment segment) {
         return runOnce(() -> {
             segment.clearAnimation();
             segment.disableLEDs();
