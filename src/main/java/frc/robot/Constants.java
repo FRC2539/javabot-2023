@@ -11,6 +11,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.lib.swerve.SecondOrderSwerveKinematics;
 import frc.lib.swerve.SwerveModuleConstants;
 import java.util.List;
 
@@ -139,7 +140,7 @@ public final class Constants {
         public static final double driveGearRatio = (6.75 / 1.0); // 6.75:1
         public static final double angleGearRatio = (12.8 / 1.0); // 12.8:1
 
-        public static final SwerveDriveKinematics swerveKinematics = new SwerveDriveKinematics(
+        public static final SecondOrderSwerveKinematics swerveKinematics = new SecondOrderSwerveKinematics(
                 new Translation2d(wheelBase / 2.0, trackWidth / 2.0),
                 new Translation2d(wheelBase / 2.0, -trackWidth / 2.0),
                 new Translation2d(-wheelBase / 2.0, trackWidth / 2.0),
