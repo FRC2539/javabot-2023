@@ -43,7 +43,7 @@ public class Robot extends TimesliceRobot {
     public void autonomousInit() {
         // Set april tags to use the correct origin (red or blue corner)
         FieldConstants.setAprilTagOrigin();
-        
+
         autonomousCommand = robotContainer.getAutonomousCommand();
 
         // Schedule the chosen autonomous command
@@ -57,7 +57,7 @@ public class Robot extends TimesliceRobot {
     public void teleopInit() {
         // Set april tags to use the correct origin (red or blue corner)
         FieldConstants.setAprilTagOrigin();
-        
+
         // Prevent any autonomous code from overrunning into teleop
         if (autonomousCommand != null) autonomousCommand.cancel();
     }

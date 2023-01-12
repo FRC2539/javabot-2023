@@ -77,6 +77,16 @@ public class SwerveModule {
         lastAngle = angle;
     }
 
+    public void setCharacterizationVoltage(double voltage) {
+        // Set the module to face forwards
+        angleMotor.set(ControlMode.Position, Conversions.degreesToFalcon(0, Constants.SwerveConstants.angleGearRatio));
+
+        lastAngle = 0;
+
+        // Set the drive motor to the specified voltage
+        driveMotor.set(ControlMode.PercentOutput, voltage / Constants.GlobalConstants.targetVoltage);
+    }
+
     public void resetToAbsolute() {
         double absolutePosition = Conversions.degreesToFalcon(
                 getCanCoder().getDegrees() - angleOffset, Constants.SwerveConstants.angleGearRatio);

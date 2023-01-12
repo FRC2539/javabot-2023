@@ -49,11 +49,7 @@ public class RobotContainer {
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
 
-        // Set non-button triggers
-        // new Trigger(() -> swerveDriveSubsystem.getVelocityMagnitude() > 1.2)
-        //         .whileTrue(
-        //                 run(() -> LEDSegment.MainStrip.setBandAnimation(LightsSubsystem.orange, 1.2),
-        // lightsSubsystem));
+        // Set non-button, multi-subsystem triggers
 
         // new Trigger(visionSubsystem::hasTarget).whileTrue(run(() -> {
         //     swerveDriveSubsystem.addVisionPoseEstimate(
@@ -74,17 +70,13 @@ public class RobotContainer {
         leftDriveController.nameBottomThumb("Robot Oriented Drive");
 
         // Set right joystick bindings
+        rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true));
+        rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(false));
+        rightDriveController.nameRightBottomMiddle("Characterize Forwards");
+        rightDriveController.nameRightBottomMiddle("Characterize Backwards");
 
         // Set operator controller bindings
-        // operatorController
-        //         .getA()
-        //         .whileTrue(
-        //                 run(() -> LEDSegment.MainStrip.setBandAnimation(LightsSubsystem.orange, 0.5),
-        // lightsSubsystem));
-        // operatorController.getX().whileTrue(run(() -> LEDSegment.MainStrip.setRainbowAnimation(0.5),
-        // lightsSubsystem));
-        // operatorController.nameA("Band Animation");
-        // operatorController.nameX("Rainbow Animation");
+        
 
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();
@@ -115,7 +107,7 @@ public class RobotContainer {
     //     return lightsSubsystem;
     // }
 
-    // public VisionSubsystem getVisionSubsystem() {
-    //     return visionSubsystem;
-    // }
+    public VisionSubsystem getVisionSubsystem() {
+        return visionSubsystem;
+    }
 }

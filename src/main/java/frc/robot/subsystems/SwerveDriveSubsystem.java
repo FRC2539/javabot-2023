@@ -20,10 +20,15 @@ import frc.lib.logging.LoggableDouble;
 import frc.lib.logging.LoggableDoubleArray;
 import frc.lib.logging.LoggablePose;
 import frc.lib.loops.Updatable;
+import frc.lib.swerve.FeedForwardCharacterization;
+import frc.lib.swerve.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
 import frc.robot.Constants.SwerveConstants;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.DoubleStream;
 
 public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     private final SwerveDrivePoseEstimator swervePoseEstimator;
@@ -74,6 +79,27 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 .withName("Drive");
     }
 
+    public CommandBase characterizeCommand(boolean forwards) {
+        Consumer<Double> voltageConsumer = (Double voltage) -> {
+            for (SwerveModule module : modules) {
+                module.setCharacterizationVoltage(voltage);
+            }
+        };
+
+        Supplier<Double> velocitySupplier = () -> {
+            return DoubleStream.of(
+                            modules[0].getState().speedMetersPerSecond,
+                            modules[1].getState().speedMetersPerSecond,
+                            modules[2].getState().speedMetersPerSecond,
+                            modules[3].getState().speedMetersPerSecond)
+                    .average()
+                    .getAsDouble();
+        };
+
+        return new FeedForwardCharacterization(
+                this, forwards, new FeedForwardCharacterizationData("Swerve Drive"), voltageConsumer, velocitySupplier);
+    }
+
     public Pose2d getPose() {
         return pose;
     }
@@ -116,6 +142,17 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 Units.degreesToRadians(gyro.getRoll()),
                 Units.degreesToRadians(gyro.getPitch()),
                 Units.degreesToRadians(gyro.getYaw()));
+    }
+
+    public Rotation3d getGyroRotationRates3d() {
+        double[] xyzDegreesPerSecond = new double[3];
+
+        gyro.getRawGyro(xyzDegreesPerSecond);
+
+        return new Rotation3d(
+                Units.degreesToRadians(xyzDegreesPerSecond[0]),
+                Units.degreesToRadians(xyzDegreesPerSecond[1]),
+                Units.degreesToRadians(xyzDegreesPerSecond[2]));
     }
 
     public void setRotation(Rotation2d angle) {
