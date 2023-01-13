@@ -47,10 +47,13 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     LoggableChassisSpeeds velocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Velocity");
     LoggableDoubleArray desiredVelocityLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Desired Velocity");
     LoggableDoubleArray wheelAnglesLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Wheel Angles");
+    LoggableDoubleArray wheelSpeedsLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Wheel Speeds");
     LoggableDoubleArray driveTemperatureLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Drive Temperatures");
     LoggableDoubleArray angleTemperatureLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Angle Temperatures");
     LoggableDoubleArray driveVoltageLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Drive Voltage");
     LoggableDoubleArray angleVoltageLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Angle Voltage");
+
+    boolean isCharacterizing = false;
 
     public SwerveDriveSubsystem() {
         modules = new SwerveModule[] {
@@ -79,14 +82,18 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 .withName("Drive");
     }
 
-    public Command characterizeCommand(boolean forwards) {
-        Consumer<Double> voltageConsumer = (Double voltage) -> {
+    public Command characterizeCommand(boolean forwards, boolean isDriveMotors) {
+        Consumer<Double> voltageConsumer = isDriveMotors ? (Double voltage) -> {
             for (SwerveModule module : modules) {
-                module.setCharacterizationVoltage(voltage);
+                module.setDriveCharacterizationVoltage(voltage);
+            }
+        } : (Double voltage) -> {
+            for (SwerveModule module : modules) {
+                module.setAngleCharacterizationVoltage(voltage);
             }
         };
 
-        Supplier<Double> velocitySupplier = () -> {
+        Supplier<Double> velocitySupplier = isDriveMotors ? () -> {
             return DoubleStream.of(
                             modules[0].getState().speedMetersPerSecond,
                             modules[1].getState().speedMetersPerSecond,
@@ -94,10 +101,24 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                             modules[3].getState().speedMetersPerSecond)
                     .average()
                     .getAsDouble();
+        } : () -> {
+            return DoubleStream.of(
+                            modules[0].getAngularVelocity(),
+                            modules[1].getAngularVelocity(),
+                            modules[2].getAngularVelocity(),
+                            modules[3].getAngularVelocity())
+                    .average()
+                    .getAsDouble();
         };
 
         return new FeedForwardCharacterization(
-                this, forwards, new FeedForwardCharacterizationData("Swerve Drive"), voltageConsumer, velocitySupplier);
+                        this,
+                        forwards,
+                        new FeedForwardCharacterizationData("Swerve Drive"),
+                        voltageConsumer,
+                        velocitySupplier)
+                .beforeStarting(() -> isCharacterizing = true)
+                .andThen(() -> isCharacterizing = false);
     }
 
     public Pose2d getPose() {
@@ -183,6 +204,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     public void update() {
         updateOdometry();
 
+        if (isCharacterizing) return;
+
         updateModules(driveSignal);
     }
 
@@ -245,6 +268,13 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
             modules[1].getPosition().angle.getDegrees(),
             modules[2].getPosition().angle.getDegrees(),
             modules[3].getPosition().angle.getDegrees()
+        });
+
+        wheelSpeedsLogger.set(new double[] {
+            modules[0].getState().speedMetersPerSecond,
+            modules[1].getState().speedMetersPerSecond,
+            modules[2].getState().speedMetersPerSecond,
+            modules[3].getState().speedMetersPerSecond
         });
 
         driveTemperatureLogger.set(getDriveTemperatures());

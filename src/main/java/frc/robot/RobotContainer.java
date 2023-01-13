@@ -70,8 +70,8 @@ public class RobotContainer {
         leftDriveController.nameBottomThumb("Robot Oriented Drive");
 
         // Set right joystick bindings
-        rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true));
-        rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(false));
+        rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
+        rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
         rightDriveController.nameRightBottomMiddle("Characterize Forwards");
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
 
