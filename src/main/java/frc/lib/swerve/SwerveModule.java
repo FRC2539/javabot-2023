@@ -93,7 +93,7 @@ public class SwerveModule {
         lastAngle = angle;
     }
 
-    public void setCharacterizationVoltage(double voltage) {
+    public void setDriveCharacterizationVoltage(double voltage) {
         // Set the module to face forwards
         angleMotor.set(ControlMode.Position, Conversions.degreesToFalcon(0, Constants.SwerveConstants.angleGearRatio));
 
@@ -101,6 +101,16 @@ public class SwerveModule {
 
         // Set the drive motor to the specified voltage
         driveMotor.set(ControlMode.PercentOutput, voltage / Constants.GlobalConstants.targetVoltage);
+    }
+
+    public void setAngleCharacterizationVoltage(double voltage) {
+        // Set the module to face forwards
+        angleMotor.set(ControlMode.PercentOutput, voltage / Constants.GlobalConstants.targetVoltage);
+
+        lastAngle = 0;
+
+        // Set the drive motor to just enough to overcome static friction
+        driveMotor.set(ControlMode.PercentOutput, 1.1 * Constants.SwerveConstants.driveKS);
     }
 
     public void resetToAbsolute() {
@@ -145,6 +155,11 @@ public class SwerveModule {
         Rotation2d angle = Rotation2d.fromDegrees(Conversions.falconToDegrees(
                 angleMotor.getSelectedSensorPosition(), Constants.SwerveConstants.angleGearRatio));
         return new SwerveModuleState(velocity, angle);
+    }
+
+    public double getAngularVelocity() {
+        return Conversions.falconToRPM(
+            angleMotor.getSelectedSensorVelocity(), Constants.SwerveConstants.angleGearRatio) / 60 * 2 * Math.PI;
     }
 
     public SwerveModulePosition getPosition() {

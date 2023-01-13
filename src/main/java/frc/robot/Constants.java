@@ -171,9 +171,9 @@ public final class Constants {
 
         /* Drive Motor Characterization Values */
         public static final double driveKS =
-                (0.667 / 12); // divide by 12 to convert from volts to percent output for CTRE
-        public static final double driveKV = (2.44 / 12);
-        public static final double driveKA = (0.27 / 12);
+                (0.31382 / 12); // divide by 12 to convert from volts to percent output for CTRE
+        public static final double driveKV = (2.15681 / 12);
+        public static final double driveKA = 0;
 
         /* Angle Motor Characterization Values */
         public static final double angleKS = (0.368 / 12); // divide by 12 to convert from volts to percent output for CTRE
@@ -192,7 +192,7 @@ public final class Constants {
         public static final boolean driveMotorInvert = true;
 
         /* Drive Encoder Inverts */
-        public static final boolean driveEncoderInvert = true;
+        public static final boolean driveEncoderInvert = false;
 
         /* Angle Motor Inverts */
         public static final boolean angleMotorInvert = false;
