@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.sensors.Pigeon2;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -10,6 +11,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -75,41 +78,63 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
         return runEnd(
-                        () -> setVelocity(
-                                new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)),
-                                isFieldOriented),
-                        this::stop)
-                .withName("Drive");
+                () -> setVelocity(
+                        new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)), isFieldOriented),
+                this::stop);
+    }
+
+    public Command levelChargeStationCommand() {
+        var constraints = new TrapezoidProfile.Constraints(1.2, 0.5);
+        var pitchController = new ProfiledPIDController(0.05, 0, 0, constraints);
+
+        // End with no pitch and stationary
+        State goal = new State(0, 0);
+
+        // Four degrees of tolerance
+        pitchController.setTolerance(4, 0.1);
+
+        return runEnd(
+                () -> {
+                    double pitch = getGyroRotation3d().getY();
+
+                    // Negative pitch -> drive forward, Positive pitch -> drive backward
+                    setVelocity(new ChassisSpeeds(pitchController.calculate(pitch, goal), 0, 0), false);
+                },
+                this::stop);
     }
 
     public Command characterizeCommand(boolean forwards, boolean isDriveMotors) {
-        Consumer<Double> voltageConsumer = isDriveMotors ? (Double voltage) -> {
-            for (SwerveModule module : modules) {
-                module.setDriveCharacterizationVoltage(voltage);
-            }
-        } : (Double voltage) -> {
-            for (SwerveModule module : modules) {
-                module.setAngleCharacterizationVoltage(voltage);
-            }
-        };
+        Consumer<Double> voltageConsumer = isDriveMotors
+                ? (Double voltage) -> {
+                    for (SwerveModule module : modules) {
+                        module.setDriveCharacterizationVoltage(voltage);
+                    }
+                }
+                : (Double voltage) -> {
+                    for (SwerveModule module : modules) {
+                        module.setAngleCharacterizationVoltage(voltage);
+                    }
+                };
 
-        Supplier<Double> velocitySupplier = isDriveMotors ? () -> {
-            return DoubleStream.of(
-                            modules[0].getState().speedMetersPerSecond,
-                            modules[1].getState().speedMetersPerSecond,
-                            modules[2].getState().speedMetersPerSecond,
-                            modules[3].getState().speedMetersPerSecond)
-                    .average()
-                    .getAsDouble();
-        } : () -> {
-            return DoubleStream.of(
-                            modules[0].getAngularVelocity(),
-                            modules[1].getAngularVelocity(),
-                            modules[2].getAngularVelocity(),
-                            modules[3].getAngularVelocity())
-                    .average()
-                    .getAsDouble();
-        };
+        Supplier<Double> velocitySupplier = isDriveMotors
+                ? () -> {
+                    return DoubleStream.of(
+                                    modules[0].getState().speedMetersPerSecond,
+                                    modules[1].getState().speedMetersPerSecond,
+                                    modules[2].getState().speedMetersPerSecond,
+                                    modules[3].getState().speedMetersPerSecond)
+                            .average()
+                            .getAsDouble();
+                }
+                : () -> {
+                    return DoubleStream.of(
+                                    modules[0].getAngularVelocity(),
+                                    modules[1].getAngularVelocity(),
+                                    modules[2].getAngularVelocity(),
+                                    modules[3].getAngularVelocity())
+                            .average()
+                            .getAsDouble();
+                };
 
         return new FeedForwardCharacterization(
                         this,
@@ -118,7 +143,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                         voltageConsumer,
                         velocitySupplier)
                 .beforeStarting(() -> isCharacterizing = true)
-                .andThen(() -> isCharacterizing = false);
+                .finallyDo((boolean interrupted) -> isCharacterizing = false);
     }
 
     public Pose2d getPose() {
@@ -243,7 +268,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.SwerveConstants.maxSpeed);
 
         for (SwerveModule module : modules) {
-            module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop, true);
+            module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop, false);
         }
     }
 

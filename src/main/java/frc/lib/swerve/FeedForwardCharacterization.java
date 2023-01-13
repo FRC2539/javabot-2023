@@ -6,7 +6,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.lib.math.PolynomialRegression;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -108,7 +107,7 @@ public class FeedForwardCharacterization extends CommandBase {
         timer.stop();
 
         // Prevent accidental crashing if no data was recorded
-        if(dataPrimary.velocityData.isEmpty()) return;
+        if (dataPrimary.velocityData.isEmpty()) return;
 
         dataPrimary.print();
         if (isDrive) {
@@ -139,28 +138,27 @@ public class FeedForwardCharacterization extends CommandBase {
         }
 
         public void print() {
-            double velocityDataArray[] = velocityData.stream().mapToDouble(Double::doubleValue).toArray();
-            double voltageDataArray[] = voltageData.stream().mapToDouble(Double::doubleValue).toArray();
+            double velocityDataArray[] =
+                    velocityData.stream().mapToDouble(Double::doubleValue).toArray();
+            double voltageDataArray[] =
+                    voltageData.stream().mapToDouble(Double::doubleValue).toArray();
             double accelerationDataArray[] = new double[velocityDataArray.length];
             for (int i = 0; i < velocityDataArray.length - 1; i++) {
                 accelerationDataArray[i] = (velocityDataArray[i + 1] - velocityDataArray[i]) / 0.020;
             }
-            accelerationDataArray[accelerationDataArray.length - 1] = accelerationDataArray[accelerationDataArray.length - 2];
+            accelerationDataArray[accelerationDataArray.length - 1] =
+                    accelerationDataArray[accelerationDataArray.length - 2];
 
-            PolynomialRegression regression = new PolynomialRegression(
-                    velocityDataArray,
-                    voltageDataArray,
-                    1);
-            
+            PolynomialRegression regression = new PolynomialRegression(velocityDataArray, voltageDataArray, 1);
+
             double residualsVoltageVelocityWise[] = new double[velocityDataArray.length];
 
             for (int i = 0; i < velocityDataArray.length; i++) {
                 residualsVoltageVelocityWise[i] = voltageDataArray[i] - regression.predict(velocityDataArray[i]);
             }
-        
 
-            PolynomialRegression accelerationRegression = new PolynomialRegression(
-                accelerationDataArray, residualsVoltageVelocityWise, 1);  
+            PolynomialRegression accelerationRegression =
+                    new PolynomialRegression(accelerationDataArray, residualsVoltageVelocityWise, 1);
 
             System.out.println("FF Characterization Results (" + name + "):");
             System.out.println("\tCount=" + Integer.toString(velocityData.size()) + "");

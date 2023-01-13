@@ -74,11 +74,13 @@ public class SwerveModule {
                     driveFeedforward.calculate(desiredState.speedMetersPerSecond));
         }
 
+        // Determine the angle to set the module to
         double angle = (Math.abs(desiredState.speedMetersPerSecond) <= (Constants.SwerveConstants.maxSpeed * 0.01))
                 ? lastAngle
                 : desiredState.angle
                         .getDegrees(); // Prevent rotating module if speed is less then 1%. Prevents Jittering.
 
+        // Account for the velocity of the angle motor if in second order mode
         if (isSecondOrder && desiredState instanceof SecondOrderSwerveModuleState) {
             angleMotor.set(
                     ControlMode.Position,
@@ -90,6 +92,7 @@ public class SwerveModule {
             angleMotor.set(
                     ControlMode.Position, Conversions.degreesToFalcon(angle, Constants.SwerveConstants.angleGearRatio));
         }
+
         lastAngle = angle;
     }
 
@@ -139,8 +142,8 @@ public class SwerveModule {
         driveMotor.setNeutralMode(Constants.SwerveConstants.driveNeutralMode);
         driveMotor.setSelectedSensorPosition(0);
         driveMotor.enableVoltageCompensation(true);
-        driveMotor.setInverted(Constants.SwerveConstants.driveMotorInvert);
         driveMotor.setSensorPhase(Constants.SwerveConstants.driveEncoderInvert);
+        driveMotor.setInverted(Constants.SwerveConstants.driveMotorInvert);
     }
 
     public Rotation2d getCanCoder() {
@@ -158,8 +161,10 @@ public class SwerveModule {
     }
 
     public double getAngularVelocity() {
-        return Conversions.falconToRPM(
-            angleMotor.getSelectedSensorVelocity(), Constants.SwerveConstants.angleGearRatio) / 60 * 2 * Math.PI;
+        return Conversions.falconToRPM(angleMotor.getSelectedSensorVelocity(), Constants.SwerveConstants.angleGearRatio)
+                / 60
+                * 2
+                * Math.PI;
     }
 
     public SwerveModulePosition getPosition() {
