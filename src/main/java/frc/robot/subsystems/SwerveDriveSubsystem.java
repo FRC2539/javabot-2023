@@ -243,7 +243,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.SwerveConstants.maxSpeed);
 
         for (SwerveModule module : modules) {
-            module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop);
+            module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop, true);
         }
     }
 
