@@ -175,6 +175,11 @@ public final class Constants {
         public static final double driveKV = (2.44 / 12);
         public static final double driveKA = (0.27 / 12);
 
+        /* Angle Motor Characterization Values */
+        public static final double angleKS = (0.368 / 12); // divide by 12 to convert from volts to percent output for CTRE
+        public static final double angleKV = (0.234 / 12);
+        public static final double angleKA = (0.003 / 12);
+
         /* Swerve Profiling Values */
         public static final double maxSpeed = 4.968230454756032; // meters per second
         public static final double maxAngularVelocity = 11.771048567785275;

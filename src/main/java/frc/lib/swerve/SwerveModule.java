@@ -20,8 +20,11 @@ public class SwerveModule {
     private WPI_CANCoder angleEncoder;
     private double lastAngle;
 
-    SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(
+    SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(
             Constants.SwerveConstants.driveKS, Constants.SwerveConstants.driveKV, Constants.SwerveConstants.driveKA);
+
+    SimpleMotorFeedforward angleFeedforward = new SimpleMotorFeedforward(
+            Constants.SwerveConstants.angleKS, Constants.SwerveConstants.angleKV, Constants.SwerveConstants.angleKA);
 
     public SwerveModule(int moduleNumber, SwerveModuleConstants moduleConstants) {
         this.moduleNumber = moduleNumber;
@@ -49,6 +52,10 @@ public class SwerveModule {
     }
 
     public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop) {
+        setDesiredState(desiredState, isOpenLoop, false);
+    }
+
+    public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop, boolean isSecondOrder) {
         // Custom optimize command, since default WPILib optimize assumes continuous controller, which CTRE is not
         desiredState = CTREModuleState.optimize(desiredState, getState().angle);
 
@@ -64,7 +71,7 @@ public class SwerveModule {
                     ControlMode.Velocity,
                     velocity,
                     DemandType.ArbitraryFeedForward,
-                    feedforward.calculate(desiredState.speedMetersPerSecond));
+                    driveFeedforward.calculate(desiredState.speedMetersPerSecond));
         }
 
         double angle = (Math.abs(desiredState.speedMetersPerSecond) <= (Constants.SwerveConstants.maxSpeed * 0.01))
@@ -72,8 +79,17 @@ public class SwerveModule {
                 : desiredState.angle
                         .getDegrees(); // Prevent rotating module if speed is less then 1%. Prevents Jittering.
 
-        angleMotor.set(
-                ControlMode.Position, Conversions.degreesToFalcon(angle, Constants.SwerveConstants.angleGearRatio));
+        if (isSecondOrder && desiredState instanceof SecondOrderSwerveModuleState) {
+            angleMotor.set(
+                    ControlMode.Position,
+                    Conversions.degreesToFalcon(0, Constants.SwerveConstants.angleGearRatio),
+                    DemandType.ArbitraryFeedForward,
+                    angleFeedforward.calculate(
+                            ((SecondOrderSwerveModuleState) desiredState).angularVelocityRadiansPerSecond));
+        } else {
+            angleMotor.set(
+                    ControlMode.Position, Conversions.degreesToFalcon(angle, Constants.SwerveConstants.angleGearRatio));
+        }
         lastAngle = angle;
     }
 
