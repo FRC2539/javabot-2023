@@ -2,8 +2,6 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggableDouble;
 import frc.lib.logging.LoggablePose;
@@ -107,7 +105,7 @@ public class VisionSubsystem extends SubsystemBase {
     //     }
     // }
 
-    private NetworkTableEntry getEntry(String key) {
-        return NetworkTableInstance.getDefault().getTable("limelight").getEntry(key);
-    }
+    // private NetworkTableEntry getEntry(String key) {
+    //     return NetworkTableInstance.getDefault().getTable("limelight").getEntry(key);
+    // }
 }
