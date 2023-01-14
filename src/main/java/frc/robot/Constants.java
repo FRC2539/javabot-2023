@@ -6,7 +6,9 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -45,6 +47,13 @@ public final class Constants {
         public static final double tapeWidth = Units.inchesToMeters(2.0);
 
         // Includes 3d transform from camera(s) to robot origin
+        public static final Transform3d cameraToRobot = new Transform3d(
+                new Translation3d(Units.inchesToMeters(10), Units.inchesToMeters(6), Units.inchesToMeters(22)),
+                new Rotation3d());
+
+        public static final Transform3d robotToCamera = cameraToRobot.inverse();
+
+        public static final double ambiguityThreshold = 0.35;
     }
 
     public static final class FieldConstants {

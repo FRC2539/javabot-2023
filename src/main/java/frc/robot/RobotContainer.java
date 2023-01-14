@@ -5,12 +5,14 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimesliceRobot;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.controller.Axis;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
 import frc.lib.loops.UpdateManager;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.TimesliceConstants;
+import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.*;
 
 public class RobotContainer {
@@ -50,11 +52,19 @@ public class RobotContainer {
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
 
         // Set non-button, multi-subsystem triggers
+        new Trigger(visionSubsystem::hasTargets)
+                .and(new Trigger(() -> visionSubsystem.getAmbiguity() < VisionConstants.ambiguityThreshold))
+                .whileTrue(run(() -> {
+                    var netTransform =
+                            visionSubsystem.getCameraToTarget().inverse().plus(VisionConstants.cameraToRobot);
 
-        // new Trigger(visionSubsystem::hasTarget).whileTrue(run(() -> {
-        //     swerveDriveSubsystem.addVisionPoseEstimate(
-        //             visionSubsystem.getPoseEstimate(), visionSubsystem.getTimestamp());
-        // }));
+                    var robotPoseEstimate = visionSubsystem
+                            .getAprilTagFieldPose()
+                            .transformBy(netTransform)
+                            .toPose2d();
+
+                    swerveDriveSubsystem.addVisionPoseEstimate(robotPoseEstimate, visionSubsystem.getTimestamp());
+                }));
 
         // Set left joystick bindings
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
@@ -74,6 +84,8 @@ public class RobotContainer {
         rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
         rightDriveController.nameRightBottomMiddle("Characterize Forwards");
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
+        // rightDriveController.getBottomThumb().whileTrue(new ChaseTagCommand(visionSubsystem, swerveDriveSubsystem,
+        // swerveDriveSubsystem::getPose));
 
         // Set operator controller bindings
 
