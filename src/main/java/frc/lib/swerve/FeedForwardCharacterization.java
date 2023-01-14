@@ -84,7 +84,8 @@ public class FeedForwardCharacterization extends CommandBase {
                 voltageConsumerSimple.accept(0.0);
             }
         } else {
-            double timeConversion = disableSquaring ? (timer.get() - startDelaySecs) : Math.pow((timer.get() - startDelaySecs), 2);
+            double timeConversion =
+                    disableSquaring ? (timer.get() - startDelaySecs) : Math.pow((timer.get() - startDelaySecs), 2);
             double voltage = timeConversion * rampRateVoltsPerSecSquared * (forwards ? 1 : -1);
             if (isDrive) {
                 voltageConsumerDrive.accept(voltage, voltage);

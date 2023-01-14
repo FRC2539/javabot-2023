@@ -47,7 +47,7 @@ public class AutonomousManager {
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
                 new PIDConstants(3.0, 0.0, 0.0), // try decreasing P here
-                new PIDConstants(0.02, 0.0, 0.0),
+                new PIDConstants(0.03, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
                 swerveDriveSubsystem);
@@ -56,14 +56,6 @@ public class AutonomousManager {
         if (!Constants.competitionMode) {
             PathPlannerServer.startServer(5811);
         }
-
-        // Temporary Robot Auto Guide
-
-        // Forward is 180 degrees always.
-        // To make an appropriate angle, make the back of the robot face the angle you want in pathplanner
-
-        // To make a stop point, add a time duration in the marker page.
-        // Then, add the "stop" event.
     }
 
     public Command getAutonomousCommand() {
@@ -77,12 +69,7 @@ public class AutonomousManager {
     }
 
     private Command pathGroupCommand(List<PathPlannerTrajectory> pathGroup) {
-        return autoBuilder.fullAuto(pathGroup).andThen(reversePoseCommand());
-    }
-
-    private Command reversePoseCommand() {
-        return runOnce(() -> swerveDriveSubsystem.setRotation(
-                swerveDriveSubsystem.getRotation().rotateBy(Rotation2d.fromDegrees(180))));
+        return autoBuilder.fullAuto(pathGroup);
     }
 
     private void initializeNetworkTablesValues() {
