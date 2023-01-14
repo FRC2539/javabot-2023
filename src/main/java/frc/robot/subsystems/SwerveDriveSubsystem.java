@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -46,6 +47,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     private final Pigeon2 gyro = new Pigeon2(SwerveConstants.PIGEON_PORT);
 
     LoggableDouble gyroLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro");
+    LoggableDouble rollLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro Roll");
+    LoggableDouble pitchLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro Pitch");
     LoggablePose poseLogger = new LoggablePose("/SwerveDriveSubsystem/Pose", true);
     LoggableChassisSpeeds velocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Velocity");
     LoggableDoubleArray desiredVelocityLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Desired Velocity");
@@ -78,8 +81,11 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
         return runEnd(
-                () -> setVelocity(
-                        new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)), isFieldOriented),
+                () -> 
+                    setVelocity(
+                            new ChassisSpeeds(-forward.get(true), -strafe.get(true), -rotation.get(true)),
+                            isFieldOriented)
+                ,
                 this::stop);
     }
 
@@ -190,6 +196,14 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 Units.degreesToRadians(gyro.getYaw()));
     }
 
+    public Translation3d getNormalVector3d() {
+        return new Translation3d(0, 0, 1).rotateBy(getGyroRotation3d());
+    }
+
+    public double getTiltAmount() {
+        return Math.toDegrees(Math.acos(getNormalVector3d().getZ()));
+    }
+
     public Rotation3d getGyroRotationRates3d() {
         double[] xyzDegreesPerSecond = new double[3];
 
@@ -280,7 +294,9 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     @Override
     public void periodic() {
-        gyroLogger.set(getGyroRotation().getDegrees());
+        gyroLogger.set(Math.toDegrees(getGyroRotation3d().getZ()));
+        rollLogger.set(Math.toDegrees(getGyroRotation3d().getX()));
+        pitchLogger.set(Math.toDegrees(getGyroRotation3d().getY()));
 
         poseLogger.set(pose);
         velocityLogger.set(velocity);

@@ -14,7 +14,8 @@ import java.util.function.Supplier;
 
 public class FeedForwardCharacterization extends CommandBase {
     private static final double startDelaySecs = 1.0;
-    private static final double rampRateVoltsPerSec = 0.1;
+    private static final double rampRateVoltsPerSecSquared = 0.1;
+    private static final boolean disableSquaring = true;
 
     private final boolean forwards;
     private final boolean isDrive;
@@ -83,7 +84,8 @@ public class FeedForwardCharacterization extends CommandBase {
                 voltageConsumerSimple.accept(0.0);
             }
         } else {
-            double voltage = (timer.get() - startDelaySecs) * rampRateVoltsPerSec * (forwards ? 1 : -1);
+            double timeConversion = disableSquaring ? (timer.get() - startDelaySecs) : Math.pow((timer.get() - startDelaySecs), 2);
+            double voltage = timeConversion * rampRateVoltsPerSecSquared * (forwards ? 1 : -1);
             if (isDrive) {
                 voltageConsumerDrive.accept(voltage, voltage);
             } else {

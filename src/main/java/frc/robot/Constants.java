@@ -176,8 +176,8 @@ public final class Constants {
         public static final double driveKA = 0;
 
         /* Angle Motor Characterization Values */
-        public static final double angleKS =
-                (0.368 / 12); // divide by 12 to convert from volts to percent output for CTRE
+        public static final double angleKS = 0;
+                //(0.368 / 12); // divide by 12 to convert from volts to percent output for CTRE
         public static final double angleKV = (0.234 / 12);
         public static final double angleKA = (0.003 / 12);
 
@@ -190,7 +190,7 @@ public final class Constants {
         public static final NeutralMode driveNeutralMode = NeutralMode.Brake;
 
         /* Drive Motor Inverts */
-        public static final boolean driveMotorInvert = true;
+        public static final boolean driveMotorInvert = false;
 
         /* Drive Encoder Inverts */
         public static final boolean driveEncoderInvert = false;
