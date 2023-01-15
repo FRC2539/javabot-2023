@@ -55,15 +55,8 @@ public class RobotContainer {
         new Trigger(visionSubsystem::hasTargets)
                 .and(new Trigger(() -> visionSubsystem.getAmbiguity() < VisionConstants.ambiguityThreshold))
                 .whileTrue(run(() -> {
-                    var netTransform =
-                            visionSubsystem.getCameraToTarget().inverse().plus(VisionConstants.cameraToRobot);
-
-                    var robotPoseEstimate = visionSubsystem
-                            .getAprilTagFieldPose()
-                            .transformBy(netTransform)
-                            .toPose2d();
-
-                    swerveDriveSubsystem.addVisionPoseEstimate(robotPoseEstimate, visionSubsystem.getTimestamp());
+                    swerveDriveSubsystem.addVisionPoseEstimate(
+                            visionSubsystem.getRobotPoseEstimate(), visionSubsystem.getTimestamp());
                 }));
 
         // Set left joystick bindings

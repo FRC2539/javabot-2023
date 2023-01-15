@@ -1,11 +1,13 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggableDouble;
 import frc.lib.logging.LoggablePose;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.VisionConstants;
 import java.util.Optional;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -47,6 +49,15 @@ public class VisionSubsystem extends SubsystemBase {
 
     public Transform3d getCameraToTarget() {
         return cameraToTarget;
+    }
+
+    public Pose2d getRobotPoseEstimate() {
+        var targetToRobot = getCameraToTarget().inverse().plus(VisionConstants.cameraToRobot);
+
+        var robotPoseEstimate =
+                getAprilTagFieldPose().transformBy(targetToRobot).toPose2d();
+
+        return robotPoseEstimate;
     }
 
     @Override

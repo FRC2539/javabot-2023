@@ -2,8 +2,9 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -38,8 +39,43 @@ public final class Constants {
         public static final double DRIVETRAIN_PERIOD = 0.0025;
     }
 
+    public static final class FieldConstants {
+        public static final double fieldLength = Units.inchesToMeters(651.25);
+        public static final double fieldWidth = Units.inchesToMeters(315.5);
+
+        public static AprilTagFieldLayout APRIL_TAG_FIELD_LAYOUT;
+
+        static {
+            try {
+                APRIL_TAG_FIELD_LAYOUT = new AprilTagFieldLayout(AprilTagFields.k2023ChargedUp.m_resourceFile);
+            } catch (Exception e) {
+                APRIL_TAG_FIELD_LAYOUT = new AprilTagFieldLayout(List.of(), fieldLength, fieldWidth);
+            }
+        }
+
+        public static void setAprilTagOrigin() {
+            APRIL_TAG_FIELD_LAYOUT.setOrigin(
+                    DriverStation.getAlliance() == Alliance.Red
+                            ? OriginPosition.kRedAllianceWallRightSide
+                            : OriginPosition.kBlueAllianceWallRightSide);
+        }
+    }
+
     public static final class LightsConstants {
         public static final int CANDLE_PORT = 59;
+    }
+
+    public static final class ArmConstants {
+        public static final double arm1Length = Units.inchesToMeters(30);
+        public static final double arm2Length = Units.inchesToMeters(30);
+
+        public static final Transform3d armToRobot = new Transform3d();
+
+        // Rotation relative to positive x-axis, counterclockwise-positive
+        public static final Rotation2d arm1StartingAngle = Rotation2d.fromDegrees(100);
+
+        // Rotation relative to first arm
+        public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-160);
     }
 
     public static final class VisionConstants {
@@ -53,28 +89,6 @@ public final class Constants {
         public static final Transform3d robotToCamera = cameraToRobot.inverse();
 
         public static final double ambiguityThreshold = 0.35;
-    }
-
-    public static final class FieldConstants {
-        public static final double fieldLength = Units.inchesToMeters(651.25);
-        public static final double fieldWidth = Units.inchesToMeters(315.5);
-
-        public static AprilTagFieldLayout APRIL_TAG_FIELD_LAYOUT;
-
-        static {
-                try {
-                        APRIL_TAG_FIELD_LAYOUT = new AprilTagFieldLayout(AprilTagFields.k2023ChargedUp.m_resourceFile);
-                } catch (Exception e) {
-                        APRIL_TAG_FIELD_LAYOUT = new AprilTagFieldLayout(List.of(), fieldLength, fieldWidth);
-                }
-        }
-
-        public static void setAprilTagOrigin() {
-            APRIL_TAG_FIELD_LAYOUT.setOrigin(
-                    DriverStation.getAlliance() == Alliance.Red
-                            ? OriginPosition.kRedAllianceWallRightSide
-                            : OriginPosition.kBlueAllianceWallRightSide);
-        }
     }
 
     public static final class SwerveConstants extends Mk4SwerveConstants {}
