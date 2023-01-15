@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
@@ -21,8 +20,6 @@ public class ArmSubsystem extends SubsystemBase {
 
     ArmState armState = ArmState.AWAITING_PIECE;
 
-    Timer demoTimer = new Timer();
-
     public ArmSubsystem() {
         arm1 = root.append(
                 new MechanismLigament2d("Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
@@ -39,8 +36,6 @@ public class ArmSubsystem extends SubsystemBase {
                 ArmConstants.arm2StartingAngle);
 
         SmartDashboard.putData("Arm Mechanism", mechanism);
-
-        demoTimer.start();
     }
 
     private void inverseKinematics(Translation2d endEffector) {
@@ -59,8 +54,10 @@ public class ArmSubsystem extends SubsystemBase {
     private Translation2d forwardKinematics(
             double arm1Length, Rotation2d arm1Angle, double arm2Length, Rotation2d arm2Angle) {
         return new Translation2d(
-                arm1Length * arm1Angle.getCos() + arm2Length * arm2Angle.plus(arm1Angle).getCos(),
-                arm1Length * arm1Angle.getSin() + arm2Length * arm2Angle.plus(arm1Angle).getSin());
+                arm1Length * arm1Angle.getCos()
+                        + arm2Length * arm2Angle.plus(arm1Angle).getCos(),
+                arm1Length * arm1Angle.getSin()
+                        + arm2Length * arm2Angle.plus(arm1Angle).getSin());
     }
 
     public void setState(ArmState state) {
@@ -90,27 +87,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     @Override
-    public void periodic() {
-        if(demoTimer.advanceIfElapsed(1.0)) {
-            switch (armState) {
-                case AWAITING_PIECE:
-                    setAwaitingDeployment();
-                    break;
-                case AWAITING_DEPLOYMENT:
-                    setHybrid();
-                    break;
-                case HYBRID:
-                    setMid();
-                    break;
-                case MID:
-                    setHigh();
-                    break;
-                case HIGH:
-                    setAwaitingPiece();
-                    break;
-            }
-        }
-    }
+    public void periodic() {}
 
     private enum ArmState {
         AWAITING_PIECE(0.20, 0.07),

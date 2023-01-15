@@ -24,12 +24,12 @@ import frc.lib.logging.LoggableDouble;
 import frc.lib.logging.LoggableDoubleArray;
 import frc.lib.logging.LoggablePose;
 import frc.lib.loops.Updatable;
-import frc.lib.swerve.FeedForwardCharacterization;
-import frc.lib.swerve.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
 import frc.robot.Constants.SwerveConstants;
+import frc.robot.commands.FeedForwardCharacterization;
+import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
@@ -38,7 +38,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     private final SwerveDrivePoseEstimator swervePoseEstimator;
 
     private Pose2d pose = new Pose2d();
-    private final MovingAverageVelocity velocityEstimator = new MovingAverageVelocity(20);
+    private final MovingAverageVelocity velocityEstimator = new MovingAverageVelocity(15);
     private ChassisSpeeds velocity = new ChassisSpeeds();
     private SwerveDriveSignal driveSignal = new SwerveDriveSignal();
 
@@ -51,9 +51,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     LoggableDouble pitchLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro Pitch");
     LoggablePose poseLogger = new LoggablePose("/SwerveDriveSubsystem/Pose", true);
     LoggableChassisSpeeds velocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Velocity");
-    LoggableDoubleArray desiredVelocityLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Desired Velocity");
+    LoggableChassisSpeeds desiredVelocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Desired Velocity");
     LoggableDoubleArray wheelAnglesLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Wheel Angles");
-    LoggableDoubleArray wheelSpeedsLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Wheel Speeds");
     LoggableDoubleArray driveTemperatureLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Drive Temperatures");
     LoggableDoubleArray angleTemperatureLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Angle Temperatures");
     LoggableDoubleArray driveVoltageLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Drive Voltage");
@@ -297,22 +296,13 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
         poseLogger.set(pose);
         velocityLogger.set(velocity);
-        desiredVelocityLogger.set(new double[] {
-            driveSignal.vxMetersPerSecond, driveSignal.vyMetersPerSecond, driveSignal.omegaRadiansPerSecond
-        });
+        desiredVelocityLogger.set((ChassisSpeeds) driveSignal);
 
         wheelAnglesLogger.set(new double[] {
             modules[0].getPosition().angle.getDegrees(),
             modules[1].getPosition().angle.getDegrees(),
             modules[2].getPosition().angle.getDegrees(),
             modules[3].getPosition().angle.getDegrees()
-        });
-
-        wheelSpeedsLogger.set(new double[] {
-            modules[0].getState().speedMetersPerSecond,
-            modules[1].getState().speedMetersPerSecond,
-            modules[2].getState().speedMetersPerSecond,
-            modules[3].getState().speedMetersPerSecond
         });
 
         driveTemperatureLogger.set(getDriveTemperatures());

@@ -13,34 +13,36 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class AutonomousManager {
     private NetworkTable autonomousTable;
     private NetworkTableEntry selectedAuto;
-    private final String[] autoStrings = {"demo"};
 
-    SwerveDriveSubsystem swerveDriveSubsystem;
-
-    private HashMap<String, Command> eventMap = new HashMap<>();
     private SwerveAutoBuilder autoBuilder;
 
-    // Load all autonomous paths
-    List<PathPlannerTrajectory> demoPath = PathPlanner.loadPathGroup("demo2", new PathConstraints(2, 3));
+    private final AutonomousOption defaultAuto = AutonomousOption.DEMO;
 
     public AutonomousManager(RobotContainer container) {
-        swerveDriveSubsystem = container.getSwerveDriveSubsystem();
+        SwerveDriveSubsystem swerveDriveSubsystem = container.getSwerveDriveSubsystem();
+        ArmSubsystem armSubsystem = container.getArmSubsystem();
 
         // Allow thd custom driver station to select an auto
         initializeNetworkTablesValues();
 
         // Create an event map for use in all autos
+        HashMap<String, Command> eventMap = new HashMap<>();
         eventMap.put("stop", runOnce(swerveDriveSubsystem::stop, swerveDriveSubsystem));
-
-        SwerveDriveSubsystem swerveDriveSubsystem = container.getSwerveDriveSubsystem();
+        eventMap.put(
+                "placeHigh",
+                sequence(
+                        runOnce(armSubsystem::setHigh, armSubsystem),
+                        waitSeconds(1),
+                        runOnce(armSubsystem::setAwaitingPiece, armSubsystem)));
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
@@ -58,28 +60,49 @@ public class AutonomousManager {
     }
 
     public Command getAutonomousCommand() {
-        switch (selectedAuto.getString(autoStrings[0])) {
-            case "demo":
-                return pathGroupCommand(demoPath);
+        String nameOfSelectedAuto = selectedAuto.getString(defaultAuto.name());
+
+        Command autonomousCommand;
+
+        // Run the default auto if an invalid auto has been chosen
+        try {
+            autonomousCommand = AutonomousOption.valueOf(nameOfSelectedAuto).getCommand(autoBuilder);
+        } catch (Exception e) {
+            autonomousCommand = AutonomousOption.valueOf(defaultAuto.name()).getCommand(autoBuilder);
         }
 
         // Return an empty command group if no auto is specified
-        return new SequentialCommandGroup();
+        return autonomousCommand;
     }
 
-    private Command pathGroupCommand(List<PathPlannerTrajectory> pathGroup) {
-        return autoBuilder.fullAuto(pathGroup);
+    private enum AutonomousOption {
+        DEMO("demo2", new PathConstraints(2, 3)),
+        PLACE1ANDCLIMB("place1andclimb", new PathConstraints(5, 4));
+
+        private List<PathPlannerTrajectory> path;
+
+        private AutonomousOption(String pathName, PathConstraints constraints) {
+            this.path = PathPlanner.loadPathGroup(pathName, constraints);
+        }
+
+        public Command getCommand(SwerveAutoBuilder autoBuilder) {
+            return autoBuilder.fullAuto(path);
+        }
     }
 
     private void initializeNetworkTablesValues() {
         autonomousTable = NetworkTableInstance.getDefault().getTable("Autonomous");
 
         // Insert all of the auto options into the network tables
-        autonomousTable.getEntry("autos").setStringArray(autoStrings);
+        autonomousTable.getEntry("autos").setStringArray(getAutonomousOptionNames());
 
         selectedAuto = autonomousTable.getEntry("selectedAuto");
 
         // Choose the first auto as the default
-        selectedAuto.setString(autoStrings[0]);
+        selectedAuto.setString(defaultAuto.name());
+    }
+
+    public static String[] getAutonomousOptionNames() {
+        return Stream.of(AutonomousOption.values()).map(AutonomousOption::name).toArray(String[]::new);
     }
 }

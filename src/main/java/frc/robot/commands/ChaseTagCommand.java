@@ -1,4 +1,4 @@
-package frc.lib.swerve;
+package frc.robot.commands;
 
 import static frc.robot.Constants.VisionConstants.robotToCamera;
 
@@ -25,10 +25,13 @@ public class ChaseTagCommand extends CommandBase {
 
     private static final Transform3d tagToGoal =
             new Transform3d(new Translation3d(0.5, 0.0, 0.0), new Rotation3d(0.0, 0.0, Math.PI));
+    private static final Transform3d tagIsGoal = new Transform3d();
 
     private final SwerveDriveSubsystem swerveDriveSubsystem;
     private final VisionSubsystem visionSubsystem;
     private final Supplier<Pose2d> poseProvider;
+
+    private final boolean shouldCoverPose;
 
     private final ProfiledPIDController xController = new ProfiledPIDController(3, 0, 0, xConstraints);
     private final ProfiledPIDController yController = new ProfiledPIDController(3, 0, 0, yConstraints);
@@ -36,13 +39,17 @@ public class ChaseTagCommand extends CommandBase {
 
     private final Timer deadbandTimer = new Timer();
 
-    private static final double DEADBAND_DURATION = 1.0;
+    private static final double DEADBAND_DURATION = 0.5;
 
     public ChaseTagCommand(
-            VisionSubsystem visionSubsystem, SwerveDriveSubsystem swerveDriveSubsystem, Supplier<Pose2d> poseProvider) {
+            VisionSubsystem visionSubsystem,
+            SwerveDriveSubsystem swerveDriveSubsystem,
+            Supplier<Pose2d> poseProvider,
+            boolean shouldCoverPose) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.visionSubsystem = visionSubsystem;
         this.poseProvider = poseProvider;
+        this.shouldCoverPose = shouldCoverPose;
 
         xController.setTolerance(0.2);
         yController.setTolerance(0.2);
@@ -81,7 +88,9 @@ public class ChaseTagCommand extends CommandBase {
             var targetPose = cameraPose.transformBy(camToTarget);
 
             // Transform the tag's pose to set our goal
-            var goalPose = targetPose.transformBy(tagToGoal).toPose2d();
+            var goalPose = targetPose
+                    .transformBy(shouldCoverPose ? tagIsGoal : tagToGoal)
+                    .toPose2d();
 
             // Update controllers
             xController.setGoal(goalPose.getX());

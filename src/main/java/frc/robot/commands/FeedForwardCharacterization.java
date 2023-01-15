@@ -1,6 +1,6 @@
 // From Mechanical Advantage, Team 6328
 
-package frc.lib.swerve;
+package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
