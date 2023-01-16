@@ -49,12 +49,8 @@ public class RobotContainer {
         // Set default commands
         // lightsSubsystem.setDefaultCommand(lightsSubsystem.defaultCommand());
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
-                getDriveForwardAxis(),
-                getDriveStrafeAxis(),
-                getDriveRotationAxis(),
-                true,
-                rightDriveController.getBottomThumb()));
-        rightDriveController.nameBottomThumb("Activate Snekey Mode");
+                getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
+        rightDriveController.nameBottomThumb("Activate Precise Mode");
         // Set non-button, multi-subsystem triggers
         new Trigger(visionSubsystem::hasTargets)
                 .and(new Trigger(() -> visionSubsystem.getAmbiguity() < VisionConstants.ambiguityThreshold))
@@ -70,12 +66,8 @@ public class RobotContainer {
                 .onTrue(runOnce(() -> swerveDriveSubsystem.setPose(new Pose2d()), swerveDriveSubsystem));
         leftDriveController
                 .getBottomThumb()
-                .whileTrue(swerveDriveSubsystem.driveCommand(
-                        getDriveForwardAxis(),
-                        getDriveStrafeAxis(),
-                        getDriveRotationAxis(),
-                        false,
-                        rightDriveController.getBottomThumb()));
+                .whileTrue(swerveDriveSubsystem.preciseDriveCommand(
+                        getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
         leftDriveController.nameLeftTopLeft("Reset Gyro Angle");
         leftDriveController.nameLeftTopRight("Reset Pose");
         leftDriveController.nameBottomThumb("Robot Oriented Drive");

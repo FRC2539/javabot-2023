@@ -30,7 +30,6 @@ import frc.robot.Constants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
@@ -79,16 +78,26 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 SwerveConstants.swerveKinematics, getGyroRotation(), getModulePositions(), new Pose2d());
     }
 
-    public Command driveCommand(
-            Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented, BooleanSupplier isSnekey) {
+    public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
         return runEnd(
                 () -> {
-                    double speedModification = isSnekey.getAsBoolean() ? SwerveConstants.snekeyModeSpeedChange : 1;
+                    setVelocity(
+                            new ChassisSpeeds(-forward.get(true), -strafe.get(true), -rotation.get(true)),
+                            isFieldOriented);
+                },
+                this::stop);
+    }
+
+    public Command preciseDriveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
+        var speedMultiplier = SwerveConstants.preciseDrivingModeSpeedMultiplier;
+
+        return runEnd(
+                () -> {
                     setVelocity(
                             new ChassisSpeeds(
-                                    speedModification * -forward.get(true),
-                                    speedModification * -strafe.get(true),
-                                    speedModification * -rotation.get(true)),
+                                    speedMultiplier * -forward.get(true),
+                                    speedMultiplier * -strafe.get(true),
+                                    speedMultiplier * -rotation.get(true)),
                             isFieldOriented);
                 },
                 this::stop);
