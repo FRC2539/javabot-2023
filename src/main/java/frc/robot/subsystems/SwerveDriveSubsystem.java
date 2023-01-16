@@ -124,7 +124,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
                     Translation2d finalDirection = direction.times(pitchController.calculate(pitch, goal));
 
-                    setVelocity(new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0), false);
+                    setVelocity(new ChassisSpeeds(finalDirection.getX() / finalDirection.getNorm(), finalDirection.getY() / finalDirection.getNorm(), 0), false);
                 },
                 this::stop);
     }
