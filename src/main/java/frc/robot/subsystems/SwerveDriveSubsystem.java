@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.sensors.Pigeon2;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -75,7 +76,12 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
         // Initialize the swerve drive pose estimator with access to the module positions.
         swervePoseEstimator = new SwerveDrivePoseEstimator(
-                SwerveConstants.swerveKinematics, getGyroRotation(), getModulePositions(), new Pose2d());
+                SwerveConstants.swerveKinematics,
+                getGyroRotation(),
+                getModulePositions(),
+                new Pose2d(),
+                VecBuilder.fill(0.1, 0.1, 0.1),
+                VecBuilder.fill(0.95, 0.95, 0.95));
     }
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {

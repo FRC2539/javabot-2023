@@ -5,14 +5,18 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
 import com.pathplanner.lib.PathPlannerTrajectory;
+import com.pathplanner.lib.PathPoint;
 import com.pathplanner.lib.auto.PIDConstants;
 import com.pathplanner.lib.auto.SwerveAutoBuilder;
 import com.pathplanner.lib.server.PathPlannerServer;
+
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.HashMap;
@@ -27,8 +31,10 @@ public class AutonomousManager {
 
     private final AutonomousOption defaultAuto = AutonomousOption.DEMO;
 
+    SwerveDriveSubsystem swerveDriveSubsystem;
+
     public AutonomousManager(RobotContainer container) {
-        SwerveDriveSubsystem swerveDriveSubsystem = container.getSwerveDriveSubsystem();
+        swerveDriveSubsystem = container.getSwerveDriveSubsystem();
         ArmSubsystem armSubsystem = container.getArmSubsystem();
 
         // Allow thd custom driver station to select an auto
@@ -59,6 +65,21 @@ public class AutonomousManager {
         }
     }
 
+    private enum AutonomousOption {
+        DEMO("demo2", new PathConstraints(2, 3)),
+        PLACE1ANDCLIMB("place1andclimb", new PathConstraints(5, 4));
+
+        private List<PathPlannerTrajectory> path;
+
+        private AutonomousOption(String pathName, PathConstraints constraints) {
+            this.path = PathPlanner.loadPathGroup(pathName, constraints);
+        }
+
+        public Command getCommand(SwerveAutoBuilder autoBuilder) {
+            return autoBuilder.fullAuto(path);
+        }
+    }
+
     public Command getAutonomousCommand() {
         String nameOfSelectedAuto = selectedAuto.getString(defaultAuto.name());
 
@@ -75,19 +96,29 @@ public class AutonomousManager {
         return autonomousCommand;
     }
 
-    private enum AutonomousOption {
-        DEMO("demo2", new PathConstraints(2, 3)),
-        PLACE1ANDCLIMB("place1andclimb", new PathConstraints(5, 4));
+    public Command followAutoToPoseCommand(Pose2d targetPose) {
+        return new ProxyCommand(() -> generateAutoToPoseCommand(targetPose));
+    }
 
-        private List<PathPlannerTrajectory> path;
+    private Command generateAutoToPoseCommand(Pose2d targetPose) {
+        var initialPose = swerveDriveSubsystem.getPose();
+        // var initialRotation = initialPose.getRotation().rotateBy(Rotation2d.fromDegrees(180));
+        // var targetRotation = targetPose.getRotation().rotateBy(Rotation2d.fromDegrees(180));
+        var currentVelocityDirection = swerveDriveSubsystem.getVelocityRotation();
 
-        private AutonomousOption(String pathName, PathConstraints constraints) {
-            this.path = PathPlanner.loadPathGroup(pathName, constraints);
-        }
+        var path = PathPlanner.generatePath(
+                new PathConstraints(3, 2),
+                new PathPoint(
+                        initialPose.getTranslation(),
+                        currentVelocityDirection,
+                        initialPose.getRotation(),
+                        swerveDriveSubsystem.getVelocityMagnitude()),
+                new PathPoint(
+                        targetPose.getTranslation(),
+                        targetPose.getRotation(),
+                        targetPose.getRotation()));
 
-        public Command getCommand(SwerveAutoBuilder autoBuilder) {
-            return autoBuilder.fullAuto(path);
-        }
+        return autoBuilder.followPath(path);
     }
 
     private void initializeNetworkTablesValues() {
