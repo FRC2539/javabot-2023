@@ -82,7 +82,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         return runEnd(
                 () -> {
                     setVelocity(
-                            new ChassisSpeeds(-forward.get(true), -strafe.get(true), -rotation.get(true)),
+                            new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)),
                             isFieldOriented);
                 },
                 this::stop);
@@ -95,9 +95,9 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 () -> {
                     setVelocity(
                             new ChassisSpeeds(
-                                    speedMultiplier * -forward.get(true),
-                                    speedMultiplier * -strafe.get(true),
-                                    speedMultiplier * -rotation.get(true)),
+                                    speedMultiplier * forward.get(true),
+                                    speedMultiplier * strafe.get(true),
+                                    speedMultiplier * rotation.get(true)),
                             isFieldOriented);
                 },
                 this::stop);

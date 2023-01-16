@@ -5,6 +5,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggableDouble;
+import frc.lib.logging.LoggableInteger;
 import frc.lib.logging.LoggablePose;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
@@ -27,8 +28,8 @@ public class VisionSubsystem extends SubsystemBase {
     double ambiguity = 0.0;
     double timestamp = 0.0;
 
-    public LoggablePose poseEstimateLogger = new LoggablePose("/VisionSubsystem/Pose");
-
+    LoggablePose poseEstimateLogger = new LoggablePose("/VisionSubsystem/Pose");
+    LoggableInteger fiducialIdLogger = new LoggableInteger("/VisionSubsystem/Fiducial Id");
     LoggableDouble ambiguityLogger = new LoggableDouble("/VisionSubsystem/Ambiguity");
 
     public boolean hasTargets() {
@@ -52,10 +53,12 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     public Pose2d getRobotPoseEstimate() {
-        var targetToRobot = getCameraToTarget().inverse().plus(VisionConstants.cameraToRobot);
+        var targetToCamera = getCameraToTarget().inverse();
 
-        var robotPoseEstimate =
-                getAprilTagFieldPose().transformBy(targetToRobot).toPose2d();
+        var robotPoseEstimate = getAprilTagFieldPose()
+                .transformBy(targetToCamera)
+                .transformBy(VisionConstants.cameraToRobot)
+                .toPose2d();
 
         return robotPoseEstimate;
     }
@@ -79,6 +82,7 @@ public class VisionSubsystem extends SubsystemBase {
         timestamp = latestResult.getTimestampSeconds();
 
         ambiguityLogger.set(ambiguity);
+        fiducialIdLogger.set(fiducialId);
 
         cameraToTarget = currentTarget.getBestCameraToTarget();
 
@@ -87,7 +91,7 @@ public class VisionSubsystem extends SubsystemBase {
         if (currentTargetFieldPose.isPresent()) {
             aprilTagPose = currentTargetFieldPose.get();
 
-            // poseEstimateLogger.set(aprilTagPose);
+            poseEstimateLogger.set(aprilTagPose);
         }
     }
 

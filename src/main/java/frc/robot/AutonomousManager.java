@@ -48,7 +48,7 @@ public class AutonomousManager {
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
                 new PIDConstants(3.0, 0.0, 0.0), // try decreasing P here
-                new PIDConstants(0.03, 0.0, 0.001),
+                new PIDConstants(0.05, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
                 swerveDriveSubsystem);

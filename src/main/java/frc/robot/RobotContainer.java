@@ -3,17 +3,23 @@ package frc.robot;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimesliceRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.controller.Axis;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
+import frc.lib.logging.LoggablePose;
 import frc.lib.loops.UpdateManager;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.TimesliceConstants;
 import frc.robot.Constants.VisionConstants;
+import frc.robot.commands.DriveToPoseCommand;
 import frc.robot.subsystems.*;
+import java.util.function.Supplier;
 
 public class RobotContainer {
     private final ThrustmasterJoystick leftDriveController =
@@ -45,12 +51,16 @@ public class RobotContainer {
         leftDriveController.getXAxis().setScale(Constants.SwerveConstants.maxSpeed);
         leftDriveController.getYAxis().setScale(Constants.SwerveConstants.maxSpeed);
         rightDriveController.getXAxis().setScale(Constants.SwerveConstants.maxAngularVelocity);
+        leftDriveController.getXAxis().setInverted(true);
+        leftDriveController.getYAxis().setInverted(true);
+        rightDriveController.getXAxis().setInverted(true);
 
         // Set default commands
         // lightsSubsystem.setDefaultCommand(lightsSubsystem.defaultCommand());
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
         rightDriveController.nameBottomThumb("Activate Precise Mode");
+
         // Set non-button, multi-subsystem triggers
         new Trigger(visionSubsystem::hasTargets)
                 .and(new Trigger(() -> visionSubsystem.getAmbiguity() < VisionConstants.ambiguityThreshold))
@@ -77,8 +87,21 @@ public class RobotContainer {
         rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
         rightDriveController.nameRightBottomMiddle("Characterize Forwards");
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
-        // rightDriveController.getBottomThumb().whileTrue(new ChaseTagCommand(visionSubsystem, swerveDriveSubsystem,
-        // swerveDriveSubsystem::getPose));
+
+        LoggablePose targetPoseLogger = new LoggablePose("/SwerveDriveSubsystem/TargetPose");
+
+        Supplier<Pose2d> targetPoseSupplier = () -> {
+            var targetPose = visionSubsystem
+                    .getAprilTagFieldPose()
+                    .toPose2d()
+                    .transformBy(new Transform2d(new Translation2d(1.5, 0.1), Rotation2d.fromDegrees(180)));
+            targetPoseLogger.set(targetPose);
+            return targetPose;
+        };
+
+        rightDriveController
+                .getBottomThumb()
+                .whileTrue(new DriveToPoseCommand(swerveDriveSubsystem, targetPoseSupplier));
 
         // Set operator controller bindings
 
