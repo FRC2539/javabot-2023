@@ -154,6 +154,9 @@ public final class Constants {
         public static final double maxSpeed = 4.968230454756032; // meters per second
         public static final double maxAngularVelocity = 11.771048567785275;
 
+        /* Snekey Mode Values */
+        public static final double snekeyModeSpeedChange = 0.1;
+
         /* Neutral Modes */
         public static final NeutralMode angleNeutralMode = NeutralMode.Brake;
         public static final NeutralMode driveNeutralMode = NeutralMode.Brake;
