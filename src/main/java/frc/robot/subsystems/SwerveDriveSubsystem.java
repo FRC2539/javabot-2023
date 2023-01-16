@@ -97,10 +97,15 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
         return runEnd(
                 () -> {
-                    double pitch = getGyroRotation3d().getY();
+                    double pitch = getTiltAmount();
 
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
-                    setVelocity(new ChassisSpeeds(pitchController.calculate(pitch, goal), 0, 0), false);
+
+                    Translation2d direction = new Translation2d(getNormalVector3d().getX(), getNormalVector3d().getY());
+
+                    Translation2d finalDirection = direction.times(pitchController.calculate(pitch, goal));
+
+                    setVelocity(new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0), false);
                 },
                 this::stop);
     }
