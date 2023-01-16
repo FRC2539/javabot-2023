@@ -49,7 +49,11 @@ public class RobotContainer {
         // Set default commands
         // lightsSubsystem.setDefaultCommand(lightsSubsystem.defaultCommand());
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
-                getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true, rightDriveController.getBottomThumb()));
+                getDriveForwardAxis(),
+                getDriveStrafeAxis(),
+                getDriveRotationAxis(),
+                true,
+                rightDriveController.getBottomThumb()));
         rightDriveController.nameBottomThumb("Activate Snekey Mode");
         // Set non-button, multi-subsystem triggers
         new Trigger(visionSubsystem::hasTargets)
@@ -67,7 +71,11 @@ public class RobotContainer {
         leftDriveController
                 .getBottomThumb()
                 .whileTrue(swerveDriveSubsystem.driveCommand(
-                        getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), false, rightDriveController.getBottomThumb()));
+                        getDriveForwardAxis(),
+                        getDriveStrafeAxis(),
+                        getDriveRotationAxis(),
+                        false,
+                        rightDriveController.getBottomThumb()));
         leftDriveController.nameLeftTopLeft("Reset Gyro Angle");
         leftDriveController.nameLeftTopRight("Reset Pose");
         leftDriveController.nameBottomThumb("Robot Oriented Drive");

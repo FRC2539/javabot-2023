@@ -30,7 +30,6 @@ import frc.robot.Constants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -80,15 +79,18 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 SwerveConstants.swerveKinematics, getGyroRotation(), getModulePositions(), new Pose2d());
     }
 
-    public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented, BooleanSupplier isSnekey) {
+    public Command driveCommand(
+            Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented, BooleanSupplier isSnekey) {
         return runEnd(
                 () -> {
                     double speedModification = isSnekey.getAsBoolean() ? SwerveConstants.snekeyModeSpeedChange : 1;
                     setVelocity(
-                        new ChassisSpeeds(speedModification * -forward.get(true), speedModification * -strafe.get(true), speedModification * -rotation.get(true)), isFieldOriented);
-                    
-                    }
-                        ,
+                            new ChassisSpeeds(
+                                    speedModification * -forward.get(true),
+                                    speedModification * -strafe.get(true),
+                                    speedModification * -rotation.get(true)),
+                            isFieldOriented);
+                },
                 this::stop);
     }
 
@@ -108,7 +110,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 
-                    Translation2d direction = new Translation2d(getNormalVector3d().getX(), getNormalVector3d().getY());
+                    Translation2d direction = new Translation2d(
+                            getNormalVector3d().getX(), getNormalVector3d().getY());
 
                     Translation2d finalDirection = direction.times(pitchController.calculate(pitch, goal));
 
