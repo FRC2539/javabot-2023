@@ -96,9 +96,10 @@
       "isStopPoint": true,
       "stopEvent": {
         "names": [
-          "placeHigh"
+          "placeHigh",
+          "stop"
         ],
-        "executionBehavior": "sequential",
+        "executionBehavior": "parallel",
         "waitBehavior": "none",
         "waitTime": 0
       }

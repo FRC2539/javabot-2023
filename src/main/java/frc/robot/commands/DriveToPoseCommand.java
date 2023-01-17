@@ -92,6 +92,11 @@ public class DriveToPoseCommand extends CommandBase {
     }
 
     @Override
+    public boolean isFinished() {
+        return xController.atGoal() && yController.atGoal() && omegaController.atGoal();
+    }
+
+    @Override
     public void end(boolean interrupted) {
         swerveDriveSubsystem.stop();
     }
