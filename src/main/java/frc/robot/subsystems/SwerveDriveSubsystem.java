@@ -81,7 +81,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 getModulePositions(),
                 new Pose2d(),
                 VecBuilder.fill(0.1, 0.1, 0.1),
-                VecBuilder.fill(0.95, 0.95, 0.95));
+                VecBuilder.fill(0.9, 1.0, 0.9));
     }
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
@@ -97,7 +97,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     public Command preciseDriveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
         var speedMultiplier = SwerveConstants.preciseDrivingModeSpeedMultiplier;
 
-        return runEnd(
+        return run(
                 () -> {
                     setVelocity(
                             new ChassisSpeeds(
@@ -105,8 +105,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                                     speedMultiplier * strafe.get(true),
                                     speedMultiplier * rotation.get(true)),
                             isFieldOriented);
-                },
-                this::stop);
+                });
     }
 
     public Command levelChargeStationCommand() {
@@ -119,7 +118,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         // Four degrees of tolerance
         pitchController.setTolerance(4, 0.1);
 
-        return runEnd(
+        return run(
                 () -> {
                     double pitch = getTiltAmount();
 
@@ -136,8 +135,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                                     finalDirection.getY() / finalDirection.getNorm(),
                                     0),
                             false);
-                },
-                this::stop);
+                });
     }
 
     public Command characterizeCommand(boolean forwards, boolean isDriveMotors) {
@@ -196,8 +194,18 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         swervePoseEstimator.addVisionMeasurement(pose, timestamp);
     }
 
+    /**
+     * @return The robot relative velocity of the drivetrain
+     */
     public ChassisSpeeds getVelocity() {
         return velocity;
+    }
+
+    /**
+     * @return The potentially field relative desired velocity of the drivetrain
+     */
+    public ChassisSpeeds getDesiredVelocity() {
+        return (ChassisSpeeds) driveSignal;
     }
 
     public double getVelocityMagnitude() {

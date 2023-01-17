@@ -146,7 +146,7 @@ public final class Constants {
 
         // Includes 3d transform from camera(s) to robot origin
         public static final Transform3d cameraToRobot = new Transform3d(
-                new Translation3d(Units.inchesToMeters(10), Units.inchesToMeters(6), Units.inchesToMeters(22)),
+                new Translation3d(Units.inchesToMeters(10), Units.inchesToMeters(6 + 2), Units.inchesToMeters(-22)),
                 new Rotation3d());
 
         public static final Transform3d robotToCamera = cameraToRobot.inverse();

@@ -94,7 +94,7 @@ public class RobotContainer {
             var targetPose = visionSubsystem
                     .getAprilTagFieldPose()
                     .toPose2d()
-                    .transformBy(new Transform2d(new Translation2d(1.5, 0.1), Rotation2d.fromDegrees(180)));
+                    .transformBy(new Transform2d(new Translation2d(1.5, 0), Rotation2d.fromDegrees(180)));
             targetPoseLogger.set(targetPose);
             return targetPose;
         };

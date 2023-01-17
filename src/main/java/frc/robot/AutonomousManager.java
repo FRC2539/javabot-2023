@@ -5,18 +5,15 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
 import com.pathplanner.lib.PathPlannerTrajectory;
-import com.pathplanner.lib.PathPoint;
 import com.pathplanner.lib.auto.PIDConstants;
 import com.pathplanner.lib.auto.SwerveAutoBuilder;
 import com.pathplanner.lib.server.PathPlannerServer;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.HashMap;
@@ -54,7 +51,7 @@ public class AutonomousManager {
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
                 new PIDConstants(3.0, 0.0, 0.0), // try decreasing P here
-                new PIDConstants(0.05, 0.0, 0.001),
+                new PIDConstants(1.0, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
                 swerveDriveSubsystem);
@@ -94,31 +91,6 @@ public class AutonomousManager {
 
         // Return an empty command group if no auto is specified
         return autonomousCommand;
-    }
-
-    public Command followAutoToPoseCommand(Pose2d targetPose) {
-        return new ProxyCommand(() -> generateAutoToPoseCommand(targetPose));
-    }
-
-    private Command generateAutoToPoseCommand(Pose2d targetPose) {
-        var initialPose = swerveDriveSubsystem.getPose();
-        // var initialRotation = initialPose.getRotation().rotateBy(Rotation2d.fromDegrees(180));
-        // var targetRotation = targetPose.getRotation().rotateBy(Rotation2d.fromDegrees(180));
-        var currentVelocityDirection = swerveDriveSubsystem.getVelocityRotation();
-
-        var path = PathPlanner.generatePath(
-                new PathConstraints(3, 2),
-                new PathPoint(
-                        initialPose.getTranslation(),
-                        currentVelocityDirection,
-                        initialPose.getRotation(),
-                        swerveDriveSubsystem.getVelocityMagnitude()),
-                new PathPoint(
-                        targetPose.getTranslation(),
-                        targetPose.getRotation(),
-                        targetPose.getRotation()));
-
-        return autoBuilder.followPath(path);
     }
 
     private void initializeNetworkTablesValues() {
