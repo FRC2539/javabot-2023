@@ -19,9 +19,9 @@ public class DriveToPoseCommand extends CommandBase {
 
     private Supplier<Pose2d> targetPoseSupplier;
 
-    private final ProfiledPIDController xController = new ProfiledPIDController(3.5, 0, 0, xConstraints);
-    private final ProfiledPIDController yController = new ProfiledPIDController(3.5, 0, 0, yConstraints);
-    private final ProfiledPIDController omegaController = new ProfiledPIDController(4, 0, 0, omegaConstraints);
+    private final ProfiledPIDController xController = new ProfiledPIDController(3, 0, 0, xConstraints);
+    private final ProfiledPIDController yController = new ProfiledPIDController(3, 0, 0, yConstraints);
+    private final ProfiledPIDController omegaController = new ProfiledPIDController(3, 0, 0, omegaConstraints);
 
     private LoggableDouble xErrorLogger = new LoggableDouble("/Commands/xError");
     private LoggableDouble xSetpointLogger = new LoggableDouble("/Commands/xSetpoint");
@@ -43,8 +43,8 @@ public class DriveToPoseCommand extends CommandBase {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.targetPoseSupplier = targetPoseSupplier;
 
-        xController.setTolerance(0.2);
-        yController.setTolerance(0.2);
+        xController.setTolerance(0.1);
+        yController.setTolerance(0.1);
         omegaController.setTolerance(Units.degreesToRadians(3));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 

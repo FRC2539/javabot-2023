@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.lib.math.PolynomialRegression;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -18,36 +17,12 @@ public class FeedForwardCharacterization extends CommandBase {
     private static final boolean disableSquaring = true;
 
     private final boolean forwards;
-    private final boolean isDrive;
 
     private final FeedForwardCharacterizationData dataPrimary;
-    private final FeedForwardCharacterizationData dataSecondary;
     private final Consumer<Double> voltageConsumerSimple;
-    private final BiConsumer<Double, Double> voltageConsumerDrive;
     private final Supplier<Double> velocitySupplierPrimary;
-    private final Supplier<Double> velocitySupplierSecondary;
 
     private final Timer timer = new Timer();
-
-    /** Creates a new FeedForwardCharacterization for a differential drive. */
-    public FeedForwardCharacterization(
-            Subsystem drive,
-            boolean forwards,
-            FeedForwardCharacterizationData leftData,
-            FeedForwardCharacterizationData rightData,
-            BiConsumer<Double, Double> voltageConsumer,
-            Supplier<Double> leftVelocitySupplier,
-            Supplier<Double> rightVelocitySupplier) {
-        addRequirements(drive);
-        this.forwards = forwards;
-        this.isDrive = true;
-        this.dataPrimary = leftData;
-        this.dataSecondary = rightData;
-        this.voltageConsumerSimple = null;
-        this.voltageConsumerDrive = voltageConsumer;
-        this.velocitySupplierPrimary = leftVelocitySupplier;
-        this.velocitySupplierSecondary = rightVelocitySupplier;
-    }
 
     /** Creates a new FeedForwardCharacterization for a simple subsystem. */
     public FeedForwardCharacterization(
@@ -58,13 +33,9 @@ public class FeedForwardCharacterization extends CommandBase {
             Supplier<Double> velocitySupplier) {
         addRequirements(subsystem);
         this.forwards = forwards;
-        this.isDrive = false;
         this.dataPrimary = data;
-        this.dataSecondary = null;
         this.voltageConsumerSimple = voltageConsumer;
-        this.voltageConsumerDrive = null;
         this.velocitySupplierPrimary = velocitySupplier;
-        this.velocitySupplierSecondary = null;
     }
 
     // Called when the command is initially scheduled.
@@ -78,44 +49,29 @@ public class FeedForwardCharacterization extends CommandBase {
     @Override
     public void execute() {
         if (timer.get() < startDelaySecs) {
-            if (isDrive) {
-                voltageConsumerDrive.accept(0.0, 0.0);
-            } else {
-                voltageConsumerSimple.accept(0.0);
-            }
+            voltageConsumerSimple.accept(0.0);
         } else {
             double timeConversion =
                     disableSquaring ? (timer.get() - startDelaySecs) : Math.pow((timer.get() - startDelaySecs), 2);
             double voltage = timeConversion * rampRateVoltsPerSecSquared * (forwards ? 1 : -1);
-            if (isDrive) {
-                voltageConsumerDrive.accept(voltage, voltage);
-            } else {
-                voltageConsumerSimple.accept(voltage);
-            }
+
+            voltageConsumerSimple.accept(voltage);
+
             dataPrimary.add(velocitySupplierPrimary.get(), voltage);
-            if (isDrive) {
-                dataSecondary.add(velocitySupplierSecondary.get(), voltage);
-            }
         }
     }
 
     // Called once the command ends or is interrupted.
     @Override
     public void end(boolean interrupted) {
-        if (isDrive) {
-            voltageConsumerDrive.accept(0.0, 0.0);
-        } else {
-            voltageConsumerSimple.accept(0.0);
-        }
+        voltageConsumerSimple.accept(0.0);
+
         timer.stop();
 
         // Prevent accidental crashing if no data was recorded
         if (dataPrimary.velocityData.isEmpty()) return;
 
         dataPrimary.print();
-        if (isDrive) {
-            dataSecondary.print();
-        }
     }
 
     // Returns true when the command should end.

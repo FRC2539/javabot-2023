@@ -21,10 +21,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.controller.Axis;
 import frc.lib.interpolation.MovingAverageVelocity;
 import frc.lib.logging.LoggableChassisSpeeds;
-import frc.lib.logging.LoggableDouble;
 import frc.lib.logging.LoggableDoubleArray;
 import frc.lib.logging.LoggablePose;
 import frc.lib.loops.Updatable;
+import frc.lib.math.MathUtils;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
@@ -47,12 +47,6 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     private final Pigeon2 gyro = new Pigeon2(SwerveConstants.PIGEON_PORT);
 
-    LoggableDouble gyroLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro/Yaw");
-    LoggableDouble rollLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro/Roll");
-    LoggableDouble pitchLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro/Pitch");
-    LoggableDouble tiltLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro/Tilt");
-    LoggableDouble tiltHeadingLogger = new LoggableDouble("/SwerveDriveSubsystem/Gyro/Tilt Heading");
-    LoggableDoubleArray normalDirectionLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Gyro/Normal");
     LoggablePose poseLogger = new LoggablePose("/SwerveDriveSubsystem/Pose", true);
     LoggableChassisSpeeds velocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Velocity");
     LoggableChassisSpeeds desiredVelocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Desired Velocity");
@@ -88,13 +82,12 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     }
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
-        return runEnd(
+        return run(
                 () -> {
                     setVelocity(
                             new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)),
                             isFieldOriented);
-                },
-                this::stop);
+                });
     }
 
     public Command preciseDriveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
@@ -111,14 +104,14 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     }
 
     public Command levelChargeStationCommand() {
-        var constraints = new TrapezoidProfile.Constraints(1.2, 0.5);
-        var pitchController = new ProfiledPIDController(0.05, 0, 0, constraints);
+        var constraints = new TrapezoidProfile.Constraints(0.6, 0.3);
+        var tiltController = new ProfiledPIDController(0.01, 0, 0, constraints);
 
         // End with no pitch and stationary
         State goal = new State(0, 0);
 
         // Four degrees of tolerance
-        pitchController.setTolerance(4, 0.1);
+        tiltController.setTolerance(4, 0.1);
 
         return run(() -> {
             double pitch = getTiltAmount();
@@ -128,13 +121,18 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
             Translation2d direction = new Translation2d(
                     getNormalVector3d().getX(), getNormalVector3d().getY());
 
-            Translation2d finalDirection = direction.times(pitchController.calculate(pitch, goal));
+            Translation2d finalDirection = direction.times(tiltController.calculate(pitch, goal));
+
+            ChassisSpeeds velocity = new ChassisSpeeds(
+                finalDirection.getX() / finalDirection.getNorm(),
+                finalDirection.getY() / finalDirection.getNorm(),
+                0);
+
+            if (MathUtils.equalsWithinError(pitch, 0, 2))
+                velocity = new ChassisSpeeds();
 
             setVelocity(
-                    new ChassisSpeeds(
-                            finalDirection.getX() / finalDirection.getNorm(),
-                            finalDirection.getY() / finalDirection.getNorm(),
-                            0),
+                    velocity,
                     false);
         });
     }
@@ -230,7 +228,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     }
 
     public Rotation3d getGyroRotation3d() {
-        return new Rotation3d(Units.degreesToRadians(gyro.getRoll()), Units.degreesToRadians(gyro.getPitch()), 0);
+        //we add 2 degrees to the pitch because the Pidgeon is offset by about -2 degrees pitchwise
+        return new Rotation3d(Units.degreesToRadians(gyro.getRoll()), Units.degreesToRadians(gyro.getPitch() + 2), 0);
     }
 
     public Translation3d getNormalVector3d() {
@@ -336,16 +335,6 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     @Override
     public void periodic() {
-        gyroLogger.set(Math.toDegrees(getGyroRotation3d().getZ()));
-        rollLogger.set(Math.toDegrees(getGyroRotation3d().getX()));
-        pitchLogger.set(Math.toDegrees(getGyroRotation3d().getY()));
-
-        tiltLogger.set(getTiltAmount());
-        tiltHeadingLogger.set(getTiltDirection().getDegrees());
-
-        Translation3d normalVector = getNormalVector3d();
-        normalDirectionLogger.set(new double[] {normalVector.getX(), normalVector.getY(), normalVector.getZ()});
-
         poseLogger.set(pose);
         velocityLogger.set(velocity);
         desiredVelocityLogger.set((ChassisSpeeds) driveSignal);

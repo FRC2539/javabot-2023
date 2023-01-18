@@ -151,7 +151,7 @@ public final class Constants {
 
         public static final Transform3d robotToCamera = cameraToRobot.inverse();
 
-        public static final double ambiguityThreshold = 0.35;
+        public static final double ambiguityThreshold = 0.37;
     }
 
     public static final class SwerveConstants extends Mk4SwerveConstants {}

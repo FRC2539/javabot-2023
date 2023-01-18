@@ -55,13 +55,13 @@ public class RobotContainer {
         leftDriveController.getYAxis().setInverted(true);
         rightDriveController.getXAxis().setInverted(true);
 
-        // Set default commands
+        /* Set default commands */
         // lightsSubsystem.setDefaultCommand(lightsSubsystem.defaultCommand());
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
         rightDriveController.nameBottomThumb("Activate Precise Mode");
 
-        // Set non-button, multi-subsystem triggers
+        /* Set non-button, multi-subsystem triggers */
         new Trigger(visionSubsystem::hasTargets)
                 .and(new Trigger(() -> visionSubsystem.getAmbiguity() < VisionConstants.ambiguityThreshold))
                 .whileTrue(run(() -> {
@@ -69,11 +69,15 @@ public class RobotContainer {
                             visionSubsystem.getRobotPoseEstimate(), visionSubsystem.getTimestamp());
                 }));
 
-        // Set left joystick bindings
+        /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
         leftDriveController
                 .getLeftTopRight()
                 .onTrue(runOnce(() -> swerveDriveSubsystem.setPose(new Pose2d()), swerveDriveSubsystem));
+
+        // Leveling
+        leftDriveController.getLeftBottomLeft().whileTrue(swerveDriveSubsystem.levelChargeStationCommand());
+
         leftDriveController
                 .getBottomThumb()
                 .whileTrue(swerveDriveSubsystem.preciseDriveCommand(
@@ -82,7 +86,7 @@ public class RobotContainer {
         leftDriveController.nameLeftTopRight("Reset Pose");
         leftDriveController.nameBottomThumb("Robot Oriented Drive");
 
-        // Set right joystick bindings
+        /* Set right joystick bindings */
         rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
         rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
         rightDriveController.nameRightBottomMiddle("Characterize Forwards");
@@ -103,7 +107,7 @@ public class RobotContainer {
                 .getBottomThumb()
                 .whileTrue(new DriveToPoseCommand(swerveDriveSubsystem, targetPoseSupplier));
 
-        // Set operator controller bindings
+        /* Set operator controller bindings */
 
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();
