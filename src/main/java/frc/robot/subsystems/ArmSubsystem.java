@@ -1,7 +1,10 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -20,6 +23,10 @@ public class ArmSubsystem extends SubsystemBase {
 
     ArmState armState = ArmState.AWAITING_PIECE;
 
+    Matrix<N2, N2> motorTorqueInvMatrix;
+
+    Matrix<N2, N2> backEmfMatrix;
+
     public ArmSubsystem() {
         arm1 = root.append(
                 new MechanismLigament2d("Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
@@ -34,6 +41,9 @@ public class ArmSubsystem extends SubsystemBase {
                 ArmConstants.arm1StartingAngle,
                 ArmConstants.arm2Length,
                 ArmConstants.arm2StartingAngle);
+
+        motorTorqueInvMatrix = calculateMotorTorqueMatrix().inv();
+
 
         SmartDashboard.putData("Arm Mechanism", mechanism);
     }
@@ -59,6 +69,34 @@ public class ArmSubsystem extends SubsystemBase {
                 arm1Length * arm1Angle.getSin()
                         + arm2Length * arm2Angle.plus(arm1Angle).getSin());
     }
+
+    private Matrix<N2, N2> calculateArmInertiaMatrix(Matrix<N2, N1> motorAngles) {
+
+    }
+
+    private Matrix<N2, N2> calculateCoriolisMatrix(Matrix<N2, N1> motorSpeeds, Matrix<N2, N1> motorAngles) {
+
+    }
+
+    private Matrix<N2, N1> calculateFeedforwardVoltageMatrix(Matrix<N2, N1> motorAccelerations, ) {
+        return motorTorqueInvMatrix.times(
+            calculateArmInertiaMatrix(motorAngles)
+        );
+    }
+
+    private Matrix<N2, N1> calculateGravityMatrix(Matrix<N2, N1> motorAngles) {
+
+    }
+
+    private Matrix<N2, N2> calculateMotorTorqueMatrix() {
+
+    }
+
+    private Matrix<N2, N2> calculateBackEmfMatrix() {
+
+    }
+
+    private  
 
     public void setState(ArmState state) {
         armState = state;
