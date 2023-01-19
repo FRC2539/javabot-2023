@@ -59,7 +59,6 @@ public class RobotContainer {
         // lightsSubsystem.setDefaultCommand(lightsSubsystem.defaultCommand());
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
-        rightDriveController.nameBottomThumb("Activate Precise Mode");
 
         /* Set non-button, multi-subsystem triggers */
         new Trigger(visionSubsystem::hasTargets)
@@ -74,17 +73,19 @@ public class RobotContainer {
         leftDriveController
                 .getLeftTopRight()
                 .onTrue(runOnce(() -> swerveDriveSubsystem.setPose(new Pose2d()), swerveDriveSubsystem));
-
-        // Leveling
-        leftDriveController.getLeftBottomLeft().whileTrue(swerveDriveSubsystem.levelChargeStationCommand());
-
         leftDriveController
                 .getBottomThumb()
                 .whileTrue(swerveDriveSubsystem.preciseDriveCommand(
                         getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
         leftDriveController.nameLeftTopLeft("Reset Gyro Angle");
         leftDriveController.nameLeftTopRight("Reset Pose");
-        leftDriveController.nameBottomThumb("Robot Oriented Drive");
+        leftDriveController.nameBottomThumb("Precise Driving");
+
+        // Leveling
+        leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommand());
+        leftDriveController.getLeftBottomMiddle().whileTrue(run(swerveDriveSubsystem::lock, swerveDriveSubsystem));
+        leftDriveController.nameLeftBottomLeft("Level Charge Station");
+        leftDriveController.nameLeftBottomMiddle("Lock Wheels");
 
         /* Set right joystick bindings */
         rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
@@ -106,6 +107,7 @@ public class RobotContainer {
         rightDriveController
                 .getBottomThumb()
                 .whileTrue(new DriveToPoseCommand(swerveDriveSubsystem, targetPoseSupplier));
+        rightDriveController.nameBottomThumb("Drive to Pose");
 
         /* Set operator controller bindings */
 
