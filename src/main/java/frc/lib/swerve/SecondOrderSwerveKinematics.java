@@ -17,6 +17,9 @@ forward kinematics code public. It is pure witchcraft and I
 would cry if I had to write it.
 
 Sincerely, Matthew
+
+Link to original whitepaper by Team 449: 
+https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964
 */
 
 /**

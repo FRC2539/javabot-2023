@@ -7,6 +7,13 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 
+/*
+ * This all was made possible using this whitepaper.
+ * https://www.chiefdelphi.com/t/whitepaper-two-jointed-arm-dynamics/423060
+ * 
+ * Thank you to Team 449!
+ */
+
 public class TwoJointedArmFeedforward {
     Matrix<N2, N2> motorTorqueInvMatrix;
 
