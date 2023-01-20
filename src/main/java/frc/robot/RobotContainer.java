@@ -19,6 +19,7 @@ import frc.robot.Constants.TimesliceConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.DriveToPoseCommand;
 import frc.robot.subsystems.*;
+import frc.robot.utils.AutoPlaceManager;
 import java.util.function.Supplier;
 
 public class RobotContainer {
@@ -110,6 +111,11 @@ public class RobotContainer {
         rightDriveController.nameBottomThumb("Drive to Pose");
 
         /* Set operator controller bindings */
+        AutoPlaceManager.initializeAutoPlaceManager();
+        operatorController.getDPadUp().onTrue(runOnce(() -> AutoPlaceManager.incrementLevel()));
+        operatorController.getDPadRight().onTrue(runOnce(() -> AutoPlaceManager.incrementRow()));
+        operatorController.getDPadDown().onTrue(runOnce(() -> AutoPlaceManager.decrementLevel()));
+        operatorController.getDPadLeft().onTrue(runOnce(() -> AutoPlaceManager.decrementRow()));
 
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();

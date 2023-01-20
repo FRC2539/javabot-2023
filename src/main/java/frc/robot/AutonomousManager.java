@@ -39,6 +39,7 @@ public class AutonomousManager {
         // Create an event map for use in all autos
         HashMap<String, Command> eventMap = new HashMap<>();
         eventMap.put("stop", runOnce(swerveDriveSubsystem::stop, swerveDriveSubsystem));
+        eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommand());
         eventMap.put(
                 "placeHigh",
                 sequence(
@@ -63,6 +64,7 @@ public class AutonomousManager {
 
     private enum AutonomousOption {
         DEMO("demo2", new PathConstraints(2, 3)),
+        AUTOCLIMB("autoclimb", new PathConstraints(3, 2)),
         PLACE1ANDCLIMB("place1andclimb", new PathConstraints(5, 4)),
         PLACE2ANDCLIMB("place2andclimb", new PathConstraints(5, 4)),
         COLLISIONTESTING("collisiontesting", new PathConstraints(4, 3));

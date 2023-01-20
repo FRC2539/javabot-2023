@@ -4,6 +4,7 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -44,16 +45,36 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(651.25);
         public static final double fieldWidth = Units.inchesToMeters(315.5);
 
-        // public static AprilTagFieldLayout APRIL_TAG_FIELD_LAYOUT;
+        /* X Placement constants from 6328 */
+        public static final double outerX = Units.inchesToMeters(54.25);
+        public static final double lowX =
+                outerX - (Units.inchesToMeters(14.25) / 2.0); // Centered when under cube nodes
+        public static final double midX = outerX - Units.inchesToMeters(22.75);
+        public static final double highX = outerX - Units.inchesToMeters(39.75);
 
-        // static {
-        //     try {
-        //         APRIL_TAG_FIELD_LAYOUT = new AprilTagFieldLayout(AprilTagFields.k2023ChargedUp.m_resourceFile);
-        //     } catch (Exception e) {
-        //         System.out.println("Could not load field layout.");
-        //         APRIL_TAG_FIELD_LAYOUT = new AprilTagFieldLayout(List.of(), fieldLength, fieldWidth);
-        //     }
-        // }
+        /* Z Placement constants from 6328 */
+        public static final double cubeEdgeHigh = Units.inchesToMeters(3.0);
+        public static final double highCubeZ = Units.inchesToMeters(35.5) - cubeEdgeHigh;
+        public static final double midCubeZ = Units.inchesToMeters(23.5) - cubeEdgeHigh;
+        public static final double highConeZ = Units.inchesToMeters(46.0);
+        public static final double midConeZ = Units.inchesToMeters(34.0);
+
+        public static final int numberOfNodeRows = 9;
+        public static final double separationBetweenNodeRows = Units.inchesToMeters(22.0);
+        public static final Pose2d firstPlacingPose =
+                new Pose2d(1.8, Units.inchesToMeters(20.19), Rotation2d.fromDegrees(180));
+
+        // Store the locations we will score from on the field (for automatic placement)
+        public static final Pose2d[] placingPoses = new Pose2d[numberOfNodeRows];
+
+        static {
+            for (int i = 0; i < numberOfNodeRows; i++) {
+                placingPoses[i] = new Pose2d(
+                        firstPlacingPose.getX(),
+                        firstPlacingPose.getY() + i * separationBetweenNodeRows,
+                        Rotation2d.fromDegrees(180));
+            }
+        }
 
         public static final List<AprilTag> aprilTags = List.of(
                 new AprilTag(
