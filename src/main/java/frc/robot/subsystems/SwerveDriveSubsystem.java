@@ -82,12 +82,9 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     }
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
-        return run(
-                () -> {
-                    setVelocity(
-                            new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)),
-                            isFieldOriented);
-                });
+        return run(() -> {
+            setVelocity(new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)), isFieldOriented);
+        });
     }
 
     public Command preciseDriveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
@@ -124,16 +121,13 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
             Translation2d finalDirection = direction.times(tiltController.calculate(pitch, goal));
 
             ChassisSpeeds velocity = new ChassisSpeeds(
-                finalDirection.getX() / finalDirection.getNorm(),
-                finalDirection.getY() / finalDirection.getNorm(),
-                0);
+                    finalDirection.getX() / finalDirection.getNorm(),
+                    finalDirection.getY() / finalDirection.getNorm(),
+                    0);
 
-            if (MathUtils.equalsWithinError(pitch, 0, 2))
-                velocity = new ChassisSpeeds();
+            if (MathUtils.equalsWithinError(pitch, 0, 2)) velocity = new ChassisSpeeds();
 
-            setVelocity(
-                    velocity,
-                    false);
+            setVelocity(velocity, false);
         });
     }
 
@@ -228,7 +222,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     }
 
     public Rotation3d getGyroRotation3d() {
-        //we add 2 degrees to the pitch because the Pidgeon is offset by about -2 degrees pitchwise
+        // we add 2 degrees to the pitch because the Pidgeon is offset by about -2 degrees pitchwise
         return new Rotation3d(Units.degreesToRadians(gyro.getRoll()), Units.degreesToRadians(gyro.getPitch() + 2), 0);
     }
 

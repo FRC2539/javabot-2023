@@ -129,16 +129,16 @@ public final class Constants {
     }
 
     public static final class ArmConstants {
-        //Length of the first arm segment
+        // Length of the first arm segment
         public static final double arm1Length = Units.inchesToMeters(30);
-        //Length of the second arm segment
+        // Length of the second arm segment
         public static final double arm2Length = Units.inchesToMeters(30);
 
-        //Length from starting joint to center of mass of respective arm segments
+        // Length from starting joint to center of mass of respective arm segments
         public static final double arm1CenterOfMass = Units.inchesToMeters(15);
         public static final double arm2CenterOfMass = Units.inchesToMeters(15);
 
-        //arm
+        // arm
         public static final double arm1Mass = Units.lbsToKilograms(15);
         public static final double arm2Mass = Units.lbsToKilograms(15);
 
@@ -151,7 +151,6 @@ public final class Constants {
         public static final double stallTorque = 1;
         public static final double stallCurrent = 1;
         public static final double freeSpeed = 1;
-        
 
         public static final Transform3d armToRobot = new Transform3d();
 
