@@ -1,10 +1,7 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -12,6 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ArmConstants;
+import frc.lib.math.TwoJointedArmFeedforward;
 
 public class ArmSubsystem extends SubsystemBase {
     Mechanism2d mechanism = new Mechanism2d(2, 2);
@@ -23,9 +21,7 @@ public class ArmSubsystem extends SubsystemBase {
 
     ArmState armState = ArmState.AWAITING_PIECE;
 
-    Matrix<N2, N2> motorTorqueInvMatrix;
-
-    Matrix<N2, N2> backEmfMatrix;
+    TwoJointedArmFeedforward feedforward;
 
     public ArmSubsystem() {
         arm1 = root.append(
@@ -42,10 +38,18 @@ public class ArmSubsystem extends SubsystemBase {
                 ArmConstants.arm2Length,
                 ArmConstants.arm2StartingAngle);
 
-        motorTorqueInvMatrix = calculateMotorTorqueMatrix().inv();
-
 
         SmartDashboard.putData("Arm Mechanism", mechanism);
+
+        feedforward = new TwoJointedArmFeedforward(
+            ArmConstants.arm1Length, ArmConstants.arm2Length, 
+            ArmConstants.arm1CenterOfMass, ArmConstants.arm2CenterOfMass, 
+            ArmConstants.arm1Mass, ArmConstants.arm2Mass, 
+            ArmConstants.arm1MomentOfInertia, ArmConstants.arm2MomentOfInertia, 
+            ArmConstants.arm1GearRatio, ArmConstants.arm2GearRatio, 
+            1, 1, 
+            ArmConstants.stallTorque, ArmConstants.stallCurrent, ArmConstants.freeSpeed, 
+            9.81);
     }
 
     private void inverseKinematics(Translation2d endEffector) {
@@ -69,34 +73,6 @@ public class ArmSubsystem extends SubsystemBase {
                 arm1Length * arm1Angle.getSin()
                         + arm2Length * arm2Angle.plus(arm1Angle).getSin());
     }
-
-    private Matrix<N2, N2> calculateArmInertiaMatrix(Matrix<N2, N1> motorAngles) {
-
-    }
-
-    private Matrix<N2, N2> calculateCoriolisMatrix(Matrix<N2, N1> motorSpeeds, Matrix<N2, N1> motorAngles) {
-
-    }
-
-    private Matrix<N2, N1> calculateFeedforwardVoltageMatrix(Matrix<N2, N1> motorAccelerations, ) {
-        return motorTorqueInvMatrix.times(
-            calculateArmInertiaMatrix(motorAngles)
-        );
-    }
-
-    private Matrix<N2, N1> calculateGravityMatrix(Matrix<N2, N1> motorAngles) {
-
-    }
-
-    private Matrix<N2, N2> calculateMotorTorqueMatrix() {
-
-    }
-
-    private Matrix<N2, N2> calculateBackEmfMatrix() {
-
-    }
-
-    private  
 
     public void setState(ArmState state) {
         armState = state;
