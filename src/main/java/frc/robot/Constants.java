@@ -148,6 +148,11 @@ public final class Constants {
         public static final double arm1GearRatio = 1;
         public static final double arm2GearRatio = 1;
 
+        public static final double stallTorque = 1;
+        public static final double stallCurrent = 1;
+        public static final double freeSpeed = 1;
+        
+
         public static final Transform3d armToRobot = new Transform3d();
 
         // Rotation relative to positive x-axis, counterclockwise-positive
