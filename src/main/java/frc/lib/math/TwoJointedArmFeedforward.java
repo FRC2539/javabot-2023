@@ -10,7 +10,7 @@ import edu.wpi.first.math.numbers.N2;
 /*
  * This all was made possible using this whitepaper.
  * https://www.chiefdelphi.com/t/whitepaper-two-jointed-arm-dynamics/423060
- * 
+ *
  * Thank you to Team 449!
  */
 
@@ -111,12 +111,12 @@ public class TwoJointedArmFeedforward {
     }
 
     public double[] calculateFeedforwardVoltages(
-            double joint1Acceleration,
-            double joint2Acceleration,
+            double joint1Angle,
+            double joint2Angle,
             double joint1Speed,
             double joint2Speed,
-            double joint1Angle,
-            double joint2Angle) {
+            double joint1Acceleration,
+            double joint2Acceleration) {
         Matrix<N2, N1> voltages = calculateFeedforwardVoltageMatrix(
                 VecBuilder.fill(joint1Acceleration, joint2Acceleration),
                 VecBuilder.fill(joint1Speed, joint2Speed),

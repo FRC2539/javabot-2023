@@ -148,9 +148,9 @@ public final class Constants {
         public static final double arm1GearRatio = 1;
         public static final double arm2GearRatio = 1;
 
-        public static final double stallTorque = 1;
-        public static final double stallCurrent = 1;
-        public static final double freeSpeed = 1;
+        public static final double stallTorque = 4.69;
+        public static final double stallCurrent = 257;
+        public static final double freeSpeed = 6300;
 
         public static final Transform3d armToRobot = new Transform3d();
 
