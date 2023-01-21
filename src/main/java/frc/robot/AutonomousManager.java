@@ -33,7 +33,7 @@ public class AutonomousManager {
         swerveDriveSubsystem = container.getSwerveDriveSubsystem();
         ArmSubsystem armSubsystem = container.getArmSubsystem();
 
-        // Allow thd custom driver station to select an auto
+        // Allow the custom driver station to select an auto
         initializeNetworkTablesValues();
 
         // Create an event map for use in all autos
@@ -50,7 +50,7 @@ public class AutonomousManager {
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
-                new PIDConstants(3.0, 0.0, 0.0), // try decreasing P here
+                new PIDConstants(3.0, 0.0, 0.0),
                 new PIDConstants(1.0, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
