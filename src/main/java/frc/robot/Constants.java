@@ -35,7 +35,7 @@ public final class Constants {
     }
 
     public static final class TimesliceConstants {
-        public static final double ROBOT_PERIODIC_ALLOCATION = 0.004;
+        public static final double ROBOT_PERIODIC_ALLOCATION = 0.007;
         public static final double CONTROLLER_PERIOD = 0.010;
 
         public static final double DRIVETRAIN_PERIOD = 0.0025;

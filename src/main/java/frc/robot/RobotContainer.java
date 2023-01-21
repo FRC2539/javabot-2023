@@ -17,7 +17,7 @@ import frc.lib.loops.UpdateManager;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.TimesliceConstants;
 import frc.robot.Constants.VisionConstants;
-import frc.robot.commands.DriveToPoseCommand;
+import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.utils.AutoPlaceManager;
 import java.util.function.Supplier;
@@ -62,11 +62,11 @@ public class RobotContainer {
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
 
         /* Set non-button, multi-subsystem triggers */
-        new Trigger(visionSubsystem::hasTargets)
-                .and(new Trigger(() -> visionSubsystem.getAmbiguity() < VisionConstants.ambiguityThreshold))
+        new Trigger(visionSubsystem::photonHasTargets)
+                .and(new Trigger(() -> visionSubsystem.getPhotonAmbiguity() < VisionConstants.ambiguityThreshold))
                 .whileTrue(run(() -> {
                     swerveDriveSubsystem.addVisionPoseEstimate(
-                            visionSubsystem.getRobotPoseEstimate(), visionSubsystem.getTimestamp());
+                            visionSubsystem.getPhotonRobotPoseEstimate(), visionSubsystem.getPhotonTimestamp());
                 }));
 
         /* Set left joystick bindings */
@@ -98,17 +98,30 @@ public class RobotContainer {
 
         Supplier<Pose2d> targetPoseSupplier = () -> {
             var targetPose = visionSubsystem
-                    .getAprilTagFieldPose()
-                    .toPose2d()
-                    .transformBy(new Transform2d(new Translation2d(1.5, 0), Rotation2d.fromDegrees(180)));
+                    .getPhotonRobotRelativeTargetPose(swerveDriveSubsystem.getPose())
+                    .transformBy(new Transform2d(new Translation2d(1.2, 0), Rotation2d.fromDegrees(180)));
             targetPoseLogger.set(targetPose);
             return targetPose;
         };
 
         rightDriveController
                 .getBottomThumb()
-                .whileTrue(new DriveToPoseCommand(swerveDriveSubsystem, targetPoseSupplier));
+                .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
         rightDriveController.nameBottomThumb("Drive to Pose");
+
+        // Supplier<Pose2d> targetPoseSupplier = () -> {
+        //     var targetPose = visionSubsystem
+        //             .getAprilTagFieldPose()
+        //             .toPose2d()
+        //             .transformBy(new Transform2d(new Translation2d(1.5, 0), Rotation2d.fromDegrees(180)));
+        //     targetPoseLogger.set(targetPose);
+        //     return targetPose;
+        // };
+
+        // rightDriveController
+        //         .getBottomThumb()
+        //         .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
+        // rightDriveController.nameBottomThumb("Drive to Pose");
 
         /* Set operator controller bindings */
         AutoPlaceManager.initializeAutoPlaceManager();

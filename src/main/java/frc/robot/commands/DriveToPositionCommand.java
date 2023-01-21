@@ -2,6 +2,7 @@ package frc.robot.commands;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
@@ -10,7 +11,7 @@ import frc.lib.logging.LoggableDouble;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.function.Supplier;
 
-public class DriveToPoseCommand extends CommandBase {
+public class DriveToPositionCommand extends CommandBase {
     private static final TrapezoidProfile.Constraints xConstraints = new TrapezoidProfile.Constraints(3, 2);
     private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(3, 2);
     private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(8, 8);
@@ -39,9 +40,39 @@ public class DriveToPoseCommand extends CommandBase {
      * @param swerveDriveSubsystem
      * @param targetPoseSupplier
      */
-    public DriveToPoseCommand(SwerveDriveSubsystem swerveDriveSubsystem, Supplier<Pose2d> targetPoseSupplier) {
+    public DriveToPositionCommand(SwerveDriveSubsystem swerveDriveSubsystem, Supplier<Pose2d> targetPoseSupplier) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.targetPoseSupplier = targetPoseSupplier;
+
+        xController.setTolerance(0.1);
+        yController.setTolerance(0.1);
+        omegaController.setTolerance(Units.degreesToRadians(3));
+        omegaController.enableContinuousInput(-Math.PI, Math.PI);
+
+        addRequirements(swerveDriveSubsystem);
+    }
+
+    /**
+     * Drives to the given robot-relative transform on the field automatically.
+     *
+     * While the driving is generally smooth and fast, this algorithm currently assumes zero initial velocity.
+     * It will behave erratically at the start if the robot is moving.
+     *
+     * @param swerveDriveSubsystem
+     * @param robotToTargetSupplier
+     */
+    public DriveToPositionCommand(
+            SwerveDriveSubsystem swerveDriveSubsystem,
+            Supplier<Transform2d> targetTransformSupplier,
+            boolean isRobotToTarget) {
+        this.swerveDriveSubsystem = swerveDriveSubsystem;
+
+        if (isRobotToTarget)
+            this.targetPoseSupplier = () -> swerveDriveSubsystem.getPose().transformBy(targetTransformSupplier.get());
+        else
+            this.targetPoseSupplier = () -> swerveDriveSubsystem
+                    .getPose()
+                    .transformBy(targetTransformSupplier.get().inverse());
 
         xController.setTolerance(0.1);
         yController.setTolerance(0.1);
