@@ -150,7 +150,7 @@ public final class Constants {
 
         public static final double stallTorque = 4.69;
         public static final double stallCurrent = 257;
-        public static final double freeSpeed = 6300;
+        public static final double freeSpeed = 630;
 
         public static final Transform3d armToRobot = new Transform3d();
 

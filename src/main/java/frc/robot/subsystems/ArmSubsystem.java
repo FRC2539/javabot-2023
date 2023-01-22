@@ -16,6 +16,8 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.math.Conversions;
 import frc.lib.math.TwoJointedArmFeedforward;
@@ -28,6 +30,10 @@ public class ArmSubsystem extends SubsystemBase {
     private MechanismRoot2d root = mechanism.getRoot("Arm", 2, 2);
     private MechanismLigament2d arm1;
     private MechanismLigament2d arm2;
+
+    //private MechanismRoot2d root = mechanism.getRoot("Arm", 2, 2);
+    private MechanismLigament2d ghostArm1;
+    private MechanismLigament2d ghostArm2;
     
 
     private double joint1DesiredMotorPosition = 0;
@@ -46,8 +52,8 @@ public class ArmSubsystem extends SubsystemBase {
     private ProfiledPIDController motor1Controller;
     private ProfiledPIDController motor2Controller;
 
-    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(3, 4);
-    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(3, 4);
+    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(3, 6);
+    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(3, 6);
 
     Translation2d endEffector = new Translation2d();
 
@@ -67,6 +73,16 @@ public class ArmSubsystem extends SubsystemBase {
         arm2 = arm1.append(
                 new MechanismLigament2d("Arm 2", ArmConstants.arm2Length, ArmConstants.arm2StartingAngle.getDegrees()));
 
+        ghostArm1 = root.append(
+            new MechanismLigament2d("Ghost Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
+        ghostArm2 = ghostArm1.append(
+            new MechanismLigament2d("Ghost Arm 2", ArmConstants.arm2Length, ArmConstants.arm2StartingAngle.getDegrees()));
+    
+        ghostArm1.setLineWeight(5);
+        ghostArm1.setColor(new Color8Bit(Color.kGray));
+        ghostArm2.setLineWeight(5);
+        ghostArm2.setColor(new Color8Bit(Color.kGray));
+        
         arm1.setLineWeight(5);
         arm2.setLineWeight(5);
 
@@ -99,8 +115,8 @@ public class ArmSubsystem extends SubsystemBase {
                 ArmConstants.freeSpeed,
                 9.81);
 
-        motor1Controller = new ProfiledPIDController(1, 0, 0, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(1, 0, 0, motor2Constraints);
+        motor1Controller = new ProfiledPIDController(4, 0, 0, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(4, 0, 0, motor2Constraints);
 
         joint1Motor = new WPI_TalonFX(14555);
         joint2Motor = new WPI_TalonFX(14556);
@@ -137,6 +153,8 @@ public class ArmSubsystem extends SubsystemBase {
         Matrix<N2, N1> armAngles = inverseKinematics(endEffector);
         joint1DesiredMotorPosition = armAngles.get(0, 0);
         joint2DesiredMotorPosition = armAngles.get(1, 0);
+        ghostArm1.setAngle(Math.toDegrees(joint1DesiredMotorPosition));
+        ghostArm2.setAngle(Math.toDegrees(joint2DesiredMotorPosition));
     }
 
     public void setAwaitingPiece() {
@@ -208,7 +226,7 @@ public class ArmSubsystem extends SubsystemBase {
     public void simulationPeriodic() {
         Matrix<N2, N1> angles = VecBuilder.fill(arm1Angle, arm2Angle);
         Matrix<N2, N1> speeds = VecBuilder.fill(arm1Speed, arm2Speed);
-        Matrix<N2, N1> voltages = VecBuilder.fill(joint1Motor.get(), joint2Motor.get());
+        Matrix<N2, N1> voltages = VecBuilder.fill(joint1Motor.get() * 12, joint2Motor.get() * 12);
         Matrix<N2, N1> acceleration = feedforward
                 .calculateArmInertiaMatrix(angles)
                 .inv()
