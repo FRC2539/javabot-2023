@@ -30,22 +30,38 @@ public class TwoJointedArmFeedforward {
     double g;
 
     /**
-     *
+     * Initializes a feedforward for voltage calculation of a two jointed arm given the proper input values. 
+     * Unless otherwise stated, all units are in metric.
      * @param length1
+     * Distance between first and second joint.
      * @param length2
+     * Distance between second joint and end of arm.
      * @param com1
+     * Distance from the first joint to the center of mass of the first arm segment.
      * @param com2
+     * Distance from the second joint to the center of mass of the second arm segment.
      * @param mass1
+     * Mass of the first arm segment.
      * @param mass2
+     * Mass of the second arm segment.
      * @param I1
+     * Moment of inertia of the first arm segment.
      * @param I2
+     * Moment of inertia of the second arm segment.
      * @param gearRatio1
+     * Gear ratio of the motor(s) for the first joint.
      * @param gearRatio2
+     * Gear ratio of the motor(s) for the second joint.
      * @param nMotors1
+     * Number of motors being used on the first joint.
      * @param nMotors2
+     * Number of motors being used on the second joint,
      * @param stallTorque
+     * The stall torque of the motors.
      * @param stallCurrent
+     * The stall current of the motors.
      * @param freeSpeed
+     * The free speed of the motors.
      */
     public TwoJointedArmFeedforward(
             double length1,

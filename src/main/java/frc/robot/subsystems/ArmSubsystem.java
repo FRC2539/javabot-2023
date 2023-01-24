@@ -193,8 +193,11 @@ public class ArmSubsystem extends SubsystemBase {
             arm2Speed = Conversions.falconToRadPS(joint2Motor.getSelectedSensorVelocity(), ArmConstants.arm2GearRatio);
         }
 
-        double arm1DesiredSpeed = motor1Controller.calculate(arm1Angle);
-        double arm2DesiredSpeed = motor2Controller.calculate(arm2Angle);
+        double arm1VoltageCorrection = motor1Controller.calculate(arm1Speed);
+        double arm2VoltageCorrection = motor2Controller.calculate(arm2Angle);
+
+        double arm1DesiredSpeed = motor1Controller.getSetpoint().velocity;
+        double arm2DesiredSpeed = motor2Controller.getSetpoint().velocity;
 
         if (motor1Controller.atGoal()) arm1DesiredSpeed = 0;
         if (motor2Controller.atGoal()) arm2DesiredSpeed = 0;
@@ -208,9 +211,9 @@ public class ArmSubsystem extends SubsystemBase {
                 (arm2DesiredSpeed - arm2Speed) / 0.02);
 
         joint1Motor.set(
-                voltages[0]/12);
+                voltages[0]/12 + arm1VoltageCorrection);
         joint2Motor.set(
-                voltages[1]/12);
+                voltages[1]/12 + arm2VoltageCorrection);
 
         arm1.setAngle(Math.toDegrees(arm1Angle));
         arm2.setAngle(Math.toDegrees(arm2Angle));
