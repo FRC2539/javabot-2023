@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
@@ -52,8 +53,8 @@ public class ArmSubsystem extends SubsystemBase {
     private ProfiledPIDController motor1Controller;
     private ProfiledPIDController motor2Controller;
 
-    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(3, 6);
-    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(3, 6);
+    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(12, 6);
+    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(12, 6);
 
     Translation2d endEffector = new Translation2d();
 
@@ -115,11 +116,14 @@ public class ArmSubsystem extends SubsystemBase {
                 ArmConstants.freeSpeed,
                 9.81);
 
-        motor1Controller = new ProfiledPIDController(4, 0, 0, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(4, 0, 0, motor2Constraints);
+        motor1Controller = new ProfiledPIDController(40, 0, 0, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(40, 0, 0, motor2Constraints);
 
         joint1Motor = new WPI_TalonFX(14555);
         joint2Motor = new WPI_TalonFX(14556);
+
+        motor1Controller.reset(arm1Angle);
+        motor2Controller.reset(arm2Angle);
 
         setState(ArmState.MID);
     }
@@ -193,14 +197,11 @@ public class ArmSubsystem extends SubsystemBase {
             arm2Speed = Conversions.falconToRadPS(joint2Motor.getSelectedSensorVelocity(), ArmConstants.arm2GearRatio);
         }
 
-        double arm1VoltageCorrection = motor1Controller.calculate(arm1Speed);
+        double arm1VoltageCorrection = motor1Controller.calculate(arm1Angle);
         double arm2VoltageCorrection = motor2Controller.calculate(arm2Angle);
 
         double arm1DesiredSpeed = motor1Controller.getSetpoint().velocity;
         double arm2DesiredSpeed = motor2Controller.getSetpoint().velocity;
-
-        if (motor1Controller.atGoal()) arm1DesiredSpeed = 0;
-        if (motor2Controller.atGoal()) arm2DesiredSpeed = 0;
 
         double[] voltages = feedforward.calculateFeedforwardVoltages(
                 arm1Angle,
@@ -211,9 +212,9 @@ public class ArmSubsystem extends SubsystemBase {
                 (arm2DesiredSpeed - arm2Speed) / 0.02);
 
         joint1Motor.set(
-                voltages[0]/12 + arm1VoltageCorrection);
+                voltages[0]/12   + arm1VoltageCorrection);
         joint2Motor.set(
-                voltages[1]/12 + arm2VoltageCorrection);
+                voltages[1]/12   + arm2VoltageCorrection);
 
         arm1.setAngle(Math.toDegrees(arm1Angle));
         arm2.setAngle(Math.toDegrees(arm2Angle));
