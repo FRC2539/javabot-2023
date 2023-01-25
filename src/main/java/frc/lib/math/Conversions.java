@@ -36,7 +36,7 @@ public class Conversions {
      * @return Falcon Counts
      */
     public static double radiansToFalcon(double radians, double gearRatio) {
-        return(degreesToFalcon(radians / Math.PI * 180, gearRatio));
+        return (degreesToFalcon(radians / Math.PI * 180, gearRatio));
     }
 
     /**

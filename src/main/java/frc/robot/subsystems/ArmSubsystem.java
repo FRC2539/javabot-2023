@@ -1,7 +1,5 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.sensors.WPI_CANCoder;
 import edu.wpi.first.math.Matrix;
@@ -12,7 +10,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
@@ -24,7 +22,6 @@ import frc.lib.math.Conversions;
 import frc.lib.math.TwoJointedArmFeedforward;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Robot;
-import edu.wpi.first.wpilibj.Timer;
 
 public class ArmSubsystem extends SubsystemBase {
     private Mechanism2d mechanism = new Mechanism2d(4, 4);
@@ -32,10 +29,9 @@ public class ArmSubsystem extends SubsystemBase {
     private MechanismLigament2d arm1;
     private MechanismLigament2d arm2;
 
-    //private MechanismRoot2d root = mechanism.getRoot("Arm", 2, 2);
+    // private MechanismRoot2d root = mechanism.getRoot("Arm", 2, 2);
     private MechanismLigament2d ghostArm1;
     private MechanismLigament2d ghostArm2;
-    
 
     private double joint1DesiredMotorPosition = 0;
     private double joint2DesiredMotorPosition = 0;
@@ -62,6 +58,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     TwoJointedArmFeedforward feedforward;
 
+    TwoJointedArmFeedforward feedforwardFalse;
+
     private Timer myFunTestTimer = new Timer();
 
     int currentSpot = 0;
@@ -74,16 +72,16 @@ public class ArmSubsystem extends SubsystemBase {
         arm2 = arm1.append(
                 new MechanismLigament2d("Arm 2", ArmConstants.arm2Length, ArmConstants.arm2StartingAngle.getDegrees()));
 
-        ghostArm1 = root.append(
-            new MechanismLigament2d("Ghost Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
-        ghostArm2 = ghostArm1.append(
-            new MechanismLigament2d("Ghost Arm 2", ArmConstants.arm2Length, ArmConstants.arm2StartingAngle.getDegrees()));
-    
+        ghostArm1 = root.append(new MechanismLigament2d(
+                "Ghost Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
+        ghostArm2 = ghostArm1.append(new MechanismLigament2d(
+                "Ghost Arm 2", ArmConstants.arm2Length, ArmConstants.arm2StartingAngle.getDegrees()));
+
         ghostArm1.setLineWeight(5);
         ghostArm1.setColor(new Color8Bit(Color.kGray));
         ghostArm2.setLineWeight(5);
         ghostArm2.setColor(new Color8Bit(Color.kGray));
-        
+
         arm1.setLineWeight(5);
         arm2.setLineWeight(5);
 
@@ -116,8 +114,27 @@ public class ArmSubsystem extends SubsystemBase {
                 ArmConstants.freeSpeed,
                 9.81);
 
-        motor1Controller = new ProfiledPIDController(40, 0, 0, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(40, 0, 0, motor2Constraints);
+        // for testing
+        feedforwardFalse = new TwoJointedArmFeedforward(
+                ArmConstants.arm1Length,
+                ArmConstants.arm2Length,
+                ArmConstants.arm1CenterOfMass + 0.2,
+                ArmConstants.arm2CenterOfMass - 0.2,
+                ArmConstants.arm1Mass + 0.7,
+                ArmConstants.arm2Mass + 0.9,
+                ArmConstants.arm1MomentOfInertia + 1,
+                ArmConstants.arm2MomentOfInertia - 0.2,
+                ArmConstants.arm1GearRatio,
+                ArmConstants.arm2GearRatio,
+                1,
+                1,
+                ArmConstants.stallTorque,
+                ArmConstants.stallCurrent,
+                ArmConstants.freeSpeed,
+                7);
+
+        motor1Controller = new ProfiledPIDController(10, 0, 0, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(10, 0, 0, motor2Constraints);
 
         joint1Motor = new WPI_TalonFX(14555);
         joint2Motor = new WPI_TalonFX(14556);
@@ -130,15 +147,14 @@ public class ArmSubsystem extends SubsystemBase {
 
     private Matrix<N2, N1> inverseKinematics(Translation2d endEffector) {
         double arm2InverseAngle = -Math.acos((Math.pow(endEffector.getX(), 2)
-                                + Math.pow(endEffector.getY(), 2)
-                                - Math.pow(arm1.getLength(), 2)
-                                - Math.pow(arm2.getLength(), 2))
-                        / (2 * arm1.getLength() * arm2.getLength()));
+                        + Math.pow(endEffector.getY(), 2)
+                        - Math.pow(arm1.getLength(), 2)
+                        - Math.pow(arm2.getLength(), 2))
+                / (2 * arm1.getLength() * arm2.getLength()));
         double arm1InverseAngle = Math.atan2(endEffector.getY(), endEffector.getX())
-                        - Math.atan2(
-                                arm2.getLength() * Math.sin(arm2InverseAngle),
-                                arm1.getLength()
-                                        + arm2.getLength() * Math.cos(arm2InverseAngle));
+                - Math.atan2(
+                        arm2.getLength() * Math.sin(arm2InverseAngle),
+                        arm1.getLength() + arm2.getLength() * Math.cos(arm2InverseAngle));
         return VecBuilder.fill(arm1InverseAngle, arm2InverseAngle);
     }
 
@@ -200,8 +216,8 @@ public class ArmSubsystem extends SubsystemBase {
         double arm1VoltageCorrection = motor1Controller.calculate(arm1Angle);
         double arm2VoltageCorrection = motor2Controller.calculate(arm2Angle);
 
-        double arm1DesiredSpeed = motor1Controller.getSetpoint().velocity;
-        double arm2DesiredSpeed = motor2Controller.getSetpoint().velocity;
+        double arm1DesiredSpeed = motor1Controller.getSetpoint().velocity + arm1VoltageCorrection;
+        double arm2DesiredSpeed = motor2Controller.getSetpoint().velocity + arm2VoltageCorrection;
 
         double[] voltages = feedforward.calculateFeedforwardVoltages(
                 arm1Angle,
@@ -211,10 +227,8 @@ public class ArmSubsystem extends SubsystemBase {
                 (arm1DesiredSpeed - arm1Speed) / 0.02,
                 (arm2DesiredSpeed - arm2Speed) / 0.02);
 
-        joint1Motor.set(
-                voltages[0]/12   + arm1VoltageCorrection);
-        joint2Motor.set(
-                voltages[1]/12   + arm2VoltageCorrection);
+        joint1Motor.set(voltages[0] / 12);
+        joint2Motor.set(voltages[1] / 12);
 
         arm1.setAngle(Math.toDegrees(arm1Angle));
         arm2.setAngle(Math.toDegrees(arm2Angle));

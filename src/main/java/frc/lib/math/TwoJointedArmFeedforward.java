@@ -30,7 +30,7 @@ public class TwoJointedArmFeedforward {
     double g;
 
     /**
-     * Initializes a feedforward for voltage calculation of a two jointed arm given the proper input values. 
+     * Initializes a feedforward for voltage calculation of a two jointed arm given the proper input values.
      * Unless otherwise stated, all units are in metric.
      * @param length1
      * Distance between first and second joint.
