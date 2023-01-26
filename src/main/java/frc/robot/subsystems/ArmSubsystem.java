@@ -1,7 +1,6 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
-import com.ctre.phoenix.sensors.WPI_CANCoder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -18,10 +17,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.logging.LoggableDoubleArray;
 import frc.lib.math.Conversions;
 import frc.lib.math.TwoJointedArmFeedforward;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Robot;
+import java.util.function.Function;
 
 public class ArmSubsystem extends SubsystemBase {
     private Mechanism2d mechanism = new Mechanism2d(4, 4);
@@ -29,7 +30,6 @@ public class ArmSubsystem extends SubsystemBase {
     private MechanismLigament2d arm1;
     private MechanismLigament2d arm2;
 
-    // private MechanismRoot2d root = mechanism.getRoot("Arm", 2, 2);
     private MechanismLigament2d ghostArm1;
     private MechanismLigament2d ghostArm2;
 
@@ -41,10 +41,10 @@ public class ArmSubsystem extends SubsystemBase {
     private double arm1Speed = 0;
     private double arm2Speed = 0;
 
+    private LoggableDoubleArray desiredNetworkTablesArmPosition = new LoggableDoubleArray("/ArmSubsystem/ArmPose");
+
     private WPI_TalonFX joint1Motor;
     private WPI_TalonFX joint2Motor;
-    private WPI_CANCoder joint1AngleEncoder;
-    private WPI_CANCoder joint2AngleEncoder;
 
     private ProfiledPIDController motor1Controller;
     private ProfiledPIDController motor2Controller;
@@ -87,6 +87,11 @@ public class ArmSubsystem extends SubsystemBase {
 
         arm1Angle = ArmConstants.arm1StartingAngle.getRadians();
         arm2Angle = ArmConstants.arm2StartingAngle.getRadians();
+
+        joint1Motor.setSelectedSensorPosition(
+                Conversions.radiansToFalcon(ArmConstants.arm1StartingAngle.getRadians(), ArmConstants.arm1GearRatio));
+        joint2Motor.setSelectedSensorPosition(
+                Conversions.radiansToFalcon(ArmConstants.arm2StartingAngle.getRadians(), ArmConstants.arm2GearRatio));
 
         endEffector = forwardKinematics(
                 ArmConstants.arm1Length,
@@ -142,7 +147,9 @@ public class ArmSubsystem extends SubsystemBase {
         motor1Controller.reset(arm1Angle);
         motor2Controller.reset(arm2Angle);
 
-        setState(ArmState.MID);
+        desiredNetworkTablesArmPosition.set(new double[] {1, 0});
+
+        setState(ArmState.NETWORK_TABLES_AIM);
     }
 
     private Matrix<N2, N1> inverseKinematics(Translation2d endEffector) {
@@ -169,7 +176,11 @@ public class ArmSubsystem extends SubsystemBase {
 
     public void setState(ArmState state) {
         armState = state;
-        endEffector = armState.getEndEffector();
+        updateArmDesiredPosition();
+    }
+
+    public void updateArmDesiredPosition() {
+        endEffector = armState.getEndEffector(this);
         Matrix<N2, N1> armAngles = inverseKinematics(endEffector);
         joint1DesiredMotorPosition = armAngles.get(0, 0);
         joint2DesiredMotorPosition = armAngles.get(1, 0);
@@ -199,6 +210,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        if (armState.isDynamic()) updateArmDesiredPosition();
+
         // Update controllers
         motor1Controller.setGoal(joint1DesiredMotorPosition);
         motor2Controller.setGoal(joint2DesiredMotorPosition);
@@ -233,11 +246,11 @@ public class ArmSubsystem extends SubsystemBase {
         arm1.setAngle(Math.toDegrees(arm1Angle));
         arm2.setAngle(Math.toDegrees(arm2Angle));
 
-        if (myFunTestTimer.advanceIfElapsed(3.5)) {
+        /*if (myFunTestTimer.advanceIfElapsed(3.5)) {
             setState(ArmState.values()[currentSpot]);
             currentSpot++;
             currentSpot %= ArmState.values().length;
-        }
+        }*/
     }
 
     @Override
@@ -264,22 +277,51 @@ public class ArmSubsystem extends SubsystemBase {
         arm2Speed = speeds.get(1, 0);
     }
 
+    public Translation2d getDynamicArmPosition() {
+        return new Translation2d(0.5, 0).rotateBy(new Rotation2d(Timer.getFPGATimestamp()));
+    }
+
+    public Translation2d getNetworkTablesArmPosition() {
+        double[] armPosition = desiredNetworkTablesArmPosition.get();
+        try {
+            return new Translation2d(armPosition[0], armPosition[1]);
+        } catch (Exception e) {
+            return new Translation2d(0, 0);
+        }
+    }
+
     private enum ArmState {
         AWAITING_PIECE(0.20, 0.07),
         AWAITING_DEPLOYMENT(0.22, 0.27),
         HYBRID(0.5, 0.05),
         MID(0.7, 0.6),
         HIGH(1.0, 1.1),
-        CRAZY(-1.0, 1.1);
+        DYNAMIC_AIM(a -> a.getDynamicArmPosition()),
+        NETWORK_TABLES_AIM(a -> a.getNetworkTablesArmPosition());
+
+        private boolean dynamic;
 
         private Translation2d endEffector;
 
+        private Function<ArmSubsystem, Translation2d> endEffectorSupplier;
+
         private ArmState(double x, double y) {
             endEffector = new Translation2d(x, y);
+            dynamic = false;
+            endEffectorSupplier = a -> endEffector;
         }
 
-        public Translation2d getEndEffector() {
-            return endEffector;
+        private ArmState(Function<ArmSubsystem, Translation2d> dynamicSupplier) {
+            dynamic = true;
+            endEffectorSupplier = dynamicSupplier;
+        }
+
+        public Translation2d getEndEffector(ArmSubsystem armSubsystem) {
+            return endEffectorSupplier.apply(armSubsystem);
+        }
+
+        public boolean isDynamic() {
+            return dynamic;
         }
     }
 }
