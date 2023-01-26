@@ -88,6 +88,9 @@ public class ArmSubsystem extends SubsystemBase {
         arm1Angle = ArmConstants.arm1StartingAngle.getRadians();
         arm2Angle = ArmConstants.arm2StartingAngle.getRadians();
 
+        joint1Motor = new WPI_TalonFX(14555);
+        joint2Motor = new WPI_TalonFX(14556);
+
         joint1Motor.setSelectedSensorPosition(
                 Conversions.radiansToFalcon(ArmConstants.arm1StartingAngle.getRadians(), ArmConstants.arm1GearRatio));
         joint2Motor.setSelectedSensorPosition(
@@ -140,9 +143,6 @@ public class ArmSubsystem extends SubsystemBase {
 
         motor1Controller = new ProfiledPIDController(10, 0, 0, motor1Constraints);
         motor2Controller = new ProfiledPIDController(10, 0, 0, motor2Constraints);
-
-        joint1Motor = new WPI_TalonFX(14555);
-        joint2Motor = new WPI_TalonFX(14556);
 
         motor1Controller.reset(arm1Angle);
         motor2Controller.reset(arm2Angle);
