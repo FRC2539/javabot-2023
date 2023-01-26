@@ -3,9 +3,6 @@ package frc.robot;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimesliceRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.controller.Axis;
@@ -16,6 +13,7 @@ import frc.lib.loops.UpdateManager;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.TimesliceConstants;
+import frc.robot.commands.AimAtPoseCommand;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.utils.AutoPlaceManager;
@@ -90,33 +88,20 @@ public class RobotContainer {
 
         LoggablePose targetPoseLogger = new LoggablePose("/SwerveDriveSubsystem/TargetPose");
 
-        // Supplier<Pose2d> targetPoseSupplier = () -> {
-        //     var targetPose = visionSubsystem
-        //             .getPhotonRobotRelativeTargetPose(swerveDriveSubsystem.getPose())
-        //             .transformBy(new Transform2d(new Translation2d(1.2, 0), Rotation2d.fromDegrees(180)));
-        //     targetPoseLogger.set(targetPose);
-        //     return targetPose;
-        // };
-
-        // rightDriveController
-        //         .getBottomThumb()
-        //         .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
-        // rightDriveController.nameBottomThumb("Drive to Pose");
-
         Supplier<Pose2d> targetPoseSupplier = () -> {
-            var targetPose = FieldConstants.APRIL_TAG_FIELD_LAYOUT
-                    .getTagPose(6)
-                    .get()
-                    .toPose2d()
-                    .transformBy(new Transform2d(new Translation2d(1.5, 0), Rotation2d.fromDegrees(180)));
+            var targetPose = FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose()).robotPlacementPose;
             targetPoseLogger.set(targetPose);
             return targetPose;
         };
 
         rightDriveController
-                .getBottomThumb()
+                .getLeftThumb()
                 .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
-        rightDriveController.nameBottomThumb("Drive to Pose");
+        rightDriveController
+                .getRightThumb()
+                .whileTrue(new AimAtPoseCommand(swerveDriveSubsystem, targetPoseSupplier, getDriveForwardAxis(), getDriveStrafeAxis()));
+        rightDriveController.nameLeftThumb("Drive to Pose");
+        rightDriveController.nameRightThumb("Aim at Pose");
 
         /* Set operator controller bindings */
         // Change this. One button for each level. That happens independently of everything else.

@@ -81,15 +81,6 @@ public class DriveToPositionCommand extends CommandBase {
         ySetpointLogger.set(yController.getSetpoint().position);
         omegaSetpointLogger.set(omegaController.getSetpoint().position);
 
-        // var forwardSpeed = forwardAxis.get(true);
-        // var strafeSpeed = strafeAxis.get(true);
-        // var rotationSpeed = rotationAxis.get(true);
-
-        // Drive to the target
-        // var xSpeed = forwardSpeed + xController.calculate(robotPose.getX() + forwardSpeed * 0.02);
-        // var ySpeed = strafeSpeed + yController.calculate(robotPose.getY() + strafeSpeed * 0.02);
-        // var omegaSpeed = rotationSpeed + omegaController.calculate(robotPose.getRotation().getRadians() +
-        // rotationSpeed * 0.02);
         var xSpeed = xController.calculate(robotPose.getX());
         var ySpeed = yController.calculate(robotPose.getY());
         var omegaSpeed = omegaController.calculate(robotPose.getRotation().getRadians());
