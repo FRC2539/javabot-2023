@@ -54,6 +54,7 @@ public class AutonomousManager {
                 new PIDConstants(1.0, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
+                true,
                 swerveDriveSubsystem);
 
         // Prevent the server from running at competitions
