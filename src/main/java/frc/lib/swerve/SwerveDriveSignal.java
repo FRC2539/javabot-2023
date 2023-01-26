@@ -6,6 +6,8 @@ public class SwerveDriveSignal extends ChassisSpeeds {
     private boolean isFieldOriented;
     private boolean isOpenLoop;
 
+    private boolean isLocked = false;
+
     public SwerveDriveSignal(ChassisSpeeds velocity, boolean isFieldOriented, boolean isOpenLoop) {
         super(velocity.vxMetersPerSecond, velocity.vyMetersPerSecond, velocity.omegaRadiansPerSecond);
 
@@ -15,6 +17,12 @@ public class SwerveDriveSignal extends ChassisSpeeds {
 
     public SwerveDriveSignal(ChassisSpeeds velocity, boolean isFieldOriented) {
         this(velocity, isFieldOriented, true);
+    }
+
+    public SwerveDriveSignal(boolean locked) {
+        this(new ChassisSpeeds(), false, false);
+
+        this.isLocked = true;
     }
 
     public SwerveDriveSignal() {
@@ -30,5 +38,9 @@ public class SwerveDriveSignal extends ChassisSpeeds {
 
     public boolean isOpenLoop() {
         return this.isOpenLoop;
+    }
+
+    public boolean isLocked() {
+        return isLocked;
     }
 }

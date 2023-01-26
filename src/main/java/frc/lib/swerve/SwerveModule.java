@@ -96,6 +96,18 @@ public class SwerveModule {
         lastAngle = angle;
     }
 
+    public void setDesiredAngleOnly(Rotation2d desiredAngle) {
+        // Set the module to face forwards
+        angleMotor.set(
+                ControlMode.Position,
+                Conversions.degreesToFalcon(desiredAngle.getDegrees(), Constants.SwerveConstants.angleGearRatio));
+
+        lastAngle = 0;
+
+        // Set the drive motor to the specified voltage
+        driveMotor.stopMotor();
+    }
+
     public void setDriveCharacterizationVoltage(double voltage) {
         // Set the module to face forwards
         angleMotor.set(ControlMode.Position, Conversions.degreesToFalcon(0, Constants.SwerveConstants.angleGearRatio));

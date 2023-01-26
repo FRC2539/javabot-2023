@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.controller.Axis;
 import frc.lib.interpolation.MovingAverageVelocity;
 import frc.lib.logging.LoggableChassisSpeeds;
+import frc.lib.logging.LoggableDouble;
 import frc.lib.logging.LoggableDoubleArray;
 import frc.lib.logging.LoggablePose;
 import frc.lib.loops.Updatable;
@@ -55,6 +56,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     LoggableDoubleArray angleTemperatureLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Angle Temperatures");
     LoggableDoubleArray driveVoltageLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Drive Voltage");
     LoggableDoubleArray angleVoltageLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Angle Voltage");
+    LoggableDouble pidOutputLogger = new LoggableDouble("/SwerveDriveSubsystem/PID Output");
 
     boolean isCharacterizing = false;
 
@@ -101,8 +103,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     }
 
     public Command levelChargeStationCommand() {
-        var constraints = new TrapezoidProfile.Constraints(0.6, 0.3);
-        var tiltController = new ProfiledPIDController(0.01, 0, 0, constraints);
+        var constraints = new TrapezoidProfile.Constraints(0.5, 0.3);
+        var tiltController = new ProfiledPIDController(0.2, 0, 0, constraints);
 
         // End with no pitch and stationary
         State goal = new State(0, 0);
@@ -111,24 +113,21 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         tiltController.setTolerance(4, 0.1);
 
         return run(() -> {
-            double pitch = getTiltAmount();
+                    double pitch = getTiltAmount();
 
-            // Negative pitch -> drive forward, Positive pitch -> drive backward
+                    // Negative pitch -> drive forward, Positive pitch -> drive backward
 
-            Translation2d direction = new Translation2d(
-                    getNormalVector3d().getX(), getNormalVector3d().getY());
+                    Translation2d direction = new Translation2d(
+                            getNormalVector3d().getX(), getNormalVector3d().getY());
 
-            Translation2d finalDirection = direction.times(tiltController.calculate(pitch, goal));
+                    Translation2d finalDirection = direction.times(tiltController.calculate(pitch, goal));
 
-            ChassisSpeeds velocity = new ChassisSpeeds(
-                    finalDirection.getX() / finalDirection.getNorm(),
-                    finalDirection.getY() / finalDirection.getNorm(),
-                    0);
+                    ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
 
-            if (MathUtils.equalsWithinError(pitch, 0, 2)) velocity = new ChassisSpeeds();
-
-            setVelocity(velocity, false);
-        });
+                    if (MathUtils.equalsWithinError(pitch, 0, 3)) lock();
+                    else setVelocity(velocity, false);
+                })
+                .repeatedly();
     }
 
     public Command characterizeCommand(boolean forwards, boolean isDriveMotors) {
@@ -274,6 +273,10 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         driveSignal = new SwerveDriveSignal();
     }
 
+    public void lock() {
+        driveSignal = new SwerveDriveSignal(true);
+    }
+
     @Override
     public void update() {
         updateOdometry();
@@ -310,7 +313,19 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         SwerveModuleState[] moduleStates =
                 Constants.SwerveConstants.swerveKinematics.toSwerveModuleStates(chassisVelocity);
 
-        setModuleStates(moduleStates, isDriveSignalStopped(driveSignal) ? true : driveSignal.isOpenLoop());
+        if (driveSignal.isLocked()) {
+            var lockedVelocity = new ChassisSpeeds(0, 0, 1);
+
+            // Get 45's for stopping
+            moduleStates = Constants.SwerveConstants.swerveKinematics.toSwerveModuleStates(lockedVelocity);
+
+            // Set the angle of each module only
+            for (int i = 0; i < moduleStates.length; i++) {
+                modules[i].setDesiredAngleOnly(moduleStates[i].angle);
+            }
+        } else {
+            setModuleStates(moduleStates, isDriveSignalStopped(driveSignal) ? true : driveSignal.isOpenLoop());
+        }
     }
 
     private void setModuleStates(SwerveModuleState[] desiredStates, boolean isOpenLoop) {

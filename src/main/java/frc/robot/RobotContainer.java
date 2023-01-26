@@ -19,6 +19,7 @@ import frc.robot.Constants.TimesliceConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.DriveToPoseCommand;
 import frc.robot.subsystems.*;
+import frc.robot.utils.AutoPlaceManager;
 import java.util.function.Supplier;
 
 public class RobotContainer {
@@ -59,7 +60,6 @@ public class RobotContainer {
         // lightsSubsystem.setDefaultCommand(lightsSubsystem.defaultCommand());
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
-        rightDriveController.nameBottomThumb("Activate Precise Mode");
 
         /* Set non-button, multi-subsystem triggers */
         new Trigger(visionSubsystem::hasTargets)
@@ -74,17 +74,19 @@ public class RobotContainer {
         leftDriveController
                 .getLeftTopRight()
                 .onTrue(runOnce(() -> swerveDriveSubsystem.setPose(new Pose2d()), swerveDriveSubsystem));
-
-        // Leveling
-        leftDriveController.getLeftBottomLeft().whileTrue(swerveDriveSubsystem.levelChargeStationCommand());
-
         leftDriveController
                 .getBottomThumb()
                 .whileTrue(swerveDriveSubsystem.preciseDriveCommand(
                         getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
         leftDriveController.nameLeftTopLeft("Reset Gyro Angle");
         leftDriveController.nameLeftTopRight("Reset Pose");
-        leftDriveController.nameBottomThumb("Robot Oriented Drive");
+        leftDriveController.nameBottomThumb("Precise Driving");
+
+        // Leveling
+        leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommand());
+        leftDriveController.getLeftBottomMiddle().whileTrue(run(swerveDriveSubsystem::lock, swerveDriveSubsystem));
+        leftDriveController.nameLeftBottomLeft("Level Charge Station");
+        leftDriveController.nameLeftBottomMiddle("Lock Wheels");
 
         /* Set right joystick bindings */
         rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
@@ -106,8 +108,14 @@ public class RobotContainer {
         rightDriveController
                 .getBottomThumb()
                 .whileTrue(new DriveToPoseCommand(swerveDriveSubsystem, targetPoseSupplier));
+        rightDriveController.nameBottomThumb("Drive to Pose");
 
         /* Set operator controller bindings */
+        AutoPlaceManager.initializeAutoPlaceManager();
+        operatorController.getDPadUp().onTrue(runOnce(() -> AutoPlaceManager.incrementLevel()));
+        operatorController.getDPadRight().onTrue(runOnce(() -> AutoPlaceManager.incrementRow()));
+        operatorController.getDPadDown().onTrue(runOnce(() -> AutoPlaceManager.decrementLevel()));
+        operatorController.getDPadLeft().onTrue(runOnce(() -> AutoPlaceManager.decrementRow()));
 
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();

@@ -33,12 +33,13 @@ public class AutonomousManager {
         swerveDriveSubsystem = container.getSwerveDriveSubsystem();
         ArmSubsystem armSubsystem = container.getArmSubsystem();
 
-        // Allow thd custom driver station to select an auto
+        // Allow the custom driver station to select an auto
         initializeNetworkTablesValues();
 
         // Create an event map for use in all autos
         HashMap<String, Command> eventMap = new HashMap<>();
         eventMap.put("stop", runOnce(swerveDriveSubsystem::stop, swerveDriveSubsystem));
+        eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommand());
         eventMap.put(
                 "placeHigh",
                 sequence(
@@ -49,7 +50,7 @@ public class AutonomousManager {
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
-                new PIDConstants(3.0, 0.0, 0.0), // try decreasing P here
+                new PIDConstants(3.0, 0.0, 0.0),
                 new PIDConstants(1.0, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
@@ -63,8 +64,10 @@ public class AutonomousManager {
 
     private enum AutonomousOption {
         DEMO("demo2", new PathConstraints(2, 3)),
+        AUTOCLIMB("autoclimb", new PathConstraints(3, 2)),
         PLACE1ANDCLIMB("place1andclimb", new PathConstraints(5, 4)),
-        PLACE2ANDCLIMB("place2andclimb", new PathConstraints(5, 4));
+        PLACE2ANDCLIMB("place2andclimb", new PathConstraints(5, 4)),
+        COLLISIONTESTING("collisiontesting", new PathConstraints(4, 3));
 
         private List<PathPlannerTrajectory> path;
 

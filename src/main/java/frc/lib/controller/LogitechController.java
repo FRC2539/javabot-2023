@@ -3,6 +3,7 @@ package frc.lib.controller;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.POVButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,10 +60,10 @@ public class LogitechController {
         start = new JoystickButton(joystick, 10);
         leftJoystick = new JoystickButton(joystick, 11);
         rightJoystick = new JoystickButton(joystick, 12);
-        dPadUp = new JoystickButton(joystick, 20);
-        dPadRight = new JoystickButton(joystick, 21);
-        dPadDown = new JoystickButton(joystick, 22);
-        dPadLeft = new JoystickButton(joystick, 23);
+        dPadUp = new POVButton(joystick, 0);
+        dPadRight = new POVButton(joystick, 90);
+        dPadDown = new POVButton(joystick, 180);
+        dPadLeft = new POVButton(joystick, 270);
 
         leftXAxis = new JoystickAxis(joystick, 0);
         leftYAxis = new JoystickAxis(joystick, 1);
