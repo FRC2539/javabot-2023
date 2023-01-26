@@ -2,7 +2,6 @@ package frc.robot.commands;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
@@ -12,8 +11,13 @@ import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.function.Supplier;
 
 public class DriveToPositionCommand extends CommandBase {
-    private static final TrapezoidProfile.Constraints xConstraints = new TrapezoidProfile.Constraints(3, 2);
-    private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(3, 2);
+    // Next algorithm iteration:
+    // Calculate twist2d to final pose
+    // Maintain linear velocity but direct the velocity along the twist
+    // Make sure it comes to a stop at the end
+
+    private static final TrapezoidProfile.Constraints xConstraints = new TrapezoidProfile.Constraints(6, 4);
+    private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(6, 4);
     private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(8, 8);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem;
@@ -52,40 +56,11 @@ public class DriveToPositionCommand extends CommandBase {
         addRequirements(swerveDriveSubsystem);
     }
 
-    /**
-     * Drives to the given robot-relative transform on the field automatically.
-     *
-     * While the driving is generally smooth and fast, this algorithm currently assumes zero initial velocity.
-     * It will behave erratically at the start if the robot is moving.
-     *
-     * @param swerveDriveSubsystem
-     * @param robotToTargetSupplier
-     */
-    public DriveToPositionCommand(
-            SwerveDriveSubsystem swerveDriveSubsystem,
-            Supplier<Transform2d> targetTransformSupplier,
-            boolean isRobotToTarget) {
-        this.swerveDriveSubsystem = swerveDriveSubsystem;
-
-        if (isRobotToTarget)
-            this.targetPoseSupplier = () -> swerveDriveSubsystem.getPose().transformBy(targetTransformSupplier.get());
-        else
-            this.targetPoseSupplier = () -> swerveDriveSubsystem
-                    .getPose()
-                    .transformBy(targetTransformSupplier.get().inverse());
-
-        xController.setTolerance(0.1);
-        yController.setTolerance(0.1);
-        omegaController.setTolerance(Units.degreesToRadians(3));
-        omegaController.enableContinuousInput(-Math.PI, Math.PI);
-
-        addRequirements(swerveDriveSubsystem);
-    }
-
     @Override
     public void initialize() {
         var robotPose = swerveDriveSubsystem.getPose();
-        var robotVelocity = swerveDriveSubsystem.getVelocity();
+        var robotVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(
+                swerveDriveSubsystem.getDesiredVelocity(), swerveDriveSubsystem.getRotation());
 
         omegaController.reset(robotPose.getRotation().getRadians(), -robotVelocity.omegaRadiansPerSecond);
         xController.reset(robotPose.getX(), -robotVelocity.vxMetersPerSecond);
@@ -106,7 +81,15 @@ public class DriveToPositionCommand extends CommandBase {
         ySetpointLogger.set(yController.getSetpoint().position);
         omegaSetpointLogger.set(omegaController.getSetpoint().position);
 
+        // var forwardSpeed = forwardAxis.get(true);
+        // var strafeSpeed = strafeAxis.get(true);
+        // var rotationSpeed = rotationAxis.get(true);
+
         // Drive to the target
+        // var xSpeed = forwardSpeed + xController.calculate(robotPose.getX() + forwardSpeed * 0.02);
+        // var ySpeed = strafeSpeed + yController.calculate(robotPose.getY() + strafeSpeed * 0.02);
+        // var omegaSpeed = rotationSpeed + omegaController.calculate(robotPose.getRotation().getRadians() +
+        // rotationSpeed * 0.02);
         var xSpeed = xController.calculate(robotPose.getX());
         var ySpeed = yController.calculate(robotPose.getY());
         var omegaSpeed = omegaController.calculate(robotPose.getRotation().getRadians());
@@ -119,7 +102,7 @@ public class DriveToPositionCommand extends CommandBase {
         if (yController.atGoal()) ySpeed = 0;
         if (omegaController.atGoal()) omegaSpeed = 0;
 
-        swerveDriveSubsystem.setVelocity(new ChassisSpeeds(xSpeed, ySpeed, omegaSpeed), true, false);
+        swerveDriveSubsystem.setVelocity(new ChassisSpeeds(xSpeed, ySpeed, omegaSpeed), true, true);
     }
 
     @Override

@@ -2,144 +2,137 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.DoubleArraySubscriber;
+import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.IntegerPublisher;
+import edu.wpi.first.networktables.IntegerSubscriber;
+import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.lib.logging.LoggableDouble;
-import frc.lib.logging.LoggableInteger;
-import frc.lib.logging.LoggablePose;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
-import org.photonvision.targeting.PhotonTrackedTarget;
+import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
 public class VisionSubsystem extends SubsystemBase {
-    private final String GLOBAL_SHUTTER_CAMERA = "Global_Shutter_Camera";
+    private PhotonCamera camera = new PhotonCamera(VisionConstants.photonCameraName);
+    private PhotonPoseEstimator photonPoseEstimator = new PhotonPoseEstimator(
+            FieldConstants.APRIL_TAG_FIELD_LAYOUT,
+            PoseStrategy.AVERAGE_BEST_TARGETS,
+            camera,
+            VisionConstants.photonRobotToCamera);
+    private Optional<EstimatedRobotPose> photonEstimatedRobotPose = Optional.empty();
 
-    PhotonCamera camera = new PhotonCamera(GLOBAL_SHUTTER_CAMERA);
+    private LimelightMode limelightMode = LimelightMode.APRILTAG;
 
-    private PhotonVisionResult photonVisionResult = new PhotonVisionResult(false, -1, 0, 0, new Transform3d(), new Pose3d());
-    private LimelightResult limelightResult;
+    private NetworkTable limelightTable = NetworkTableInstance.getDefault().getTable("limelight");
+    private IntegerPublisher pipelinePublisher =
+            limelightTable.getIntegerTopic("pipeline").publish();
+    private IntegerSubscriber limelightHasTargetSubscriber =
+            limelightTable.getIntegerTopic("tv").subscribe(0);
+    private DoubleSubscriber limelightTXSubscriber =
+            limelightTable.getDoubleTopic("tx").subscribe(0);
+    private DoubleSubscriber limelightTYSubscriber =
+            limelightTable.getDoubleTopic("ty").subscribe(0);
+    private DoubleSubscriber limelightApriltagIDSubscriber =
+            limelightTable.getDoubleTopic("tid").subscribe(-1);
+    private DoubleSubscriber limelightLatencySubscriber =
+            limelightTable.getDoubleTopic("tl").subscribe(0);
+    private DoubleArraySubscriber botposeSubscriber =
+            limelightTable.getDoubleArrayTopic("botpose").subscribe(new double[] {});
+    private DoubleArrayPublisher convertedBotposePublisher = NetworkTableInstance.getDefault()
+            .getTable("VisionSubsystem")
+            .getDoubleArrayTopic("LLPose")
+            .publish();
 
-    // PhotonTrackedTarget currentTarget = null;
+    private BiConsumer<Pose2d, Double> addVisionMeasurement;
+    private Supplier<Pose2d> robotPoseSupplier;
 
-    // Data to be updated on every loop
-    // Pose3d aprilTagPose = new Pose3d();
-    // Transform3d cameraToTarget = new Transform3d();
-    // boolean hasTargets = false;
-    // int fiducialId = -1;
-    // double ambiguity = 0.0;
-    // double timestamp = 0.0;
-
-    // LoggablePose poseEstimateLogger = new LoggablePose("/VisionSubsystem/Pose");
-    // LoggableInteger fiducialIdLogger = new LoggableInteger("/VisionSubsystem/Fiducial Id");
-    // LoggableDouble ambiguityLogger = new LoggableDouble("/VisionSubsystem/Ambiguity");
-
-    public boolean photonHasTargets() {
-        return photonVisionResult.hasTargets;
+    public VisionSubsystem(BiConsumer<Pose2d, Double> addVisionMeasurement, Supplier<Pose2d> robotPoseSupplier) {
+        this.addVisionMeasurement = addVisionMeasurement;
+        this.robotPoseSupplier = robotPoseSupplier;
     }
 
-    public double getPhotonAmbiguity() {
-        return photonVisionResult.ambiguity;
+    public void setLimelightMode(LimelightMode limelightMode) {
+        this.limelightMode = limelightMode;
+
+        pipelinePublisher.accept(limelightMode.pipelineNumber);
+    }
+
+    public LimelightMode getLimelightMode() {
+        return this.limelightMode;
+    }
+
+    public boolean limelightHasTarget() {
+        return limelightHasTargetSubscriber.get() == 1;
+    }
+
+    public Pose2d getLimelightTargetRetroreflectivePoseEstimate() {
+        var distance = (VisionConstants.retroreflectiveHeight - VisionConstants.limelightHeight)
+                / Math.tan(VisionConstants.limelightCameraToRobot.getRotation().getY() + limelightTYSubscriber.get());
+
+        return new Pose2d(new Translation2d(distance, limelightTXSubscriber.get()), Rotation2d.fromDegrees(180));
+    }
+
+    public boolean photonHasTargets() {
+        return photonEstimatedRobotPose.isPresent();
     }
 
     public double getPhotonTimestamp() {
-        return photonVisionResult.timestamp;
-    }
-
-    public Pose3d getPhotonAprilTagFieldPose() {
-        return photonVisionResult.aprilTagPose;
-    }
-
-    public Transform3d getPhotonCameraToTarget() {
-        return photonVisionResult.cameraToTarget;
+        return photonEstimatedRobotPose.get().timestampSeconds;
     }
 
     public Pose2d getPhotonRobotPoseEstimate() {
-        var targetToCamera = getPhotonCameraToTarget().inverse();
-
-        var robotPoseEstimate = getPhotonAprilTagFieldPose()
-                .transformBy(targetToCamera)
-                .transformBy(VisionConstants.cameraToRobot)
-                .toPose2d();
-
-        return robotPoseEstimate;
-    }
-
-    public Pose2d getPhotonRobotRelativeTargetPose(Pose2d robotPose) {
-        var robotPose3d = new Pose3d(robotPose);
-
-        return robotPose3d
-                .transformBy(VisionConstants.robotToCamera)
-                .transformBy(getPhotonCameraToTarget())
-                .toPose2d();
+        return photonEstimatedRobotPose.get().estimatedPose.toPose2d();
     }
 
     @Override
     public void periodic() {
-        updateUsingPhotonvision();
-        // updateUsingLimelight();
-    }
+        // Set the reference pose to the current estimated pose from the swerve drive subsystem
+        photonPoseEstimator.setReferencePose(robotPoseSupplier.get());
+        photonEstimatedRobotPose = photonPoseEstimator.update();
 
-    private void updateUsingPhotonvision() {
-        var latestResult = camera.getLatestResult();
-
-        var hasTargets = latestResult.hasTargets();
-
-        if (!hasTargets) return;
-
-        PhotonTrackedTarget currentTarget = latestResult.getBestTarget();
-        var fiducialId = currentTarget.getFiducialId();
-        var ambiguity = currentTarget.getPoseAmbiguity();
-        var timestamp = latestResult.getTimestampSeconds();
-
-        // ambiguityLogger.set(ambiguity);
-        // fiducialIdLogger.set(fiducialId);
-
-        var cameraToTarget = currentTarget.getBestCameraToTarget();
-
-        Optional<Pose3d> currentTargetFieldPose = FieldConstants.APRIL_TAG_FIELD_LAYOUT.getTagPose(fiducialId);
-
-        Pose3d aprilTagPose = null;
-
-        if (currentTargetFieldPose.isPresent()) {
-            aprilTagPose = currentTargetFieldPose.get();
-
-            // poseEstimateLogger.set(aprilTagPose);
+        if (photonEstimatedRobotPose.isPresent()) {
+            EstimatedRobotPose estimatedRobotPose = photonEstimatedRobotPose.get();
+            addVisionMeasurement.accept(
+                    estimatedRobotPose.estimatedPose.toPose2d(), estimatedRobotPose.timestampSeconds);
         }
 
-        photonVisionResult =
-                new PhotonVisionResult(hasTargets, fiducialId, ambiguity, timestamp, cameraToTarget, aprilTagPose);
-    }
+        var botpose = botposeSubscriber.get();
 
-    private void updateUsingLimelight() {
-        var hasTargets = getEntry("tv").getInteger(0) == 1;
-
-        if (!hasTargets) return;
-
-        var fiducialId = (int) getEntry("fid").getInteger(0);
-        var timestamp = Timer.getFPGATimestamp() - 0.001 * getEntry("tl").getInteger(0);
-
-        var camtran = getEntry("camtran").getDoubleArray(new double[] {});
-
-        // Transform3d targetTransform = new Transform3d(
-        //         new Translation3d(camtran[0], camtran[1], camtran[2]),
-        //         new Rotation3d(camtran[3], camtran[4], camtran[5]));
-
-        // robotRelativePose = new Pose3d().transformBy(targetTransform);
-
-        Optional<Pose3d> currentTargetFieldPose = FieldConstants.APRIL_TAG_FIELD_LAYOUT.getTagPose(fiducialId);
-
-        if (currentTargetFieldPose.isPresent()) {
-            // globalRobotPose = currentTargetFieldPose.get().transformBy(targetTransform.inverse());
-
-            // poseEstimateLogger.set(globalRobotPose);
+        if (limelightHasTarget() && botpose.length > 0) {
+            var botPose =
+                    new Pose3d(botpose[0], botpose[1], botpose[2], new Rotation3d(botpose[3], botpose[4], botpose[5]));
+            var convertedBotpose = botPose.transformBy(new Transform3d(
+                    new Translation3d(FieldConstants.fieldLength / 2, FieldConstants.fieldWidth / 2, 0),
+                    new Rotation3d()));
+            convertedBotposePublisher.set(new double[] {
+                convertedBotpose.getX(),
+                convertedBotpose.getY(),
+                convertedBotpose.getRotation().getZ()
+            });
         }
+
+        // Basic
+        // Get distance from limelight from ty
+        // Get angle from tx
+        // Make target pose estimate, assume correct placement angle is 180
+
+        // Advanced
+        // Calculate robot relative target pose from botpose from ll (apriltags)
+        //
+
     }
 
     // public static Pose3d allianceFlip(Pose3d pose) {
@@ -153,25 +146,14 @@ public class VisionSubsystem extends SubsystemBase {
     //     }
     //   }
 
-    private NetworkTableEntry getEntry(String key) {
-        return NetworkTableInstance.getDefault().getTable("limelight").getEntry(key);
-    }
+    public enum LimelightMode {
+        APRILTAG(0),
+        RETROREFLECTIVE(1);
 
-    public record PhotonVisionResult(
-                boolean hasTargets,
-                int fiducialId,
-                double ambiguity,
-                double timestamp,
-                Transform3d cameraToTarget,
-                Pose3d aprilTagPose) {
-    }
+        public int pipelineNumber;
 
-    public record LimelightResult(
-                boolean hasTargets,
-                int fiducialId,
-                double ambiguity,
-                double timestamp,
-                Transform3d cameraToTarget,
-                Pose3d aprilTagPose) {
+        private LimelightMode(int pipelineNumber) {
+            this.pipelineNumber = pipelineNumber;
+        }
     }
 }

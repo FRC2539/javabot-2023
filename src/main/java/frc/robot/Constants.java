@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -18,6 +19,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.lib.swerve.SecondOrderSwerveKinematics;
 import frc.lib.swerve.SwerveModuleConstants;
 import java.util.List;
+import java.util.TreeMap;
 
 public final class Constants {
     public static final boolean competitionMode = false;
@@ -45,6 +47,8 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(651.25);
         public static final double fieldWidth = Units.inchesToMeters(315.5);
 
+        public static final double robotLengthWithBumpers = Units.inchesToMeters(30 + 7);
+
         /* X Placement constants from 6328 */
         public static final double outerX = Units.inchesToMeters(54.25);
         public static final double lowX =
@@ -59,21 +63,74 @@ public final class Constants {
         public static final double highConeZ = Units.inchesToMeters(46.0);
         public static final double midConeZ = Units.inchesToMeters(34.0);
 
+
+        public static class PlacementLocation {
+            public Pose2d robotPlacementPose;
+            public boolean isCone;
+
+            public PlacementLocation(Pose2d poseAlignedWithEdge, double lengthOfRobotWithBumpers, boolean isCone) {
+                var transformHybridToRobot = new Transform2d(new Translation2d(lengthOfRobotWithBumpers / 2, 0), Rotation2d.fromDegrees(180));
+                robotPlacementPose = poseAlignedWithEdge.transformBy(transformHybridToRobot);
+                this.isCone = isCone;
+            }
+
+            public Pose3d getHybridPose() {
+                return new Pose3d(lowX, robotPlacementPose.getY(), 0, new Rotation3d());
+            }
+
+            public Pose3d getMidPose() {
+                return new Pose3d(midX, robotPlacementPose.getY(), isCone ? midConeZ : midCubeZ, new Rotation3d());
+            }
+
+            public Pose3d getHighPose() {
+                return new Pose3d(highX, robotPlacementPose.getY(), isCone ? highConeZ : highCubeZ, new Rotation3d());
+            }
+        }
+
         public static final int numberOfNodeRows = 9;
         public static final double separationBetweenNodeRows = Units.inchesToMeters(22.0);
         public static final Pose2d firstPlacingPose =
-                new Pose2d(1.8, Units.inchesToMeters(20.19), Rotation2d.fromDegrees(180));
+                new Pose2d(outerX, Units.inchesToMeters(20.19), new Rotation2d());
+
+        public static final boolean[] isCone = new boolean[] {true, false, true, true, false, true, true, false, true};
 
         // Store the locations we will score from on the field (for automatic placement)
-        public static final Pose2d[] placingPoses = new Pose2d[numberOfNodeRows];
+        public static final PlacementLocation[] placingPoses = new PlacementLocation[numberOfNodeRows];
 
         static {
             for (int i = 0; i < numberOfNodeRows; i++) {
-                placingPoses[i] = new Pose2d(
+                placingPoses[i] = new PlacementLocation(new Pose2d(
                         firstPlacingPose.getX(),
                         firstPlacingPose.getY() + i * separationBetweenNodeRows,
-                        Rotation2d.fromDegrees(180));
+                        new Rotation2d()), robotLengthWithBumpers, isCone[i]);
             }
+        }
+
+        private static TreeMap<Double, PlacementLocation> locationMap = new TreeMap<>();
+
+        static {
+            for (PlacementLocation placementLocation : placingPoses) {
+                locationMap.put(placementLocation.robotPlacementPose.getY(), placementLocation);
+            }
+        }
+
+        /**
+         * Finds the game piece placement area closest to the robot.
+         * @param robotPose
+         * @return The nearest placement location
+         */
+        public static PlacementLocation getNearestPlacementLocation(Pose2d robotPose) {
+            double target = robotPose.getY();
+            Double lowerYValue = locationMap.floorKey(target);
+            Double upperYValue = locationMap.ceilingKey(target);
+
+            // Account for the pose being below or above the range
+            if (lowerYValue == null) return locationMap.get(upperYValue);
+            else if (upperYValue == null) return locationMap.get(lowerYValue);
+
+            boolean isLowerCloser = Math.abs(target - lowerYValue) < Math.abs(target - upperYValue);
+
+            return isLowerCloser ? locationMap.get(lowerYValue) : locationMap.get(upperYValue);
         }
 
         public static final List<AprilTag> aprilTags = List.of(
@@ -165,14 +222,21 @@ public final class Constants {
     public static final class VisionConstants {
         public static final double tapeWidth = Units.inchesToMeters(2.0);
 
+        public static final String photonCameraName = "Global_Shutter_Camera";
+
         // Includes 3d transform from camera(s) to robot origin
-        public static final Transform3d cameraToRobot = new Transform3d(
+        public static final Transform3d photonCameraToRobot = new Transform3d(
                 new Translation3d(Units.inchesToMeters(10), Units.inchesToMeters(6 + 2), Units.inchesToMeters(-22)),
-                new Rotation3d());
+                new Rotation3d(0, 0, Math.PI));
 
-        public static final Transform3d robotToCamera = cameraToRobot.inverse();
+        public static final Transform3d photonRobotToCamera = photonCameraToRobot.inverse();
 
-        public static final double ambiguityThreshold = 0.37;
+        public static final double limelightHeight = Units.inchesToMeters(10);
+        public static final double retroreflectiveHeight = Units.inchesToMeters(30);
+
+        public static final Transform3d limelightCameraToRobot = new Transform3d(
+                new Translation3d(Units.inchesToMeters(-5), Units.inchesToMeters(0), Units.inchesToMeters(-4)),
+                new Rotation3d(0, Units.degreesToRadians(60), 0));
     }
 
     public static final class SwerveConstants extends Mk4SwerveConstants {}

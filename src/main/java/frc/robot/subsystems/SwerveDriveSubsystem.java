@@ -79,8 +79,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 getGyroRotation(),
                 getModulePositions(),
                 new Pose2d(),
-                VecBuilder.fill(0.1, 0.1, 0.1),
-                VecBuilder.fill(0.9, 1.0, 0.9));
+                VecBuilder.fill(0.01, 0.01, 0.01),
+                VecBuilder.fill(0.8, 0.8, 0.8));
     }
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {

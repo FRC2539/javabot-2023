@@ -8,15 +8,14 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimesliceRobot;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.controller.Axis;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
 import frc.lib.logging.LoggablePose;
 import frc.lib.loops.UpdateManager;
 import frc.robot.Constants.ControllerConstants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.TimesliceConstants;
-import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.utils.AutoPlaceManager;
@@ -32,7 +31,8 @@ public class RobotContainer {
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     // private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
-    private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+    private final VisionSubsystem visionSubsystem =
+            new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
     private final ArmSubsystem armSubsystem = new ArmSubsystem();
 
     private AutonomousManager autonomousManager;
@@ -62,12 +62,6 @@ public class RobotContainer {
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
 
         /* Set non-button, multi-subsystem triggers */
-        new Trigger(visionSubsystem::photonHasTargets)
-                .and(new Trigger(() -> visionSubsystem.getPhotonAmbiguity() < VisionConstants.ambiguityThreshold))
-                .whileTrue(run(() -> {
-                    swerveDriveSubsystem.addVisionPoseEstimate(
-                            visionSubsystem.getPhotonRobotPoseEstimate(), visionSubsystem.getPhotonTimestamp());
-                }));
 
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
@@ -96,24 +90,10 @@ public class RobotContainer {
 
         LoggablePose targetPoseLogger = new LoggablePose("/SwerveDriveSubsystem/TargetPose");
 
-        Supplier<Pose2d> targetPoseSupplier = () -> {
-            var targetPose = visionSubsystem
-                    .getPhotonRobotRelativeTargetPose(swerveDriveSubsystem.getPose())
-                    .transformBy(new Transform2d(new Translation2d(1.2, 0), Rotation2d.fromDegrees(180)));
-            targetPoseLogger.set(targetPose);
-            return targetPose;
-        };
-
-        rightDriveController
-                .getBottomThumb()
-                .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
-        rightDriveController.nameBottomThumb("Drive to Pose");
-
         // Supplier<Pose2d> targetPoseSupplier = () -> {
         //     var targetPose = visionSubsystem
-        //             .getAprilTagFieldPose()
-        //             .toPose2d()
-        //             .transformBy(new Transform2d(new Translation2d(1.5, 0), Rotation2d.fromDegrees(180)));
+        //             .getPhotonRobotRelativeTargetPose(swerveDriveSubsystem.getPose())
+        //             .transformBy(new Transform2d(new Translation2d(1.2, 0), Rotation2d.fromDegrees(180)));
         //     targetPoseLogger.set(targetPose);
         //     return targetPose;
         // };
@@ -123,7 +103,31 @@ public class RobotContainer {
         //         .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
         // rightDriveController.nameBottomThumb("Drive to Pose");
 
+        Supplier<Pose2d> targetPoseSupplier = () -> {
+            var targetPose = FieldConstants.APRIL_TAG_FIELD_LAYOUT
+                    .getTagPose(6)
+                    .get()
+                    .toPose2d()
+                    .transformBy(new Transform2d(new Translation2d(1.5, 0), Rotation2d.fromDegrees(180)));
+            targetPoseLogger.set(targetPose);
+            return targetPose;
+        };
+
+        rightDriveController
+                .getBottomThumb()
+                .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
+        rightDriveController.nameBottomThumb("Drive to Pose");
+
         /* Set operator controller bindings */
+        // Change this. One button for each level. That happens independently of everything else.
+        // It will constrain the arm position based on the velocity of the drivetrain
+        // Driver will likely get close to the placement area, so this isn't necessary
+        // We do need auto aim though, and it needs to be more of an assist that is continuous
+        // We do need an auto pickup from double substation though
+        // Also track the internal state (where we have game pieces, and which types)
+        // This way we can regulate which pipeline to run
+
+        // Also trust encoder estimate more
         AutoPlaceManager.initializeAutoPlaceManager();
         operatorController.getDPadUp().onTrue(runOnce(() -> AutoPlaceManager.incrementLevel()));
         operatorController.getDPadRight().onTrue(runOnce(() -> AutoPlaceManager.incrementRow()));
