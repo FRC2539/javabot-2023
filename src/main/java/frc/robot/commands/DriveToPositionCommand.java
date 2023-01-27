@@ -26,7 +26,7 @@ public class DriveToPositionCommand extends CommandBase {
 
     private final ProfiledPIDController xController = new ProfiledPIDController(3, 0, 0, xConstraints);
     private final ProfiledPIDController yController = new ProfiledPIDController(3, 0, 0, yConstraints);
-    private final ProfiledPIDController omegaController = new ProfiledPIDController(3, 0, 0, omegaConstraints);
+    private final ProfiledPIDController omegaController = new ProfiledPIDController(5, 0, 0, omegaConstraints);
 
     private LoggableDouble xErrorLogger = new LoggableDouble("/Commands/xError");
     private LoggableDouble xSetpointLogger = new LoggableDouble("/Commands/xSetpoint");
