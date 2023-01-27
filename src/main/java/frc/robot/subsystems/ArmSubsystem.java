@@ -188,6 +188,10 @@ public class ArmSubsystem extends SubsystemBase {
         ghostArm2.setAngle(Math.toDegrees(joint2DesiredMotorPosition));
     }
 
+    public ArmState getState() {
+        return armState;
+    }
+
     public void setAwaitingPiece() {
         setState(ArmState.AWAITING_PIECE);
     }
@@ -290,7 +294,7 @@ public class ArmSubsystem extends SubsystemBase {
         }
     }
 
-    private enum ArmState {
+    public enum ArmState {
         AWAITING_PIECE(0.20, 0.07),
         AWAITING_DEPLOYMENT(0.22, 0.27),
         HYBRID(0.5, 0.05),

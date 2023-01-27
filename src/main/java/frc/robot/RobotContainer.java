@@ -3,6 +3,10 @@ package frc.robot;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimesliceRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.controller.Axis;
@@ -12,11 +16,12 @@ import frc.lib.logging.LoggablePose;
 import frc.lib.loops.UpdateManager;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.Constants.TimesliceConstants;
 import frc.robot.commands.AimAtPoseCommand;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
-import frc.robot.utils.AutoPlaceManager;
+import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
 
 public class RobotContainer {
@@ -89,7 +94,39 @@ public class RobotContainer {
         LoggablePose targetPoseLogger = new LoggablePose("/SwerveDriveSubsystem/TargetPose");
 
         Supplier<Pose2d> targetPoseSupplier = () -> {
-            var targetPose = FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose()).robotPlacementPose;
+            PlacementLocation targetLocation =
+                    FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
+
+            var targetPose = targetLocation.robotPlacementPose;
+
+            targetPoseLogger.set(targetPose);
+            return targetPose;
+        };
+
+        Supplier<Pose2d> targetAimPoseSupplier = () -> {
+            PlacementLocation targetLocation =
+                    FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
+
+            ArmState armState = armSubsystem.getState();
+            Pose3d targetPose3d;
+
+            switch (armState) {
+                case HYBRID:
+                    targetPose3d = targetLocation.getHybridPose();
+                    break;
+                case MID:
+                    targetPose3d = targetLocation.getMidPose();
+                    break;
+                case HIGH:
+                    targetPose3d = targetLocation.getHighPose();
+                    break;
+                default:
+                    targetPose3d = new Pose3d(targetLocation.robotPlacementPose.plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180))));
+                    break;
+            }
+
+            var targetPose = targetPose3d.toPose2d().plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180)));
+
             targetPoseLogger.set(targetPose);
             return targetPose;
         };
@@ -99,25 +136,20 @@ public class RobotContainer {
                 .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
         rightDriveController
                 .getRightThumb()
-                .whileTrue(new AimAtPoseCommand(swerveDriveSubsystem, targetPoseSupplier, getDriveForwardAxis(), getDriveStrafeAxis()));
+                .whileTrue(new AimAtPoseCommand(
+                        swerveDriveSubsystem, targetAimPoseSupplier, getDriveForwardAxis(), getDriveStrafeAxis()));
         rightDriveController.nameLeftThumb("Drive to Pose");
         rightDriveController.nameRightThumb("Aim at Pose");
 
         /* Set operator controller bindings */
-        // Change this. One button for each level. That happens independently of everything else.
-        // It will constrain the arm position based on the velocity of the drivetrain
-        // Driver will likely get close to the placement area, so this isn't necessary
-        // We do need auto aim though, and it needs to be more of an assist that is continuous
-        // We do need an auto pickup from double substation though
-        // Also track the internal state (where we have game pieces, and which types)
-        // This way we can regulate which pipeline to run
-
-        // Also trust encoder estimate more
-        AutoPlaceManager.initializeAutoPlaceManager();
-        operatorController.getDPadUp().onTrue(runOnce(() -> AutoPlaceManager.incrementLevel()));
-        operatorController.getDPadRight().onTrue(runOnce(() -> AutoPlaceManager.incrementRow()));
-        operatorController.getDPadDown().onTrue(runOnce(() -> AutoPlaceManager.decrementLevel()));
-        operatorController.getDPadLeft().onTrue(runOnce(() -> AutoPlaceManager.decrementRow()));
+        operatorController.getA().onTrue(runOnce(armSubsystem::setHybrid, armSubsystem));
+        operatorController.getB().onTrue(runOnce(armSubsystem::setMid, armSubsystem));
+        operatorController.getY().onTrue(runOnce(armSubsystem::setHigh, armSubsystem));
+        operatorController.getX().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
+        operatorController.nameA("Place Hybrid");
+        operatorController.nameB("Place Mid");
+        operatorController.nameY("Place High");
+        operatorController.nameX("Protect Arm");
 
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();

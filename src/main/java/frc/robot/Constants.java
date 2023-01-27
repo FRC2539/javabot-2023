@@ -63,13 +63,13 @@ public final class Constants {
         public static final double highConeZ = Units.inchesToMeters(46.0);
         public static final double midConeZ = Units.inchesToMeters(34.0);
 
-
         public static class PlacementLocation {
             public Pose2d robotPlacementPose;
             public boolean isCone;
 
             public PlacementLocation(Pose2d poseAlignedWithEdge, double lengthOfRobotWithBumpers, boolean isCone) {
-                var transformHybridToRobot = new Transform2d(new Translation2d(lengthOfRobotWithBumpers / 2, 0), Rotation2d.fromDegrees(180));
+                var transformHybridToRobot = new Transform2d(
+                        new Translation2d(lengthOfRobotWithBumpers / 2, 0), Rotation2d.fromDegrees(180));
                 robotPlacementPose = poseAlignedWithEdge.transformBy(transformHybridToRobot);
                 this.isCone = isCone;
             }
@@ -89,8 +89,7 @@ public final class Constants {
 
         public static final int numberOfNodeRows = 9;
         public static final double separationBetweenNodeRows = Units.inchesToMeters(22.0);
-        public static final Pose2d firstPlacingPose =
-                new Pose2d(outerX, Units.inchesToMeters(20.19), new Rotation2d());
+        public static final Pose2d firstPlacingPose = new Pose2d(outerX, Units.inchesToMeters(20.19), new Rotation2d());
 
         public static final boolean[] isCone = new boolean[] {true, false, true, true, false, true, true, false, true};
 
@@ -99,10 +98,13 @@ public final class Constants {
 
         static {
             for (int i = 0; i < numberOfNodeRows; i++) {
-                placingPoses[i] = new PlacementLocation(new Pose2d(
-                        firstPlacingPose.getX(),
-                        firstPlacingPose.getY() + i * separationBetweenNodeRows,
-                        new Rotation2d()), robotLengthWithBumpers, isCone[i]);
+                placingPoses[i] = new PlacementLocation(
+                        new Pose2d(
+                                firstPlacingPose.getX(),
+                                firstPlacingPose.getY() + i * separationBetweenNodeRows,
+                                new Rotation2d()),
+                        robotLengthWithBumpers,
+                        isCone[i]);
             }
         }
 

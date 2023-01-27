@@ -6,23 +6,24 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.lib.controller.Axis;
 import frc.robot.subsystems.SwerveDriveSubsystem;
+
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class AimAtPoseCommand extends CommandBase {
     private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(8, 8);
-    private final ProfiledPIDController omegaController = new ProfiledPIDController(3, 0, 0, omegaConstraints);
+    private final ProfiledPIDController omegaController = new ProfiledPIDController(5, 0, 0, omegaConstraints);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem;
 
     private Supplier<Pose2d> targetPoseSupplier;
 
-    Axis forwardAxis;
-    Axis strafeAxis;
+    DoubleSupplier forwardAxis;
+    DoubleSupplier strafeAxis;
 
     /**
-     * Drives to the given pose on the field automatically.
+     * Aims at the given pose on the field automatically.
      *
      * While the driving is generally smooth and fast, this algorithm currently assumes zero initial velocity.
      * It will behave erratically at the start if the robot is moving.
@@ -30,14 +31,18 @@ public class AimAtPoseCommand extends CommandBase {
      * @param swerveDriveSubsystem
      * @param targetPoseSupplier
      */
-    public AimAtPoseCommand(SwerveDriveSubsystem swerveDriveSubsystem, Supplier<Pose2d> targetPoseSupplier, Axis forwardAxis, Axis strafeAxis) {
+    public AimAtPoseCommand(
+            SwerveDriveSubsystem swerveDriveSubsystem,
+            Supplier<Pose2d> targetPoseSupplier,
+            DoubleSupplier forwardAxis,
+            DoubleSupplier strafeAxis) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.targetPoseSupplier = targetPoseSupplier;
 
         this.forwardAxis = forwardAxis;
         this.strafeAxis = strafeAxis;
 
-        omegaController.setTolerance(Units.degreesToRadians(2));
+        omegaController.setTolerance(Units.degreesToRadians(3));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         addRequirements(swerveDriveSubsystem);
@@ -57,12 +62,12 @@ public class AimAtPoseCommand extends CommandBase {
         var robotPose = swerveDriveSubsystem.getPose();
         var targetPose = targetPoseSupplier.get();
 
-        var targetAngle = targetPose.minus(robotPose).getRotation();
+        var targetAngle = targetPose.minus(robotPose).getTranslation().getAngle();
 
         omegaController.setGoal(robotPose.getRotation().plus(targetAngle).getRadians());
 
-        var xSpeed = forwardAxis.get(true);
-        var ySpeed = strafeAxis.get(true);
+        var xSpeed = forwardAxis.getAsDouble();
+        var ySpeed = strafeAxis.getAsDouble();
         var omegaSpeed = omegaController.calculate(robotPose.getRotation().getRadians());
 
         if (omegaController.atGoal()) omegaSpeed = 0;
