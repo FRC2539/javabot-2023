@@ -97,7 +97,7 @@ public class RobotContainer {
 
             var targetPose = targetLocation.robotPlacementPose;
 
-            Logger.getInstance().log("/SwerveDriveSubsystem/TargetPose", targetPose);
+            Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
             return targetPose;
         };
 
@@ -127,7 +127,7 @@ public class RobotContainer {
             var targetPose =
                     targetPose3d.toPose2d().plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180)));
 
-            Logger.getInstance().log("/SwerveDriveSubsystem/TargetPose", targetPose);
+            Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
             return targetPose;
         };
 

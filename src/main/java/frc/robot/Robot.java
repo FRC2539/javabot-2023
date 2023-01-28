@@ -41,7 +41,7 @@ public class Robot extends TimesliceRobot {
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
 
-        Logger.getInstance().update();
+        Logger.update();
     }
 
     @Override

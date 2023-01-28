@@ -4,14 +4,11 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.DoubleArrayPublisher;
-import edu.wpi.first.networktables.DoubleArraySubscriber;
-import edu.wpi.first.networktables.DoubleSubscriber;
-import edu.wpi.first.networktables.IntegerPublisher;
-import edu.wpi.first.networktables.IntegerSubscriber;
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.logging.LoggedReceiver;
+import frc.lib.logging.Logger;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
 import java.util.Optional;
@@ -32,22 +29,12 @@ public class VisionSubsystem extends SubsystemBase {
 
     private LimelightMode limelightMode = LimelightMode.APRILTAG;
 
-    private NetworkTable limelightTable = NetworkTableInstance.getDefault().getTable("limelight");
-
-    private IntegerPublisher pipelinePublisher =
-            limelightTable.getIntegerTopic("pipeline").publish();
-    private IntegerSubscriber limelightHasTargetSubscriber =
-            limelightTable.getIntegerTopic("tv").subscribe(0);
-    private DoubleSubscriber limelightTXSubscriber =
-            limelightTable.getDoubleTopic("tx").subscribe(0);
-    private DoubleSubscriber limelightTYSubscriber =
-            limelightTable.getDoubleTopic("ty").subscribe(0);
-    private DoubleSubscriber limelightApriltagIDSubscriber =
-            limelightTable.getDoubleTopic("tid").subscribe(-1);
-    private DoubleSubscriber limelightLatencySubscriber =
-            limelightTable.getDoubleTopic("tl").subscribe(0);
-    private DoubleArraySubscriber botposeSubscriber =
-            limelightTable.getDoubleArrayTopic("botpose").subscribe(new double[] {});
+    private LoggedReceiver limelightHasTargetReceiver = Logger.receive("/limelight/tv", 0);
+    private LoggedReceiver limelightTXReceiver = Logger.receive("tx", 0);
+    private LoggedReceiver limelightTYReceiver = Logger.receive("ty", 0);
+    private LoggedReceiver limelightApriltagIDReceiver = Logger.receive("tid", -1);
+    private LoggedReceiver limelightLatencyReceiver = Logger.receive("tl", 0);
+    private LoggedReceiver botposeReceiver = Logger.receive("botpose", new double[] {});
 
     private Optional<EstimatedRobotPose> LLApriltagEstimate = Optional.empty();
     private DoubleArrayPublisher LLApriltagPosePublisher = NetworkTableInstance.getDefault()
@@ -100,7 +87,7 @@ public class VisionSubsystem extends SubsystemBase {
     public void setLimelightMode(LimelightMode limelightMode) {
         this.limelightMode = limelightMode;
 
-        pipelinePublisher.accept(limelightMode.pipelineNumber);
+        Logger.log("/limelight/pipeline", limelightMode.pipelineNumber);
     }
 
     public LimelightMode getLimelightMode() {
@@ -108,11 +95,11 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     private boolean limelightHasTarget() {
-        return limelightHasTargetSubscriber.get() == 1;
+        return limelightHasTargetReceiver.getLogValue().getInteger() == 1;
     }
 
     private boolean limelightHasApriltag() {
-        return limelightApriltagIDSubscriber.get() != -1;
+        return limelightApriltagIDReceiver.getLogValue().getInteger() != -1;
     }
 
     private void addVisionPoseEstimate(EstimatedRobotPose estimate) {
@@ -179,8 +166,9 @@ public class VisionSubsystem extends SubsystemBase {
         if (getLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
 
         // gets the botpose array from the limelight and a timestamp
-        double[] botpose = botposeSubscriber.get(); // double[] {x, y, z, roll, pitch, yaw}
-        double timestamp = Timer.getFPGATimestamp() - limelightLatencySubscriber.get() / 1000.0;
+        double[] botpose = botposeReceiver.getLogValue().getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw}
+        double timestamp = Timer.getFPGATimestamp()
+                - limelightLatencyReceiver.getLogValue().getDouble() / 1000.0;
 
         // if botpose exists and the limelight has an april tag, it adds the pose to our kalman filter
         if (limelightHasApriltag() && botpose.length == 6) {

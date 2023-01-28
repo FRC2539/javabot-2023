@@ -148,7 +148,7 @@ public class ArmSubsystem extends SubsystemBase {
         motor1Controller.reset(arm1Angle);
         motor2Controller.reset(arm2Angle);
 
-        desiredNetworkTablesArmPosition = Logger.getInstance().tunable("/ArmSubsystem/ArmPose", new double[] {1, 0});
+        desiredNetworkTablesArmPosition = Logger.tunable("/ArmSubsystem/ArmPose", new double[] {1, 0});
 
         setState(ArmState.NETWORK_TABLES_AIM);
     }

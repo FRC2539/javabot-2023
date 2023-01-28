@@ -16,39 +16,31 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class Logger {
-    private static Logger instance;
+    private static int queueCapacity = 50 * 5; // ~ 5 seconds
 
-    private int queueCapacity = 50 * 5; // ~ 5 seconds
+    private static Map<String, LogValue> updatesMap = new HashMap<>();
 
-    private Map<String, LogValue> updatesMap = new HashMap<>();
+    private static BlockingQueue<LogTable> updatesQueue = new ArrayBlockingQueue<>(queueCapacity);
 
-    private BlockingQueue<LogTable> updatesQueue = new ArrayBlockingQueue<>(queueCapacity);
+    private static final List<Writer> writers = Arrays.asList(new DataLogWriter(), new NTWriter());
 
-    private final List<Writer> writers = Arrays.asList(new DataLogWriter(), new NTWriter());
+    private static LoggingThread loggingThread = new LoggingThread(updatesQueue, writers);
 
-    private LoggingThread loggingThread = new LoggingThread(updatesQueue, writers);
-
-    private StringPublisher messagesPublisher = NetworkTableInstance.getDefault()
+    private static StringPublisher messagesPublisher = NetworkTableInstance.getDefault()
             .getTable("Messages")
             .getStringTopic("messages")
             .publish();
 
-    public Logger() {
+    static {
         // Start the logging thread
         loggingThread.start();
     }
 
-    public static Logger getInstance() {
-        if (instance == null) instance = new Logger();
-
-        return instance;
-    }
-
-    public void message(String message) {
+    public static void message(String message) {
         messagesPublisher.set(message);
     }
 
-    public void update() {
+    public static void update() {
         try {
             // Send the current updates to the updating thread
             updatesQueue.add(new LogTable(updatesMap, HALUtil.getFPGATime()));
@@ -61,53 +53,53 @@ public class Logger {
     }
 
     /* Log only methods - Log without sending to NetworkTables */
-    public void logOnly(String key, LogValue value) {
+    public static void logOnly(String key, LogValue value) {
         updatesMap.put(key, value.withoutNT());
     }
 
     /* Logger Methods - Log to DataLog and NetworkTables, no getting */
 
-    public void log(String key, boolean value) {
+    public static void log(String key, boolean value) {
         updatesMap.put(key, new LogValue(value));
     }
 
-    public void log(String key, boolean[] value) {
+    public static void log(String key, boolean[] value) {
         updatesMap.put(key, new LogValue(value));
     }
 
-    public void log(String key, double value) {
+    public static void log(String key, double value) {
         updatesMap.put(key, new LogValue(value));
     }
 
-    public void log(String key, double[] value) {
+    public static void log(String key, double[] value) {
         updatesMap.put(key, new LogValue(value));
     }
 
-    public void log(String key, long value) {
+    public static void log(String key, long value) {
         updatesMap.put(key, new LogValue(value));
     }
 
-    public void log(String key, long[] value) {
+    public static void log(String key, long[] value) {
         updatesMap.put(key, new LogValue(value));
     }
 
-    public void log(String key, String value) {
+    public static void log(String key, String value) {
         updatesMap.put(key, new LogValue(value));
     }
 
-    public void log(String key, String[] value) {
+    public static void log(String key, String[] value) {
         updatesMap.put(key, new LogValue(value));
     }
 
-    public void log(String key, ChassisSpeeds value) {
+    public static void log(String key, ChassisSpeeds value) {
         log(key, new double[] {value.vxMetersPerSecond, value.vyMetersPerSecond, value.omegaRadiansPerSecond});
     }
 
-    public void log(String key, Pose2d value) {
+    public static void log(String key, Pose2d value) {
         log(key, new double[] {value.getX(), value.getY(), value.getRotation().getRadians()});
     }
 
-    public void log(String key, Pose3d value, boolean logQuaternion) {
+    public static void log(String key, Pose3d value, boolean logQuaternion) {
         if (logQuaternion) {
             var rotation = value.getRotation().getQuaternion();
 
@@ -131,49 +123,49 @@ public class Logger {
 
     /* Tunables - Log the value once and returns an subscriber */
 
-    public LoggedReceiver tunable(String key, boolean value) {
+    public static LoggedReceiver tunable(String key, boolean value) {
         log(key, value);
 
         return receive(key, value);
     }
 
-    public LoggedReceiver tunable(String key, boolean[] value) {
+    public static LoggedReceiver tunable(String key, boolean[] value) {
         log(key, value);
 
         return receive(key, value);
     }
 
-    public LoggedReceiver tunable(String key, double value) {
+    public static LoggedReceiver tunable(String key, double value) {
         log(key, value);
 
         return receive(key, value);
     }
 
-    public LoggedReceiver tunable(String key, double[] value) {
+    public static LoggedReceiver tunable(String key, double[] value) {
         log(key, value);
 
         return receive(key, value);
     }
 
-    public LoggedReceiver tunable(String key, long value) {
+    public static LoggedReceiver tunable(String key, long value) {
         log(key, value);
 
         return receive(key, value);
     }
 
-    public LoggedReceiver tunable(String key, long[] value) {
+    public static LoggedReceiver tunable(String key, long[] value) {
         log(key, value);
 
         return receive(key, value);
     }
 
-    public LoggedReceiver tunable(String key, String value) {
+    public static LoggedReceiver tunable(String key, String value) {
         log(key, value);
 
         return receive(key, value);
     }
 
-    public LoggedReceiver tunable(String key, String[] value) {
+    public static LoggedReceiver tunable(String key, String[] value) {
         log(key, value);
 
         return receive(key, value);
@@ -181,37 +173,37 @@ public class Logger {
 
     /* Receivers - Get and log values from NetworkTables */
 
-    public LoggedReceiver receive(String key, boolean value) {
+    public static LoggedReceiver receive(String key, boolean value) {
         return new LoggedReceiver(LoggableType.Boolean, key);
     }
 
-    public LoggedReceiver receive(String key, boolean[] value) {
+    public static LoggedReceiver receive(String key, boolean[] value) {
         return new LoggedReceiver(LoggableType.BooleanArray, key);
     }
 
-    public LoggedReceiver receive(String key, double value) {
+    public static LoggedReceiver receive(String key, double value) {
         return new LoggedReceiver(LoggableType.Double, key);
     }
 
-    public LoggedReceiver receive(String key, double[] value) {
+    public static LoggedReceiver receive(String key, double[] value) {
         return new LoggedReceiver(LoggableType.DoubleArray, key);
     }
 
-    public LoggedReceiver receive(String key, long value) {
+    public static LoggedReceiver receive(String key, long value) {
         return new LoggedReceiver(LoggableType.Integer, key);
     }
 
-    public LoggedReceiver receive(String key, long[] value) {
+    public static LoggedReceiver receive(String key, long[] value) {
         return new LoggedReceiver(LoggableType.IntegerArray, key);
     }
 
-    public LoggedReceiver receive(String key, String value) {
+    public static LoggedReceiver receive(String key, String value) {
         return new LoggedReceiver(LoggableType.String, key);
     }
 
-    public LoggedReceiver receive(String key, String[] value) {
+    public static LoggedReceiver receive(String key, String[] value) {
         return new LoggedReceiver(LoggableType.StringArray, key);
     }
 
-    public record LogTable(Map<String, LogValue> updatesMap, long timestamp) {}
+    public static record LogTable(Map<String, LogValue> updatesMap, long timestamp) {}
 }

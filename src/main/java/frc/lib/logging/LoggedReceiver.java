@@ -6,7 +6,7 @@ import frc.lib.logging.LogValue.LoggableType;
 public class LoggedReceiver {
     private LoggableType type;
     private String key;
-    
+
     private Subscriber subscriber;
 
     public LoggedReceiver(LoggableType type, String key) {
@@ -105,7 +105,7 @@ public class LoggedReceiver {
                 break;
         }
 
-        if(subscriber.exists()) Logger.getInstance().logOnly(key, value);
+        if (subscriber.exists()) Logger.logOnly(key, value);
 
         return value;
     }

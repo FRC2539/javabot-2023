@@ -331,21 +331,20 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     @Override
     public void periodic() {
-        var logger = Logger.getInstance();
 
-        logger.log("/SwerveDriveSubsystem/Pose", pose);
-        logger.log("/SwerveDriveSubsystem/Velocity", velocity);
-        logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);
+        Logger.log("/SwerveDriveSubsystem/Pose", pose);
+        Logger.log("/SwerveDriveSubsystem/Velocity", velocity);
+        Logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);
 
-        logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
+        Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
             modules[0].getPosition().angle.getDegrees(),
             modules[1].getPosition().angle.getDegrees(),
             modules[2].getPosition().angle.getDegrees(),
             modules[3].getPosition().angle.getDegrees()
         });
 
-        logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
-        logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());
+        Logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
+        Logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());
     }
 
     public SwerveModuleState[] getModuleStates() {
