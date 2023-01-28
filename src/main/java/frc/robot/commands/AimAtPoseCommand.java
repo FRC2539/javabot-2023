@@ -7,7 +7,6 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.SwerveDriveSubsystem;
-
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 

@@ -297,9 +297,12 @@ public class ArmSubsystem extends SubsystemBase {
     public enum ArmState {
         AWAITING_PIECE(0.20, 0.07),
         AWAITING_DEPLOYMENT(0.22, 0.27),
-        HYBRID(0.5, 0.05),
-        MID(0.7, 0.6),
-        HIGH(1.0, 1.1),
+        // HYBRID(0.5, 0.05),
+        // MID(0.7, 0.6),
+        // HIGH(1.0, 1.1),
+        HYBRID(sus -> sus.getDynamicArmPosition()),
+        MID(a -> a.getDynamicArmPosition()),
+        HIGH(a -> a.getDynamicArmPosition()),
         DYNAMIC_AIM(a -> a.getDynamicArmPosition()),
         NETWORK_TABLES_AIM(a -> a.getNetworkTablesArmPosition());
 

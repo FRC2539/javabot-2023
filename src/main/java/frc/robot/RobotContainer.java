@@ -121,11 +121,13 @@ public class RobotContainer {
                     targetPose3d = targetLocation.getHighPose();
                     break;
                 default:
-                    targetPose3d = new Pose3d(targetLocation.robotPlacementPose.plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180))));
+                    targetPose3d = new Pose3d(targetLocation.robotPlacementPose.plus(
+                            new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180))));
                     break;
             }
 
-            var targetPose = targetPose3d.toPose2d().plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180)));
+            var targetPose =
+                    targetPose3d.toPose2d().plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180)));
 
             targetPoseLogger.set(targetPose);
             return targetPose;

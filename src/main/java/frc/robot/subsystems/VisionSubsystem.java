@@ -2,11 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.DoubleSubscriber;
@@ -14,6 +10,7 @@ import edu.wpi.first.networktables.IntegerPublisher;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
@@ -32,11 +29,11 @@ public class VisionSubsystem extends SubsystemBase {
             PoseStrategy.AVERAGE_BEST_TARGETS,
             camera,
             VisionConstants.photonRobotToCamera);
-    private Optional<EstimatedRobotPose> photonEstimatedRobotPose = Optional.empty();
 
     private LimelightMode limelightMode = LimelightMode.APRILTAG;
 
     private NetworkTable limelightTable = NetworkTableInstance.getDefault().getTable("limelight");
+
     private IntegerPublisher pipelinePublisher =
             limelightTable.getIntegerTopic("pipeline").publish();
     private IntegerSubscriber limelightHasTargetSubscriber =
@@ -51,9 +48,23 @@ public class VisionSubsystem extends SubsystemBase {
             limelightTable.getDoubleTopic("tl").subscribe(0);
     private DoubleArraySubscriber botposeSubscriber =
             limelightTable.getDoubleArrayTopic("botpose").subscribe(new double[] {});
-    private DoubleArrayPublisher convertedBotposePublisher = NetworkTableInstance.getDefault()
+
+    private Optional<EstimatedRobotPose> LLApriltagEstimate = Optional.empty();
+    private DoubleArrayPublisher LLApriltagPosePublisher = NetworkTableInstance.getDefault()
             .getTable("VisionSubsystem")
-            .getDoubleArrayTopic("LLPose")
+            .getDoubleArrayTopic("LLApriltagPose")
+            .publish();
+
+    private Optional<EstimatedRobotPose> LLRetroreflectiveEstimate = Optional.empty();
+    private DoubleArrayPublisher LLRetroreflectivePosePublisher = NetworkTableInstance.getDefault()
+            .getTable("VisionSubsystem")
+            .getDoubleArrayTopic("LLRetroreflectivePose")
+            .publish();
+
+    private Optional<EstimatedRobotPose> photonVisionEstimate = Optional.empty();
+    private DoubleArrayPublisher photonVisionPosePublisher = NetworkTableInstance.getDefault()
+            .getTable("VisionSubsystem")
+            .getDoubleArrayTopic("photonVisionPose")
             .publish();
 
     private BiConsumer<Pose2d, Double> addVisionMeasurement;
@@ -62,6 +73,7 @@ public class VisionSubsystem extends SubsystemBase {
     public VisionSubsystem(BiConsumer<Pose2d, Double> addVisionMeasurement, Supplier<Pose2d> robotPoseSupplier) {
         this.addVisionMeasurement = addVisionMeasurement;
         this.robotPoseSupplier = robotPoseSupplier;
+        setLimelightMode(limelightMode);
     }
 
     public void setLimelightMode(LimelightMode limelightMode) {
@@ -74,65 +86,115 @@ public class VisionSubsystem extends SubsystemBase {
         return this.limelightMode;
     }
 
-    public boolean limelightHasTarget() {
+    private boolean limelightHasTarget() {
         return limelightHasTargetSubscriber.get() == 1;
     }
 
-    public Pose2d getLimelightTargetRetroreflectivePoseEstimate() {
-        var distance = (VisionConstants.retroreflectiveHeight - VisionConstants.limelightHeight)
-                / Math.tan(VisionConstants.limelightCameraToRobot.getRotation().getY() + limelightTYSubscriber.get());
-
-        return new Pose2d(new Translation2d(distance, limelightTXSubscriber.get()), Rotation2d.fromDegrees(180));
-    }
-
-    public boolean photonHasTargets() {
-        return photonEstimatedRobotPose.isPresent();
-    }
-
-    public double getPhotonTimestamp() {
-        return photonEstimatedRobotPose.get().timestampSeconds;
-    }
-
-    public Pose2d getPhotonRobotPoseEstimate() {
-        return photonEstimatedRobotPose.get().estimatedPose.toPose2d();
+    private boolean limelightHasApriltag() {
+        return limelightApriltagIDSubscriber.get() != -1;
     }
 
     @Override
     public void periodic() {
+        LLApriltagEstimate = calculateLLApriltagEstimate();
+        if (LLApriltagEstimate.isPresent()) {
+            addVisionPoseEstimate(LLApriltagEstimate.get());
+            publishPoseEstimate(LLApriltagPosePublisher, LLApriltagEstimate.get());
+        }
+
+        LLRetroreflectiveEstimate = calculateLLRetroreflectiveEstimate();
+        if (LLRetroreflectiveEstimate.isPresent()) {
+            addVisionPoseEstimate(LLRetroreflectiveEstimate.get());
+            publishPoseEstimate(LLRetroreflectivePosePublisher, LLApriltagEstimate.get());
+        }
+
+        photonVisionEstimate = calculatePhotonVisionEstimate();
+        if (photonVisionEstimate.isPresent()) {
+            addVisionPoseEstimate(photonVisionEstimate.get());
+            publishPoseEstimate(photonVisionPosePublisher, photonVisionEstimate.get());
+        }
+    }
+
+    private void addVisionPoseEstimate(EstimatedRobotPose estimate) {
+        addVisionMeasurement.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+    }
+
+    private void publishPoseEstimate(DoubleArrayPublisher publisher, EstimatedRobotPose estimate) {
+        publisher.accept(new double[] {
+            estimate.estimatedPose.getX(),
+            estimate.estimatedPose.getX(),
+            estimate.estimatedPose.getRotation().getZ()
+        });
+    }
+
+    public boolean hasPhotonVisionEstimate() {
+        return photonVisionEstimate.isPresent();
+    }
+
+    public Optional<EstimatedRobotPose> getPhotonVisionEstimate() {
+        return photonVisionEstimate;
+    }
+
+    private Optional<EstimatedRobotPose> calculatePhotonVisionEstimate() {
         // Set the reference pose to the current estimated pose from the swerve drive subsystem
         photonPoseEstimator.setReferencePose(robotPoseSupplier.get());
-        photonEstimatedRobotPose = photonPoseEstimator.update();
+        return photonPoseEstimator.update();
+    }
 
-        if (photonEstimatedRobotPose.isPresent()) {
-            EstimatedRobotPose estimatedRobotPose = photonEstimatedRobotPose.get();
-            addVisionMeasurement.accept(
-                    estimatedRobotPose.estimatedPose.toPose2d(), estimatedRobotPose.timestampSeconds);
+    public boolean hasLLRetroreflectiveEstimate() {
+        return LLRetroreflectiveEstimate.isPresent();
+    }
+
+    public Optional<EstimatedRobotPose> getLLRetroreflectiveEstimate() {
+        return LLRetroreflectiveEstimate;
+    }
+
+    private Optional<EstimatedRobotPose> calculateLLRetroreflectiveEstimate() {
+        // this probably doesnt work yet
+        return Optional.empty();
+
+        // if (!limelightHasTarget()) return Optional.empty();
+
+        // var timestamp = Timer.getFPGATimestamp() - limelightLatencySubscriber.get() / 1000.0;
+
+        // var distance = (VisionConstants.retroreflectiveHeight - VisionConstants.limelightHeight)
+        //         / Math.tan(VisionConstants.limelightCameraToRobot.getRotation().getY() +
+        // limelightTYSubscriber.get());
+
+        // Pose3d poseEstimate = new Pose3d(new Pose2d(new Translation2d(distance, limelightTXSubscriber.get()),
+        // Rotation2d.fromDegrees(180)));
+
+        // return Optional.of(new EstimatedRobotPose(poseEstimate, timestamp));
+    }
+
+    public boolean hasLLApriltagEstimate() {
+        return LLApriltagEstimate.isPresent();
+    }
+
+    public Optional<EstimatedRobotPose> getLLApriltagEstimate() {
+        return LLApriltagEstimate;
+    }
+
+    private Optional<EstimatedRobotPose> calculateLLApriltagEstimate() {
+        if (getLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
+
+        // gets the botpose array from the limelight and a timestamp
+        double[] botpose = botposeSubscriber.get(); // double[] {x, y, z, roll, pitch, yaw}
+        double timestamp = Timer.getFPGATimestamp() - limelightLatencySubscriber.get() / 1000.0;
+
+        // if botpose exists and the limelight has an april tag, it adds the pose to our kalman filter
+        if (limelightHasApriltag() && botpose.length == 6) {
+            Pose3d botPose = new Pose3d(
+                    botpose[0],
+                    botpose[1],
+                    botpose[2],
+                    new Rotation3d(Math.toRadians(botpose[3]), Math.toRadians(botpose[4]), Math.toRadians(botpose[5])));
+            Pose3d convertedBotpose = botPose.relativeTo(
+                    new Pose3d(-FieldConstants.fieldLength / 2, -FieldConstants.fieldWidth / 2, 0, new Rotation3d()));
+            return Optional.of(new EstimatedRobotPose(convertedBotpose, timestamp));
+        } else {
+            return Optional.empty();
         }
-
-        var botpose = botposeSubscriber.get();
-
-        if (limelightHasTarget() && botpose.length > 0) {
-            var botPose =
-                    new Pose3d(botpose[0], botpose[1], botpose[2], new Rotation3d(botpose[3], botpose[4], botpose[5]));
-            var convertedBotpose = botPose.transformBy(new Transform3d(
-                    new Translation3d(FieldConstants.fieldLength / 2, FieldConstants.fieldWidth / 2, 0),
-                    new Rotation3d()));
-            convertedBotposePublisher.set(new double[] {
-                convertedBotpose.getX(),
-                convertedBotpose.getY(),
-                convertedBotpose.getRotation().getZ()
-            });
-        }
-
-        // Basic
-        // Get distance from limelight from ty
-        // Get angle from tx
-        // Make target pose estimate, assume correct placement angle is 180
-
-        // Advanced
-        // Calculate robot relative target pose from botpose from ll (apriltags)
-        //
-
     }
 
     // public static Pose3d allianceFlip(Pose3d pose) {
