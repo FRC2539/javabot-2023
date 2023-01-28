@@ -4,26 +4,33 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.*;
-import edu.wpi.first.util.datalog.*;
-import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class Logger {
-    // Logger v1 - runs realtime
-    // Logger v2 - will run in a separate thread
-
     private static Logger instance;
 
-    private DataLog log = DataLogManager.getLog();
+    private int queueCapacity = 50 * 5; // ~ 5 seconds 
 
-    private Map<String, Publisher> publisherMap = new HashMap<>();
-    private Map<String, DataLogEntry> loggerMap = new HashMap<>();
+    private Map<String, LogValue> updatesMap = new HashMap<>();
+
+    private BlockingQueue<LogTable> updatesQueue = new ArrayBlockingQueue<>(queueCapacity);
+
+    private LoggingThread loggingThread = new LoggingThread(updatesQueue);
 
     private StringPublisher messagesPublisher = NetworkTableInstance.getDefault()
             .getTable("Messages")
             .getStringTopic("messages")
             .publish();
+
+    public Logger() {
+        // Start the logging thread
+        loggingThread.start();
+    }
 
     public static Logger getInstance() {
         if (instance == null) instance = new Logger();
@@ -35,138 +42,51 @@ public class Logger {
         messagesPublisher.set(message);
     }
 
+    public void update() {
+        try {
+            // Send the current updates to the updating thread
+            updatesQueue.add(new LogTable(updatesMap, 0));
+
+            // Reset the update table
+            updatesMap = new HashMap<>();
+        } catch (IllegalStateException exception) {
+            DriverStation.reportError("Logging queue capacity exceeded, data is no longer being logged.", false);
+        }
+            
+    }
+
     /* Logger Methods - Log to DataLog and NetworkTables, no getting */
 
     public void log(String key, boolean value) {
-        BooleanPublisher publisher = (BooleanPublisher) publisherMap.get(key);
-        BooleanLogEntry logger = (BooleanLogEntry) loggerMap.get(key);
-
-        if (publisher == null || logger == null) {
-            publisher = NetworkTableInstance.getDefault().getBooleanTopic(key).publish();
-            logger = new BooleanLogEntry(log, key);
-
-            publisherMap.put(key, publisher);
-            loggerMap.put(key, logger);
-        }
-
-        publisher.set(value);
-        logger.append(value);
+        updatesMap.put(key, new LogValue(value));
     }
 
     public void log(String key, boolean[] value) {
-        BooleanArrayPublisher publisher = (BooleanArrayPublisher) publisherMap.get(key);
-        BooleanArrayLogEntry logger = (BooleanArrayLogEntry) loggerMap.get(key);
-
-        if (publisher == null || logger == null) {
-            publisher =
-                    NetworkTableInstance.getDefault().getBooleanArrayTopic(key).publish();
-            logger = new BooleanArrayLogEntry(log, key);
-
-            publisherMap.put(key, publisher);
-            loggerMap.put(key, logger);
-        }
-
-        publisher.set(value);
-        logger.append(value);
+        updatesMap.put(key, new LogValue(value));
     }
 
     public void log(String key, double value) {
-        DoublePublisher publisher = (DoublePublisher) publisherMap.get(key);
-        DoubleLogEntry logger = (DoubleLogEntry) loggerMap.get(key);
-
-        if (publisher == null || logger == null) {
-            publisher = NetworkTableInstance.getDefault().getDoubleTopic(key).publish();
-            logger = new DoubleLogEntry(log, key);
-
-            publisherMap.put(key, publisher);
-            loggerMap.put(key, logger);
-        }
-
-        publisher.set(value);
-        logger.append(value);
+        updatesMap.put(key, new LogValue(value));
     }
 
     public void log(String key, double[] value) {
-        DoubleArrayPublisher publisher = (DoubleArrayPublisher) publisherMap.get(key);
-        DoubleArrayLogEntry logger = (DoubleArrayLogEntry) loggerMap.get(key);
-
-        if (publisher == null || logger == null) {
-            publisher =
-                    NetworkTableInstance.getDefault().getDoubleArrayTopic(key).publish();
-            logger = new DoubleArrayLogEntry(log, key);
-
-            publisherMap.put(key, publisher);
-            loggerMap.put(key, logger);
-        }
-
-        publisher.set(value);
-        logger.append(value);
+        updatesMap.put(key, new LogValue(value));
     }
 
     public void log(String key, long value) {
-        IntegerPublisher publisher = (IntegerPublisher) publisherMap.get(key);
-        IntegerLogEntry logger = (IntegerLogEntry) loggerMap.get(key);
-
-        if (publisher == null || logger == null) {
-            publisher = NetworkTableInstance.getDefault().getIntegerTopic(key).publish();
-            logger = new IntegerLogEntry(log, key);
-
-            publisherMap.put(key, publisher);
-            loggerMap.put(key, logger);
-        }
-
-        publisher.set(value);
-        logger.append(value);
+        updatesMap.put(key, new LogValue(value));
     }
 
     public void log(String key, long[] value) {
-        IntegerArrayPublisher publisher = (IntegerArrayPublisher) publisherMap.get(key);
-        IntegerArrayLogEntry logger = (IntegerArrayLogEntry) loggerMap.get(key);
-
-        if (publisher == null || logger == null) {
-            publisher =
-                    NetworkTableInstance.getDefault().getIntegerArrayTopic(key).publish();
-            logger = new IntegerArrayLogEntry(log, key);
-
-            publisherMap.put(key, publisher);
-            loggerMap.put(key, logger);
-        }
-
-        publisher.set(value);
-        logger.append(value);
+        updatesMap.put(key, new LogValue(value));
     }
 
     public void log(String key, String value) {
-        StringPublisher publisher = (StringPublisher) publisherMap.get(key);
-        StringLogEntry logger = (StringLogEntry) loggerMap.get(key);
-
-        if (publisher == null || logger == null) {
-            publisher = NetworkTableInstance.getDefault().getStringTopic(key).publish();
-            logger = new StringLogEntry(log, key);
-
-            publisherMap.put(key, publisher);
-            loggerMap.put(key, logger);
-        }
-
-        publisher.set(value);
-        logger.append(value);
+        updatesMap.put(key, new LogValue(value));
     }
 
     public void log(String key, String[] value) {
-        StringArrayPublisher publisher = (StringArrayPublisher) publisherMap.get(key);
-        StringArrayLogEntry logger = (StringArrayLogEntry) loggerMap.get(key);
-
-        if (publisher == null || logger == null) {
-            publisher =
-                    NetworkTableInstance.getDefault().getStringArrayTopic(key).publish();
-            logger = new StringArrayLogEntry(log, key);
-
-            publisherMap.put(key, publisher);
-            loggerMap.put(key, logger);
-        }
-
-        publisher.set(value);
-        logger.append(value);
+        updatesMap.put(key, new LogValue(value));
     }
 
     public void log(String key, ChassisSpeeds value) {
@@ -253,4 +173,6 @@ public class Logger {
 
         return NetworkTableInstance.getDefault().getStringArrayTopic(key).subscribe(value);
     }
+
+    public record LogTable (Map<String, LogValue> updatesMap, long timestamp) {}
 }
