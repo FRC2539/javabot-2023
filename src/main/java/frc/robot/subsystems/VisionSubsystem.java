@@ -76,24 +76,6 @@ public class VisionSubsystem extends SubsystemBase {
         setLimelightMode(limelightMode);
     }
 
-    public void setLimelightMode(LimelightMode limelightMode) {
-        this.limelightMode = limelightMode;
-
-        pipelinePublisher.accept(limelightMode.pipelineNumber);
-    }
-
-    public LimelightMode getLimelightMode() {
-        return this.limelightMode;
-    }
-
-    private boolean limelightHasTarget() {
-        return limelightHasTargetSubscriber.get() == 1;
-    }
-
-    private boolean limelightHasApriltag() {
-        return limelightApriltagIDSubscriber.get() != -1;
-    }
-
     @Override
     public void periodic() {
         LLApriltagEstimate = calculateLLApriltagEstimate();
@@ -113,6 +95,24 @@ public class VisionSubsystem extends SubsystemBase {
             addVisionPoseEstimate(photonVisionEstimate.get());
             publishPoseEstimate(photonVisionPosePublisher, photonVisionEstimate.get());
         }
+    }
+
+    public void setLimelightMode(LimelightMode limelightMode) {
+        this.limelightMode = limelightMode;
+
+        pipelinePublisher.accept(limelightMode.pipelineNumber);
+    }
+
+    public LimelightMode getLimelightMode() {
+        return this.limelightMode;
+    }
+
+    private boolean limelightHasTarget() {
+        return limelightHasTargetSubscriber.get() == 1;
+    }
+
+    private boolean limelightHasApriltag() {
+        return limelightApriltagIDSubscriber.get() != -1;
     }
 
     private void addVisionPoseEstimate(EstimatedRobotPose estimate) {
