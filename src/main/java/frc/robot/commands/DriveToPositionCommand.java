@@ -6,7 +6,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.lib.logging.LoggableDouble;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.function.Supplier;
 
@@ -27,13 +26,6 @@ public class DriveToPositionCommand extends CommandBase {
     private final ProfiledPIDController xController = new ProfiledPIDController(3, 0, 0, xConstraints);
     private final ProfiledPIDController yController = new ProfiledPIDController(3, 0, 0, yConstraints);
     private final ProfiledPIDController omegaController = new ProfiledPIDController(5, 0, 0, omegaConstraints);
-
-    private LoggableDouble xErrorLogger = new LoggableDouble("/Commands/xError");
-    private LoggableDouble xSetpointLogger = new LoggableDouble("/Commands/xSetpoint");
-    private LoggableDouble yErrorLogger = new LoggableDouble("/Commands/yError");
-    private LoggableDouble ySetpointLogger = new LoggableDouble("/Commands/ySetpoint");
-    private LoggableDouble omegaErrorLogger = new LoggableDouble("/Commands/omegaError");
-    private LoggableDouble omegaSetpointLogger = new LoggableDouble("/Commands/omegaSetpoint");
 
     /**
      * Drives to the given pose on the field automatically.
@@ -77,17 +69,9 @@ public class DriveToPositionCommand extends CommandBase {
         yController.setGoal(targetPose.getY());
         omegaController.setGoal(targetPose.getRotation().getRadians());
 
-        xSetpointLogger.set(xController.getSetpoint().position);
-        ySetpointLogger.set(yController.getSetpoint().position);
-        omegaSetpointLogger.set(omegaController.getSetpoint().position);
-
         var xSpeed = xController.calculate(robotPose.getX());
         var ySpeed = yController.calculate(robotPose.getY());
         var omegaSpeed = omegaController.calculate(robotPose.getRotation().getRadians());
-
-        xErrorLogger.set(robotPose.getX());
-        yErrorLogger.set(robotPose.getY());
-        omegaErrorLogger.set(robotPose.getRotation().getRadians());
 
         if (xController.atGoal()) xSpeed = 0;
         if (yController.atGoal()) ySpeed = 0;
