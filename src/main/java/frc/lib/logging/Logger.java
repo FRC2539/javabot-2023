@@ -1,12 +1,16 @@
 package frc.lib.logging;
 
+import edu.wpi.first.hal.HALUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.wpilibj.DriverStation;
-
+import frc.lib.logging.LogValue.LoggableType;
+import frc.lib.logging.LoggingThread.Writer;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -14,13 +18,15 @@ import java.util.concurrent.BlockingQueue;
 public class Logger {
     private static Logger instance;
 
-    private int queueCapacity = 50 * 5; // ~ 5 seconds 
+    private int queueCapacity = 50 * 5; // ~ 5 seconds
 
     private Map<String, LogValue> updatesMap = new HashMap<>();
 
     private BlockingQueue<LogTable> updatesQueue = new ArrayBlockingQueue<>(queueCapacity);
 
-    private LoggingThread loggingThread = new LoggingThread(updatesQueue);
+    private final List<Writer> writers = Arrays.asList(new DataLogWriter(), new NTWriter());
+
+    private LoggingThread loggingThread = new LoggingThread(updatesQueue, writers);
 
     private StringPublisher messagesPublisher = NetworkTableInstance.getDefault()
             .getTable("Messages")
@@ -45,14 +51,18 @@ public class Logger {
     public void update() {
         try {
             // Send the current updates to the updating thread
-            updatesQueue.add(new LogTable(updatesMap, 0));
+            updatesQueue.add(new LogTable(updatesMap, HALUtil.getFPGATime()));
 
             // Reset the update table
             updatesMap = new HashMap<>();
         } catch (IllegalStateException exception) {
             DriverStation.reportError("Logging queue capacity exceeded, data is no longer being logged.", false);
         }
-            
+    }
+
+    /* Log only methods - Log without sending to NetworkTables */
+    public void logOnly(String key, LogValue value) {
+        updatesMap.put(key, value.withoutNT());
     }
 
     /* Logger Methods - Log to DataLog and NetworkTables, no getting */
@@ -114,65 +124,94 @@ public class Logger {
             var rotation = value.getRotation();
 
             log(key, new double[] {
-                value.getX(),
-                value.getY(),
-                value.getZ(),
-                rotation.getX(),
-                rotation.getY(),
-                rotation.getZ()
+                value.getX(), value.getY(), value.getZ(), rotation.getX(), rotation.getY(), rotation.getZ()
             });
         }
     }
 
     /* Tunables - Log the value once and returns an subscriber */
 
-    public BooleanSubscriber tunable(String key, boolean value) {
+    public LoggedReceiver tunable(String key, boolean value) {
         log(key, value);
 
-        return NetworkTableInstance.getDefault().getBooleanTopic(key).subscribe(value);
+        return receive(key, value);
     }
 
-    public BooleanArraySubscriber tunable(String key, boolean[] value) {
+    public LoggedReceiver tunable(String key, boolean[] value) {
         log(key, value);
 
-        return NetworkTableInstance.getDefault().getBooleanArrayTopic(key).subscribe(value);
+        return receive(key, value);
     }
 
-    public DoubleSubscriber tunable(String key, double value) {
+    public LoggedReceiver tunable(String key, double value) {
         log(key, value);
 
-        return NetworkTableInstance.getDefault().getDoubleTopic(key).subscribe(value);
+        return receive(key, value);
     }
 
-    public DoubleArraySubscriber tunable(String key, double[] value) {
+    public LoggedReceiver tunable(String key, double[] value) {
         log(key, value);
 
-        return NetworkTableInstance.getDefault().getDoubleArrayTopic(key).subscribe(value);
+        return receive(key, value);
     }
 
-    public IntegerSubscriber tunable(String key, long value) {
+    public LoggedReceiver tunable(String key, long value) {
         log(key, value);
 
-        return NetworkTableInstance.getDefault().getIntegerTopic(key).subscribe(value);
+        return receive(key, value);
     }
 
-    public IntegerArraySubscriber tunable(String key, long[] value) {
+    public LoggedReceiver tunable(String key, long[] value) {
         log(key, value);
 
-        return NetworkTableInstance.getDefault().getIntegerArrayTopic(key).subscribe(value);
+        return receive(key, value);
     }
 
-    public StringSubscriber tunable(String key, String value) {
+    public LoggedReceiver tunable(String key, String value) {
         log(key, value);
 
-        return NetworkTableInstance.getDefault().getStringTopic(key).subscribe(value);
+        return receive(key, value);
     }
 
-    public StringArraySubscriber tunable(String key, String[] value) {
+    public LoggedReceiver tunable(String key, String[] value) {
         log(key, value);
 
-        return NetworkTableInstance.getDefault().getStringArrayTopic(key).subscribe(value);
+        return receive(key, value);
     }
 
-    public record LogTable (Map<String, LogValue> updatesMap, long timestamp) {}
+    /* Receivers - Get and log values from NetworkTables */
+
+    public LoggedReceiver receive(String key, boolean value) {
+        return new LoggedReceiver(LoggableType.Boolean, key);
+    }
+
+    public LoggedReceiver receive(String key, boolean[] value) {
+        return new LoggedReceiver(LoggableType.BooleanArray, key);
+    }
+
+    public LoggedReceiver receive(String key, double value) {
+        return new LoggedReceiver(LoggableType.Double, key);
+    }
+
+    public LoggedReceiver receive(String key, double[] value) {
+        return new LoggedReceiver(LoggableType.DoubleArray, key);
+    }
+
+    public LoggedReceiver receive(String key, long value) {
+        return new LoggedReceiver(LoggableType.Integer, key);
+    }
+
+    public LoggedReceiver receive(String key, long[] value) {
+        return new LoggedReceiver(LoggableType.IntegerArray, key);
+    }
+
+    public LoggedReceiver receive(String key, String value) {
+        return new LoggedReceiver(LoggableType.String, key);
+    }
+
+    public LoggedReceiver receive(String key, String[] value) {
+        return new LoggedReceiver(LoggableType.StringArray, key);
+    }
+
+    public record LogTable(Map<String, LogValue> updatesMap, long timestamp) {}
 }

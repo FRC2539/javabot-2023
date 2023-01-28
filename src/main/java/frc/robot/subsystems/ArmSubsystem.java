@@ -9,7 +9,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -18,6 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.lib.math.Conversions;
 import frc.lib.math.TwoJointedArmFeedforward;
@@ -42,7 +42,7 @@ public class ArmSubsystem extends SubsystemBase {
     private double arm1Speed = 0;
     private double arm2Speed = 0;
 
-    DoubleArraySubscriber desiredNetworkTablesArmPosition;
+    LoggedReceiver desiredNetworkTablesArmPosition;
 
     private WPI_TalonFX joint1Motor;
     private WPI_TalonFX joint2Motor;
@@ -287,7 +287,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Translation2d getNetworkTablesArmPosition() {
-        double[] armPosition = desiredNetworkTablesArmPosition.get();
+        double[] armPosition = desiredNetworkTablesArmPosition.getLogValue().getDoubleArray();
         try {
             return new Translation2d(armPosition[0], armPosition[1]);
         } catch (Exception e) {

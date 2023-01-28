@@ -23,12 +23,14 @@ public class Robot extends TimesliceRobot {
 
     @Override
     public void robotInit() {
-        // Begin logging networktables, controller inputs, and more
+        // Disable default NetworkTables logging
+        DataLogManager.logNetworkTables(false);
+
+        // Begin controller inputs
         if (isReal()) {
-            DataLogManager.logNetworkTables(false); // We have a custom implementation for better NT logging
             DriverStation.startDataLog(DataLogManager.getLog());
         }
-        
+
         robotContainer = new RobotContainer(this);
 
         // Prevents the logging of many errors with our controllers
