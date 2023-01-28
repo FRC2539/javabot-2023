@@ -17,7 +17,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.lib.logging.LoggableDoubleArray;
+import frc.lib.logging.LoggedReceiver;
+import frc.lib.logging.Logger;
 import frc.lib.math.Conversions;
 import frc.lib.math.TwoJointedArmFeedforward;
 import frc.robot.Constants.ArmConstants;
@@ -41,7 +42,7 @@ public class ArmSubsystem extends SubsystemBase {
     private double arm1Speed = 0;
     private double arm2Speed = 0;
 
-    private LoggableDoubleArray desiredNetworkTablesArmPosition = new LoggableDoubleArray("/ArmSubsystem/ArmPose");
+    LoggedReceiver desiredNetworkTablesArmPosition;
 
     private WPI_TalonFX joint1Motor;
     private WPI_TalonFX joint2Motor;
@@ -147,7 +148,7 @@ public class ArmSubsystem extends SubsystemBase {
         motor1Controller.reset(arm1Angle);
         motor2Controller.reset(arm2Angle);
 
-        desiredNetworkTablesArmPosition.set(new double[] {1, 0});
+        desiredNetworkTablesArmPosition = Logger.getInstance().tunable("/ArmSubsystem/ArmPose", new double[] {1, 0});
 
         setState(ArmState.NETWORK_TABLES_AIM);
     }
@@ -286,7 +287,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Translation2d getNetworkTablesArmPosition() {
-        double[] armPosition = desiredNetworkTablesArmPosition.get();
+        double[] armPosition = desiredNetworkTablesArmPosition.getLogValue().getDoubleArray();
         try {
             return new Translation2d(armPosition[0], armPosition[1]);
         } catch (Exception e) {

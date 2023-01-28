@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimesliceRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.lib.logging.Logger;
 import frc.lib.swerve.CTREConfigs;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.TimesliceConstants;
@@ -22,21 +23,25 @@ public class Robot extends TimesliceRobot {
 
     @Override
     public void robotInit() {
+        // Disable default NetworkTables logging
+        DataLogManager.logNetworkTables(false);
+
+        // Begin controller inputs
+        if (isReal()) {
+            DriverStation.startDataLog(DataLogManager.getLog());
+        }
+
         robotContainer = new RobotContainer(this);
 
         // Prevents the logging of many errors with our controllers
         DriverStation.silenceJoystickConnectionWarning(true);
-
-        // Begin logging networktables, controller inputs, and more
-        if (isReal()) {
-            DataLogManager.logNetworkTables(false); // We have a custom implementation for better NT logging
-            DriverStation.startDataLog(DataLogManager.getLog());
-        }
     }
 
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
+
+        Logger.getInstance().update();
     }
 
     @Override

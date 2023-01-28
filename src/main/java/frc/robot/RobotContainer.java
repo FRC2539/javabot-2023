@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.controller.Axis;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
-import frc.lib.logging.LoggablePose;
+import frc.lib.logging.Logger;
 import frc.lib.loops.UpdateManager;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
@@ -91,15 +91,13 @@ public class RobotContainer {
         rightDriveController.nameRightBottomMiddle("Characterize Forwards");
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
 
-        LoggablePose targetPoseLogger = new LoggablePose("/SwerveDriveSubsystem/TargetPose");
-
         Supplier<Pose2d> targetPoseSupplier = () -> {
             PlacementLocation targetLocation =
                     FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
 
             var targetPose = targetLocation.robotPlacementPose;
 
-            targetPoseLogger.set(targetPose);
+            Logger.getInstance().log("/SwerveDriveSubsystem/TargetPose", targetPose);
             return targetPose;
         };
 
@@ -129,7 +127,7 @@ public class RobotContainer {
             var targetPose =
                     targetPose3d.toPose2d().plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180)));
 
-            targetPoseLogger.set(targetPose);
+            Logger.getInstance().log("/SwerveDriveSubsystem/TargetPose", targetPose);
             return targetPose;
         };
 

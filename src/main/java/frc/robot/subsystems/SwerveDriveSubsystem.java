@@ -20,10 +20,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.controller.Axis;
 import frc.lib.interpolation.MovingAverageVelocity;
-import frc.lib.logging.LoggableChassisSpeeds;
-import frc.lib.logging.LoggableDouble;
-import frc.lib.logging.LoggableDoubleArray;
-import frc.lib.logging.LoggablePose;
+import frc.lib.logging.Logger;
 import frc.lib.loops.Updatable;
 import frc.lib.math.MathUtils;
 import frc.lib.swerve.SwerveDriveSignal;
@@ -47,16 +44,6 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     private SwerveModule[] modules;
 
     private final Pigeon2 gyro = new Pigeon2(SwerveConstants.PIGEON_PORT);
-
-    LoggablePose poseLogger = new LoggablePose("/SwerveDriveSubsystem/Pose", true);
-    LoggableChassisSpeeds velocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Velocity");
-    LoggableChassisSpeeds desiredVelocityLogger = new LoggableChassisSpeeds("/SwerveDriveSubsystem/Desired Velocity");
-    LoggableDoubleArray wheelAnglesLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Wheel Angles");
-    LoggableDoubleArray driveTemperatureLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Drive Temperatures");
-    LoggableDoubleArray angleTemperatureLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Angle Temperatures");
-    LoggableDoubleArray driveVoltageLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Drive Voltage");
-    LoggableDoubleArray angleVoltageLogger = new LoggableDoubleArray("/SwerveDriveSubsystem/Angle Voltage");
-    LoggableDouble pidOutputLogger = new LoggableDouble("/SwerveDriveSubsystem/PID Output");
 
     boolean isCharacterizing = false;
 
@@ -344,19 +331,21 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     @Override
     public void periodic() {
-        poseLogger.set(pose);
-        velocityLogger.set(velocity);
-        desiredVelocityLogger.set((ChassisSpeeds) driveSignal);
+        var logger = Logger.getInstance();
 
-        wheelAnglesLogger.set(new double[] {
+        logger.log("/SwerveDriveSubsystem/Pose", pose);
+        logger.log("/SwerveDriveSubsystem/Velocity", velocity);
+        logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);
+
+        logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
             modules[0].getPosition().angle.getDegrees(),
             modules[1].getPosition().angle.getDegrees(),
             modules[2].getPosition().angle.getDegrees(),
             modules[3].getPosition().angle.getDegrees()
         });
 
-        driveTemperatureLogger.set(getDriveTemperatures());
-        angleTemperatureLogger.set(getAngleTemperatures());
+        logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
+        logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());
     }
 
     public SwerveModuleState[] getModuleStates() {
