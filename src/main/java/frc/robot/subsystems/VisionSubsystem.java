@@ -95,11 +95,11 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     private boolean limelightHasTarget() {
-        return limelightHasTargetReceiver.getLogValue().getInteger() == 1;
+        return limelightHasTargetReceiver.getInteger() == 1;
     }
 
     private boolean limelightHasApriltag() {
-        return limelightApriltagIDReceiver.getLogValue().getInteger() != -1;
+        return limelightApriltagIDReceiver.getInteger() != -1;
     }
 
     private void addVisionPoseEstimate(EstimatedRobotPose estimate) {
@@ -166,9 +166,9 @@ public class VisionSubsystem extends SubsystemBase {
         if (getLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
 
         // gets the botpose array from the limelight and a timestamp
-        double[] botpose = botposeReceiver.getLogValue().getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw}
+        double[] botpose = botposeReceiver.getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw}
         double timestamp = Timer.getFPGATimestamp()
-                - limelightLatencyReceiver.getLogValue().getDouble() / 1000.0;
+                - limelightLatencyReceiver.getDouble() / 1000.0;
 
         // if botpose exists and the limelight has an april tag, it adds the pose to our kalman filter
         if (limelightHasApriltag() && botpose.length == 6) {

@@ -66,7 +66,7 @@ public class LoggedReceiver {
         }
     }
 
-    public LogValue getLogValue() {
+    private LogValue getLogValue() {
         LogValue value = new LogValue(0.0); // Default value will never occur
 
         switch (type) {
@@ -109,4 +109,48 @@ public class LoggedReceiver {
 
         return value;
     }
+
+    public byte[] getRaw() {
+      return getLogValue().getRaw();
+    }
+
+    public boolean getBoolean() {
+      return getLogValue().getBoolean();
+    }
+
+    public long getInteger() {
+      return getLogValue().getInteger();
+    }
+
+    public float getFloat() {
+        return getLogValue().getFloat();
+    }
+
+    public double getDouble() {
+        return getLogValue().getDouble();
+    }
+
+    public String getString() {
+        return getLogValue().getString();
+    }
+
+    public boolean[] getBooleanArray() {
+        return getLogValue().getBooleanArray();
+      }
+  
+      public long[] getIntegerArray() {
+        return getLogValue().getIntegerArray();
+      }
+  
+      public float[] getFloatArray() {
+          return getLogValue().getFloatArray();
+      }
+  
+      public double[] getDoubleArray() {
+          return getLogValue().getDoubleArray();
+      }
+  
+      public String[] getStringArray() {
+          return getLogValue().getStringArray();
+      }
 }

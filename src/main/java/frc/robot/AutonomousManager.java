@@ -9,10 +9,9 @@ import com.pathplanner.lib.auto.PIDConstants;
 import com.pathplanner.lib.auto.SwerveAutoBuilder;
 import com.pathplanner.lib.server.PathPlannerServer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.lib.logging.LoggedReceiver;
+import frc.lib.logging.Logger;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.HashMap;
@@ -20,8 +19,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class AutonomousManager {
-    private NetworkTable autonomousTable;
-    private NetworkTableEntry selectedAuto;
+    private LoggedReceiver selectedAuto;
 
     private SwerveAutoBuilder autoBuilder;
 
@@ -82,7 +80,7 @@ public class AutonomousManager {
     }
 
     public Command getAutonomousCommand() {
-        String nameOfSelectedAuto = selectedAuto.getString(defaultAuto.name());
+        String nameOfSelectedAuto = selectedAuto.getString();
 
         Command autonomousCommand;
 
@@ -98,15 +96,10 @@ public class AutonomousManager {
     }
 
     private void initializeNetworkTablesValues() {
-        autonomousTable = NetworkTableInstance.getDefault().getTable("Autonomous");
-
         // Insert all of the auto options into the network tables
-        autonomousTable.getEntry("autos").setStringArray(getAutonomousOptionNames());
+        Logger.log("/Autonomous/autos", getAutonomousOptionNames());
 
-        selectedAuto = autonomousTable.getEntry("selectedAuto");
-
-        // Choose the first auto as the default
-        selectedAuto.setString(defaultAuto.name());
+        selectedAuto = Logger.tunable("/Autonomous/selectedAuto", defaultAuto.name());
     }
 
     public static String[] getAutonomousOptionNames() {

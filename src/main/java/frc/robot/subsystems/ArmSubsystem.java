@@ -287,7 +287,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Translation2d getNetworkTablesArmPosition() {
-        double[] armPosition = desiredNetworkTablesArmPosition.getLogValue().getDoubleArray();
+        double[] armPosition = desiredNetworkTablesArmPosition.getDoubleArray();
         try {
             return new Translation2d(armPosition[0], armPosition[1]);
         } catch (Exception e) {

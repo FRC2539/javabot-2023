@@ -331,7 +331,6 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     @Override
     public void periodic() {
-
         Logger.log("/SwerveDriveSubsystem/Pose", pose);
         Logger.log("/SwerveDriveSubsystem/Velocity", velocity);
         Logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);
