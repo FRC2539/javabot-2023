@@ -10,11 +10,6 @@ import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.function.Supplier;
 
 public class DriveToPositionCommand extends CommandBase {
-    // Next algorithm iteration:
-    // Calculate twist2d to final pose
-    // Maintain linear velocity but direct the velocity along the twist
-    // Make sure it comes to a stop at the end
-
     private static final TrapezoidProfile.Constraints xConstraints = new TrapezoidProfile.Constraints(6, 4);
     private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(6, 4);
     private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(8, 8);

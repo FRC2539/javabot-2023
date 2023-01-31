@@ -257,8 +257,10 @@ public final class Constants {
         public static final double retroreflectiveHeight = Units.inchesToMeters(30);
 
         public static final Transform3d limelightCameraToRobot = new Transform3d(
-                new Translation3d(Units.inchesToMeters(-5), Units.inchesToMeters(0), Units.inchesToMeters(-4)),
-                new Rotation3d(0, Units.degreesToRadians(60), 0));
+                new Translation3d(Units.inchesToMeters(0), Units.inchesToMeters(6), Units.inchesToMeters(-4)),
+                new Rotation3d(0, 0, 0));
+
+        public static final Transform3d limelightRobotToCamera = limelightCameraToRobot.inverse();
     }
 
     public static final class SwerveConstants extends Mk4SwerveConstants {}

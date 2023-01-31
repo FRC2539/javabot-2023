@@ -5,6 +5,8 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
@@ -30,11 +32,12 @@ public class VisionSubsystem extends SubsystemBase {
     private LimelightMode limelightMode = LimelightMode.APRILTAG;
 
     private LoggedReceiver limelightHasTargetReceiver = Logger.receive("/limelight/tv", 0);
-    private LoggedReceiver limelightTXReceiver = Logger.receive("tx", 0);
-    private LoggedReceiver limelightTYReceiver = Logger.receive("ty", 0);
-    private LoggedReceiver limelightApriltagIDReceiver = Logger.receive("tid", -1);
-    private LoggedReceiver limelightLatencyReceiver = Logger.receive("tl", 0);
-    private LoggedReceiver botposeReceiver = Logger.receive("botpose", new double[] {});
+    private LoggedReceiver limelightTXReceiver = Logger.receive("/limelight/tx", 0);
+    private LoggedReceiver limelightTYReceiver = Logger.receive("/limelight/ty", 0);
+    private LoggedReceiver limelightApriltagIDReceiver = Logger.receive("/limelight/tid", -1);
+    private LoggedReceiver limelightLatencyReceiver = Logger.receive("/limelight/tl", 0);
+    private LoggedReceiver botposeRedReceiver = Logger.receive("/limelight/botpose_wpired", new double[] {});
+    private LoggedReceiver botposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
 
     private Optional<EstimatedRobotPose> LLApriltagEstimate = Optional.empty();
     private DoubleArrayPublisher LLApriltagPosePublisher = NetworkTableInstance.getDefault()
@@ -71,23 +74,23 @@ public class VisionSubsystem extends SubsystemBase {
             publishPoseEstimate(LLApriltagPosePublisher, LLApriltagEstimate.get());
         }
 
-        LLRetroreflectiveEstimate = calculateLLRetroreflectiveEstimate();
-        if (LLRetroreflectiveEstimate.isPresent()) {
-            addVisionPoseEstimate(LLRetroreflectiveEstimate.get());
-            publishPoseEstimate(LLRetroreflectivePosePublisher, LLApriltagEstimate.get());
-        }
+        // LLRetroreflectiveEstimate = calculateLLRetroreflectiveEstimate();
+        // if (LLRetroreflectiveEstimate.isPresent()) {
+        //     addVisionPoseEstimate(LLRetroreflectiveEstimate.get());
+        //     publishPoseEstimate(LLRetroreflectivePosePublisher, LLApriltagEstimate.get());
+        // }
 
-        photonVisionEstimate = calculatePhotonVisionEstimate();
-        if (photonVisionEstimate.isPresent()) {
-            addVisionPoseEstimate(photonVisionEstimate.get());
-            publishPoseEstimate(photonVisionPosePublisher, photonVisionEstimate.get());
-        }
+        // photonVisionEstimate = calculatePhotonVisionEstimate();
+        // if (photonVisionEstimate.isPresent()) {
+        //     addVisionPoseEstimate(photonVisionEstimate.get());
+        //     publishPoseEstimate(photonVisionPosePublisher, photonVisionEstimate.get());
+        // }
     }
 
     public void setLimelightMode(LimelightMode limelightMode) {
         this.limelightMode = limelightMode;
 
-        Logger.log("/limelight/pipeline", limelightMode.pipelineNumber);
+        Logger.log("/limelight/pipeline", (double) limelightMode.pipelineNumber);
     }
 
     public LimelightMode getLimelightMode() {
@@ -166,39 +169,32 @@ public class VisionSubsystem extends SubsystemBase {
         if (getLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
 
         // gets the botpose array from the limelight and a timestamp
-        double[] botpose = botposeReceiver.getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw}
-        double timestamp = Timer.getFPGATimestamp()
-                - limelightLatencyReceiver.getDouble() / 1000.0;
+        double[] botposeArray = DriverStation.getAlliance() == Alliance.Red
+                ? botposeRedReceiver.getDoubleArray()
+                : botposeBlueReceiver.getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw}
+        double timestamp = Timer.getFPGATimestamp() - limelightLatencyReceiver.getDouble() / 1000.0;
 
         // if botpose exists and the limelight has an april tag, it adds the pose to our kalman filter
-        if (limelightHasApriltag() && botpose.length == 6) {
+        if (limelightHasApriltag() && botposeArray.length == 6) {
             Pose3d botPose = new Pose3d(
-                    botpose[0],
-                    botpose[1],
-                    botpose[2],
-                    new Rotation3d(Math.toRadians(botpose[3]), Math.toRadians(botpose[4]), Math.toRadians(botpose[5])));
-            Pose3d convertedBotpose = botPose.relativeTo(
-                    new Pose3d(-FieldConstants.fieldLength / 2, -FieldConstants.fieldWidth / 2, 0, new Rotation3d()));
-            return Optional.of(new EstimatedRobotPose(convertedBotpose, timestamp));
+                            botposeArray[0],
+                            botposeArray[1],
+                            botposeArray[2],
+                            new Rotation3d(
+                                    Math.toRadians(botposeArray[3]),
+                                    Math.toRadians(botposeArray[4]),
+                                    Math.toRadians(botposeArray[5])))
+                    .transformBy(VisionConstants.limelightCameraToRobot);
+            return Optional.of(new EstimatedRobotPose(botPose, timestamp));
         } else {
             return Optional.empty();
         }
     }
 
-    // public static Pose3d allianceFlip(Pose3d pose) {
-    //     if (DriverStation.getAlliance() == Alliance.Red) {
-    //       return new Pose2d(
-    //           fieldLength - pose.getX(),
-    //           pose.getY(),
-    //           new Rotation2d(-pose.getRotation().getCos(), pose.getRotation().getSin()));
-    //     } else {
-    //       return pose;
-    //     }
-    //   }
-
     public enum LimelightMode {
         APRILTAG(0),
-        RETROREFLECTIVE(1);
+        RETROREFLECTIVE(1),
+        CONE(2);
 
         public int pipelineNumber;
 

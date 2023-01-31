@@ -111,15 +111,15 @@ public class LoggedReceiver {
     }
 
     public byte[] getRaw() {
-      return getLogValue().getRaw();
+        return getLogValue().getRaw();
     }
 
     public boolean getBoolean() {
-      return getLogValue().getBoolean();
+        return getLogValue().getBoolean();
     }
 
     public long getInteger() {
-      return getLogValue().getInteger();
+        return getLogValue().getInteger();
     }
 
     public float getFloat() {
@@ -136,21 +136,21 @@ public class LoggedReceiver {
 
     public boolean[] getBooleanArray() {
         return getLogValue().getBooleanArray();
-      }
-  
-      public long[] getIntegerArray() {
+    }
+
+    public long[] getIntegerArray() {
         return getLogValue().getIntegerArray();
-      }
-  
-      public float[] getFloatArray() {
-          return getLogValue().getFloatArray();
-      }
-  
-      public double[] getDoubleArray() {
-          return getLogValue().getDoubleArray();
-      }
-  
-      public String[] getStringArray() {
-          return getLogValue().getStringArray();
-      }
+    }
+
+    public float[] getFloatArray() {
+        return getLogValue().getFloatArray();
+    }
+
+    public double[] getDoubleArray() {
+        return getLogValue().getDoubleArray();
+    }
+
+    public String[] getStringArray() {
+        return getLogValue().getStringArray();
+    }
 }
