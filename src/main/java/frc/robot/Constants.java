@@ -225,8 +225,8 @@ public final class Constants {
         public static final double arm1MomentOfInertia = 2;
         public static final double arm2MomentOfInertia = 2;
 
-        public static final double arm1GearRatio = 1;
-        public static final double arm2GearRatio = 1;
+        public static final double arm1GearRatio = 60;
+        public static final double arm2GearRatio = 60;
 
         public static final double stallTorque = 4.69;
         public static final double stallCurrent = 257;
