@@ -3,8 +3,6 @@ package frc.robot.subsystems;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
@@ -40,22 +38,18 @@ public class VisionSubsystem extends SubsystemBase {
     private LoggedReceiver botposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
 
     private Optional<EstimatedRobotPose> LLApriltagEstimate = Optional.empty();
-    private DoubleArrayPublisher LLApriltagPosePublisher = NetworkTableInstance.getDefault()
-            .getTable("VisionSubsystem")
-            .getDoubleArrayTopic("LLApriltagPose")
-            .publish();
 
     private Optional<EstimatedRobotPose> LLRetroreflectiveEstimate = Optional.empty();
-    private DoubleArrayPublisher LLRetroreflectivePosePublisher = NetworkTableInstance.getDefault()
-            .getTable("VisionSubsystem")
-            .getDoubleArrayTopic("LLRetroreflectivePose")
-            .publish();
+    // private DoubleArrayPublisher LLRetroreflectivePosePublisher = NetworkTableInstance.getDefault()
+    //         .getTable("VisionSubsystem")
+    //         .getDoubleArrayTopic("LLRetroreflectivePose")
+    //         .publish();
 
     private Optional<EstimatedRobotPose> photonVisionEstimate = Optional.empty();
-    private DoubleArrayPublisher photonVisionPosePublisher = NetworkTableInstance.getDefault()
-            .getTable("VisionSubsystem")
-            .getDoubleArrayTopic("photonVisionPose")
-            .publish();
+    // private DoubleArrayPublisher photonVisionPosePublisher = NetworkTableInstance.getDefault()
+    //         .getTable("VisionSubsystem")
+    //         .getDoubleArrayTopic("photonVisionPose")
+    //         .publish();
 
     private BiConsumer<Pose2d, Double> addVisionMeasurement;
     private Supplier<Pose2d> robotPoseSupplier;
@@ -71,20 +65,20 @@ public class VisionSubsystem extends SubsystemBase {
         LLApriltagEstimate = calculateLLApriltagEstimate();
         if (LLApriltagEstimate.isPresent()) {
             addVisionPoseEstimate(LLApriltagEstimate.get());
-            publishPoseEstimate(LLApriltagPosePublisher, LLApriltagEstimate.get());
+            Logger.log("/VisionSubsystem/LLApriltagPose", LLApriltagEstimate.get().estimatedPose.toPose2d());
         }
 
-        // LLRetroreflectiveEstimate = calculateLLRetroreflectiveEstimate();
-        // if (LLRetroreflectiveEstimate.isPresent()) {
-        //     addVisionPoseEstimate(LLRetroreflectiveEstimate.get());
-        //     publishPoseEstimate(LLRetroreflectivePosePublisher, LLApriltagEstimate.get());
-        // }
+        LLRetroreflectiveEstimate = calculateLLRetroreflectiveEstimate();
+        if (LLRetroreflectiveEstimate.isPresent()) {
+            addVisionPoseEstimate(LLRetroreflectiveEstimate.get());
+            Logger.log("/VisionSubsystem/LLRetroreflectivePose", LLRetroreflectiveEstimate.get().estimatedPose.toPose2d());
+        }
 
-        // photonVisionEstimate = calculatePhotonVisionEstimate();
-        // if (photonVisionEstimate.isPresent()) {
-        //     addVisionPoseEstimate(photonVisionEstimate.get());
-        //     publishPoseEstimate(photonVisionPosePublisher, photonVisionEstimate.get());
-        // }
+        photonVisionEstimate = calculatePhotonVisionEstimate();
+        if (photonVisionEstimate.isPresent()) {
+            addVisionPoseEstimate(photonVisionEstimate.get());
+            Logger.log("/VisionSubsystem/photonVisionPose", photonVisionEstimate.get().estimatedPose.toPose2d());
+        }
     }
 
     public void setLimelightMode(LimelightMode limelightMode) {
@@ -107,14 +101,6 @@ public class VisionSubsystem extends SubsystemBase {
 
     private void addVisionPoseEstimate(EstimatedRobotPose estimate) {
         addVisionMeasurement.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
-    }
-
-    private void publishPoseEstimate(DoubleArrayPublisher publisher, EstimatedRobotPose estimate) {
-        publisher.accept(new double[] {
-            estimate.estimatedPose.getX(),
-            estimate.estimatedPose.getX(),
-            estimate.estimatedPose.getRotation().getZ()
-        });
     }
 
     public boolean hasPhotonVisionEstimate() {

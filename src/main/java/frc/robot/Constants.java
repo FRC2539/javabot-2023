@@ -47,7 +47,7 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(651.25);
         public static final double fieldWidth = Units.inchesToMeters(315.5);
 
-        public static final double robotLengthWithBumpers = Units.inchesToMeters(30 + 7);
+        public static final double robotLengthWithBumpers = Units.inchesToMeters(30 + 8);
 
         /* X Placement constants from 6328 */
         public static final double outerX = Units.inchesToMeters(54.25);
@@ -257,7 +257,7 @@ public final class Constants {
         public static final double retroreflectiveHeight = Units.inchesToMeters(30);
 
         public static final Transform3d limelightCameraToRobot = new Transform3d(
-                new Translation3d(Units.inchesToMeters(0), Units.inchesToMeters(6), Units.inchesToMeters(-4)),
+                new Translation3d(Units.inchesToMeters(3), Units.inchesToMeters(6), Units.inchesToMeters(-4)),
                 new Rotation3d(0, 0, 0));
 
         public static final Transform3d limelightRobotToCamera = limelightCameraToRobot.inverse();

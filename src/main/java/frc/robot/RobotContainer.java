@@ -19,6 +19,7 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.Constants.TimesliceConstants;
 import frc.robot.commands.AimAtPoseCommand;
+import frc.robot.commands.AssistedDriveToPositionCommand;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
@@ -138,8 +139,13 @@ public class RobotContainer {
                 .getRightThumb()
                 .whileTrue(new AimAtPoseCommand(
                         swerveDriveSubsystem, targetAimPoseSupplier, getDriveForwardAxis(), getDriveStrafeAxis()));
+        rightDriveController
+                .getBottomThumb()
+                .whileTrue(new AssistedDriveToPositionCommand(
+                                swerveDriveSubsystem, targetAimPoseSupplier, getDriveForwardAxis()));
         rightDriveController.nameLeftThumb("Drive to Pose");
         rightDriveController.nameRightThumb("Aim at Pose");
+        rightDriveController.nameBottomThumb("Assisted Drive");
 
         /* Set operator controller bindings */
         operatorController.getA().onTrue(runOnce(armSubsystem::setHybrid, armSubsystem));
