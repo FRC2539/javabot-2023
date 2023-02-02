@@ -49,7 +49,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     boolean isCharacterizing = false;
 
     public SwerveDriveSubsystem() {
-        if (SwerveConstants.isPigeon) gyro = new PigeonGyro(SwerveConstants.PIGEON_PORT);
+        if (SwerveConstants.hasPigeon) gyro = new PigeonGyro(SwerveConstants.PIGEON_PORT);
         else gyro = new NavXGyro();
 
         modules = new SwerveModule[] {

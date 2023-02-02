@@ -280,7 +280,7 @@ public final class Constants {
     public static class DevelopmentBotConstants {
         // See https://github.com/Team364/BaseFalconSwerve for getting these values.
 
-        public static final boolean isPigeon = false;
+        public static final boolean hasPigeon = false;
         public static final int PIGEON_PORT = 60;
 
         public static final double trackWidth = 0.5969;
