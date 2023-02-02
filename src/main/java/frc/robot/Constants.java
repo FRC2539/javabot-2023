@@ -241,6 +241,18 @@ public final class Constants {
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-160);
     }
 
+    public static final class GripperConstants {
+        public static final double length = Units.inchesToMeters(30);
+        public static final Rotation2d startingAngle = Rotation2d.fromDegrees(0);
+
+        public static final double gearRatio = 60;
+
+        public static final double ks = 0;
+        public static final double kg = 0;
+        public static final double kv = 0;
+        public static final double ka = 0;
+    }
+
     public static final class VisionConstants {
         public static final double tapeWidth = Units.inchesToMeters(2.0);
 
