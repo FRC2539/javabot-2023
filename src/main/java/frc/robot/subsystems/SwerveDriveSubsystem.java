@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.sensors.Pigeon2;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -15,10 +14,12 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.controller.Axis;
+import frc.lib.gyro.GenericGyro;
+import frc.lib.gyro.NavXGyro;
+import frc.lib.gyro.PigeonGyro;
 import frc.lib.interpolation.MovingAverageVelocity;
 import frc.lib.logging.Logger;
 import frc.lib.loops.Updatable;
@@ -43,11 +44,14 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     private SwerveModule[] modules;
 
-    private final Pigeon2 gyro = new Pigeon2(SwerveConstants.PIGEON_PORT);
+    private final GenericGyro gyro;
 
     boolean isCharacterizing = false;
 
     public SwerveDriveSubsystem() {
+        if (SwerveConstants.isPigeon) gyro = new PigeonGyro(SwerveConstants.PIGEON_PORT);
+        else gyro = new NavXGyro();
+
         modules = new SwerveModule[] {
             new SwerveModule(0, Constants.SwerveConstants.Mod0.constants),
             new SwerveModule(1, Constants.SwerveConstants.Mod1.constants),
@@ -200,7 +204,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     }
 
     public Rotation2d getGyroRotation() {
-        return Rotation2d.fromDegrees(gyro.getYaw());
+        return gyro.getRotation2d();
     }
 
     public Rotation2d getRotation() {
@@ -208,8 +212,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
     }
 
     public Rotation3d getGyroRotation3d() {
-        // we add 2 degrees to the pitch because the Pidgeon is offset by about -2 degrees pitchwise
-        return new Rotation3d(Units.degreesToRadians(gyro.getRoll()), Units.degreesToRadians(gyro.getPitch() + 2), 0);
+        return gyro.getRotation3d();
     }
 
     public Translation3d getNormalVector3d() {
@@ -223,17 +226,6 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     public Rotation2d getTiltDirection() {
         return new Rotation2d(getNormalVector3d().getX(), getNormalVector3d().getY());
-    }
-
-    public Rotation3d getGyroRotationRates3d() {
-        double[] xyzDegreesPerSecond = new double[3];
-
-        gyro.getRawGyro(xyzDegreesPerSecond);
-
-        return new Rotation3d(
-                Units.degreesToRadians(xyzDegreesPerSecond[0]),
-                Units.degreesToRadians(xyzDegreesPerSecond[1]),
-                Units.degreesToRadians(xyzDegreesPerSecond[2]));
     }
 
     public void setRotation(Rotation2d angle) {
@@ -301,13 +293,13 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 Constants.SwerveConstants.swerveKinematics.toSwerveModuleStates(chassisVelocity);
 
         if (driveSignal.isLocked()) {
-            //get X for stopping
+            // get X for stopping
             moduleStates = new SwerveModuleState[] {
                 new SwerveModuleState(0, Rotation2d.fromDegrees(45)),
                 new SwerveModuleState(0, Rotation2d.fromDegrees(-45)),
                 new SwerveModuleState(0, Rotation2d.fromDegrees(-45)),
                 new SwerveModuleState(0, Rotation2d.fromDegrees(45)),
-            } ;
+            };
 
             // Set the angle of each module only
             for (int i = 0; i < moduleStates.length; i++) {

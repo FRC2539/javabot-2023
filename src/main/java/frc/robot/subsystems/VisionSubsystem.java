@@ -38,18 +38,8 @@ public class VisionSubsystem extends SubsystemBase {
     private LoggedReceiver botposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
 
     private Optional<EstimatedRobotPose> LLApriltagEstimate = Optional.empty();
-
     private Optional<EstimatedRobotPose> LLRetroreflectiveEstimate = Optional.empty();
-    // private DoubleArrayPublisher LLRetroreflectivePosePublisher = NetworkTableInstance.getDefault()
-    //         .getTable("VisionSubsystem")
-    //         .getDoubleArrayTopic("LLRetroreflectivePose")
-    //         .publish();
-
     private Optional<EstimatedRobotPose> photonVisionEstimate = Optional.empty();
-    // private DoubleArrayPublisher photonVisionPosePublisher = NetworkTableInstance.getDefault()
-    //         .getTable("VisionSubsystem")
-    //         .getDoubleArrayTopic("photonVisionPose")
-    //         .publish();
 
     private BiConsumer<Pose2d, Double> addVisionMeasurement;
     private Supplier<Pose2d> robotPoseSupplier;
@@ -65,19 +55,25 @@ public class VisionSubsystem extends SubsystemBase {
         LLApriltagEstimate = calculateLLApriltagEstimate();
         if (LLApriltagEstimate.isPresent()) {
             addVisionPoseEstimate(LLApriltagEstimate.get());
-            Logger.log("/VisionSubsystem/LLApriltagPose", LLApriltagEstimate.get().estimatedPose.toPose2d());
+            Logger.log(
+                    "/VisionSubsystem/LLApriltagPose",
+                    LLApriltagEstimate.get().estimatedPose.toPose2d());
         }
 
         LLRetroreflectiveEstimate = calculateLLRetroreflectiveEstimate();
         if (LLRetroreflectiveEstimate.isPresent()) {
             addVisionPoseEstimate(LLRetroreflectiveEstimate.get());
-            Logger.log("/VisionSubsystem/LLRetroreflectivePose", LLRetroreflectiveEstimate.get().estimatedPose.toPose2d());
+            Logger.log(
+                    "/VisionSubsystem/LLRetroreflectivePose",
+                    LLRetroreflectiveEstimate.get().estimatedPose.toPose2d());
         }
 
         photonVisionEstimate = calculatePhotonVisionEstimate();
         if (photonVisionEstimate.isPresent()) {
             addVisionPoseEstimate(photonVisionEstimate.get());
-            Logger.log("/VisionSubsystem/photonVisionPose", photonVisionEstimate.get().estimatedPose.toPose2d());
+            Logger.log(
+                    "/VisionSubsystem/photonVisionPose",
+                    photonVisionEstimate.get().estimatedPose.toPose2d());
         }
     }
 

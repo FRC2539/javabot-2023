@@ -7,7 +7,6 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.SwerveDriveSubsystem;
-
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -35,7 +34,10 @@ public class AssistedDriveToPositionCommand extends CommandBase {
      * @param swerveDriveSubsystem
      * @param targetPoseSupplier
      */
-    public AssistedDriveToPositionCommand(SwerveDriveSubsystem swerveDriveSubsystem, Supplier<Pose2d> targetPoseSupplier, DoubleSupplier forwardAxis) {
+    public AssistedDriveToPositionCommand(
+            SwerveDriveSubsystem swerveDriveSubsystem,
+            Supplier<Pose2d> targetPoseSupplier,
+            DoubleSupplier forwardAxis) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.targetPoseSupplier = targetPoseSupplier;
         this.forwardAxis = forwardAxis;

@@ -59,16 +59,9 @@ public class ArmSubsystem extends SubsystemBase {
     ArmState armState = ArmState.NETWORK_TABLES_AIM;
 
     TwoJointedArmFeedforward simFeedforward;
-
     TwoJointedArmFeedforward feedforward;
 
-    private Timer myFunTestTimer = new Timer();
-
-    int currentSpot = 0;
-
     public ArmSubsystem() {
-        myFunTestTimer.start();
-
         arm1 = root.append(
                 new MechanismLigament2d("Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
         arm2 = arm1.append(
@@ -158,9 +151,9 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     private Matrix<N2, N1> inverseKinematics(Translation2d endEffector) {
-        try
-        {    
-            if (endEffector.getNorm() >= arm1.getLength() + arm2.getLength()) throw new Exception("Arm Not Long Enough");
+        try {
+            if (endEffector.getNorm() >= arm1.getLength() + arm2.getLength())
+                throw new Exception("Arm Not Long Enough");
             double arm2InverseAngle = -Math.acos((Math.pow(endEffector.getX(), 2)
                             + Math.pow(endEffector.getY(), 2)
                             - Math.pow(arm1.getLength(), 2)
@@ -195,14 +188,16 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     private void setBrakes(boolean brakes) {
-        //TODO: set braking
+        // TODO: set braking
     }
 
     public void updateArmDesiredPosition() {
-        if (armState.getType() instanceof Static)
-            endEffector = ((Static) armState.getType()).getEndEffector();
+        // Store the current desired end effector position (where the end of the arm should be)
+        if (armState.getType() instanceof Static) endEffector = ((Static) armState.getType()).getEndEffector();
         else if (armState.getType() instanceof Dynamic)
             endEffector = ((Dynamic) armState.getType()).getEndEffector(this);
+
+        // Find the joint angles needed to reach the end effector
         Matrix<N2, N1> armAngles = inverseKinematics(endEffector);
         joint1DesiredMotorPosition = armAngles.get(0, 0);
         joint2DesiredMotorPosition = armAngles.get(1, 0);
@@ -243,6 +238,7 @@ public class ArmSubsystem extends SubsystemBase {
             executePIDFeedforward();
         }
 
+        // Update internal model with real motor values
         if (Robot.isReal()) {
             arm1Angle =
                     Conversions.falconToRadians(joint1Motor.getSelectedSensorPosition(), ArmConstants.arm1GearRatio);
@@ -253,16 +249,16 @@ public class ArmSubsystem extends SubsystemBase {
             arm2Speed = Conversions.falconToRadPS(joint2Motor.getSelectedSensorVelocity(), ArmConstants.arm2GearRatio);
         }
 
+        // Update Mechanism2d widget
         arm1.setAngle(Math.toDegrees(arm1Angle));
         arm2.setAngle(Math.toDegrees(arm2Angle));
 
-        executePIDFeedforward();
-
-        /*if (myFunTestTimer.advanceIfElapsed(3.5)) {
-            setState(ArmState.values()[currentSpot]);
-            currentSpot++;
-            currentSpot %= ArmState.values().length;
-        }*/
+        Logger.log("/ArmSubsystem/arm1Angle", arm1Angle);
+        Logger.log("/ArmSubsystem/arm2Angle", arm2Angle);
+        Logger.log("/ArmSubsystem/arm1Speed", arm1Speed);
+        Logger.log("/ArmSubsystem/arm2Speed", arm2Speed);
+        Logger.log("/ArmSubsystem/joint1DesiredPosition", joint1DesiredMotorPosition);
+        Logger.log("/ArmSubsystem/joint2DesiredPosition", joint2DesiredMotorPosition);
     }
 
     private void executePIDFeedforward() {
@@ -347,10 +343,8 @@ public class ArmSubsystem extends SubsystemBase {
             this.type = type;
         }
     }
-    
-    private static class Brake {
 
-    }
+    private static class Brake {}
 
     private static class Static {
         private Translation2d endEffector;

@@ -263,11 +263,12 @@ public final class Constants {
         public static final Transform3d limelightRobotToCamera = limelightCameraToRobot.inverse();
     }
 
-    public static final class SwerveConstants extends Mk4SwerveConstants {}
+    public static final class SwerveConstants extends DevelopmentBotConstants {}
 
-    public static class Mk4SwerveConstants {
+    public static class DevelopmentBotConstants {
         // See https://github.com/Team364/BaseFalconSwerve for getting these values.
 
+        public static final boolean isPigeon = false;
         public static final int PIGEON_PORT = 60;
 
         public static final double trackWidth = 0.5969;
@@ -391,9 +392,10 @@ public final class Constants {
         }
     }
 
-    public static class Mk3SwerveConstants {
+    public static class CompBotConstants {
         // See https://github.com/Team364/BaseFalconSwerve for getting these values.
 
+        public static final boolean isPigeon = true;
         public static final int PIGEON_PORT = 60;
 
         public static final double trackWidth = 0.5969;

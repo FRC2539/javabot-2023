@@ -142,7 +142,7 @@ public class RobotContainer {
         rightDriveController
                 .getBottomThumb()
                 .whileTrue(new AssistedDriveToPositionCommand(
-                                swerveDriveSubsystem, targetAimPoseSupplier, getDriveForwardAxis()));
+                        swerveDriveSubsystem, targetAimPoseSupplier, getDriveForwardAxis()));
         rightDriveController.nameLeftThumb("Drive to Pose");
         rightDriveController.nameRightThumb("Aim at Pose");
         rightDriveController.nameBottomThumb("Assisted Drive");
