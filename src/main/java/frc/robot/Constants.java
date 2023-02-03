@@ -228,6 +228,12 @@ public final class Constants {
         public static final double arm1GearRatio = 60;
         public static final double arm2GearRatio = 60;
 
+        public static final double arm1MinimumAngle = 0;
+        public static final double arm1MaximumAngle = Math.toRadians(90);
+
+        public static final double arm2MinimumAngle = Math.toRadians(-160);
+        public static final double arm2MaximumAngle = Math.toRadians(160);
+
         public static final double stallTorque = 4.69;
         public static final double stallCurrent = 257;
         public static final double freeSpeed = 630;
@@ -239,11 +245,22 @@ public final class Constants {
 
         // Rotation relative to first arm
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-160);
+
+        public static final double angularTolerance = Math.toRadians(1);
     }
 
     public static final class GripperConstants {
-        public static final double length = Units.inchesToMeters(30);
-        public static final Rotation2d startingAngle = Rotation2d.fromDegrees(0);
+        public static final double length = Units.inchesToMeters(14);
+        public static final double centerOfMass = Units.inchesToMeters(7);
+
+        public static final double mass = Units.lbsToKilograms(4);
+
+        public static final double momentOfInertia = 1;
+
+        public static final Rotation2d startingAngle = Rotation2d.fromDegrees(90);
+
+        public static final double minimumAngle = Math.toDegrees(-90);
+        public static final double maximumAngle = Math.toDegrees(90);
 
         public static final double gearRatio = 60;
 
@@ -251,6 +268,8 @@ public final class Constants {
         public static final double kg = 0;
         public static final double kv = 0;
         public static final double ka = 0;
+
+        public static double encoderOffset = 0;
     }
 
     public static final class VisionConstants {
