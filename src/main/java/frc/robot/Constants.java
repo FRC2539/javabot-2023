@@ -71,6 +71,7 @@ public final class Constants {
         public static final double highConeZ = Units.inchesToMeters(46.0);
         public static final double midConeZ = Units.inchesToMeters(34.0);
 
+        
         public static class PlacementLocation {
             public Pose2d robotPlacementPose;
             public boolean isCone;
@@ -241,7 +242,7 @@ public final class Constants {
         public static final double arm2GearRatio = 60;
 
         public static final double arm1MinimumAngle = 0;
-        public static final double arm1MaximumAngle = Math.toRadians(90);
+        public static final double arm1MaximumAngle = Math.toRadians(160);
 
         public static final double arm2MinimumAngle = Math.toRadians(-160);
         public static final double arm2MaximumAngle = Math.toRadians(160);
@@ -250,7 +251,7 @@ public final class Constants {
         public static final double stallCurrent = 257;
         public static final double freeSpeed = 630;
 
-        public static final Transform3d armToRobot = new Transform3d();
+        public static final Transform3d robotToArm = new Transform3d(new Translation3d(0,0,Units.inchesToMeters(7)), new Rotation3d());
 
         // Rotation relative to positive x-axis, counterclockwise-positive
         public static final Rotation2d arm1StartingAngle = Rotation2d.fromDegrees(100);
@@ -327,6 +328,10 @@ public final class Constants {
         public static final double wheelBase = 0.5969;
         public static final double wheelDiameter = 0.10033;
         public static final double wheelCircumference = wheelDiameter * Math.PI;
+
+        //robot size
+        public static final double widthWithBumpers = Units.inchesToMeters(30 + 3.5 * 2);
+        public static final double lengthWithBumpers = Units.inchesToMeters(30 + 3.5 * 2);
 
         public static final double openLoopRamp = 0.0; // 0.25
         public static final double closedLoopRamp = 0.0;
@@ -449,6 +454,9 @@ public final class Constants {
 
         public static final boolean hasPigeon = true;
         public static final int PIGEON_PORT = 29;
+
+        public static final double lengthWithBumpers = Units.inchesToMeters(26 + 3.5 * 2);
+        public static final double widthWithBumpers = Units.inchesToMeters(26 + 3.5 * 2);
 
         public static final double trackWidth = Units.inchesToMeters(19.5);
         public static final double wheelBase = Units.inchesToMeters(19.5);

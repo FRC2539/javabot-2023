@@ -1,13 +1,19 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
@@ -28,9 +34,14 @@ import frc.lib.math.MathUtils;
 import frc.lib.math.TwoJointedArmFeedforward;
 import frc.lib.swerve.ProfiledPIDControllerPlus;
 import frc.robot.Constants.ArmConstants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.GripperConstants;
+import frc.robot.Constants.SwerveConstants;
+import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.Robot;
+
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class ArmSubsystem extends SubsystemBase {
     private Mechanism2d mechanism = new Mechanism2d(4, 4);
@@ -76,7 +87,7 @@ public class ArmSubsystem extends SubsystemBase {
     private Translation2d endEffector = new Translation2d();
     private Rotation2d gripperEndAngle = new Rotation2d();
 
-    private ArmState armState = ArmState.NETWORK_TABLES_AIM;
+    private ArmState armState = ArmState.HYBRID_MANUAL;
     private boolean doCycleMode = false;
     private Timer cycleModeTimer = new Timer();
     private int cycleModeIndex = 0;
@@ -84,6 +95,8 @@ public class ArmSubsystem extends SubsystemBase {
     private TwoJointedArmFeedforward simFeedforward;
     private TwoJointedArmFeedforward feedforward;
     private ArmFeedforward gripperJointFeedforward;
+
+    private Supplier<Pose2d> robotPoseSupplier;
 
     public ArmSubsystem() {
         arm1 = root.append(
@@ -246,15 +259,34 @@ public class ArmSubsystem extends SubsystemBase {
 
     public void setState(ArmState state) {
         armState = state;
+        Logger.log("/ArmSubsystem/armState", armState.toString());
         if (armState.getType() instanceof Brake) {
             stopMotors();
+        } else if (armState.getType() instanceof Coast) {
+            coastMotors();
         } else {
             startMotors();
         }
+        updateArmDesiredPosition();
+    }
+
+    private void setMotorsNeutralMode(NeutralMode mode) {
+        joint1Motor.setNeutralMode(mode);
+        joint2Motor.setNeutralMode(mode);
+        gripperMotor.setNeutralMode(mode);
     }
 
     private void stopMotors() {
         brakingActivated = true;
+        setMotorsNeutralMode(NeutralMode.Brake);
+        joint1Motor.stopMotor();
+        joint2Motor.stopMotor();
+        gripperMotor.stopMotor();
+    }
+
+    private void coastMotors() {
+        brakingActivated = false;
+        setMotorsNeutralMode(NeutralMode.Coast);
         joint1Motor.stopMotor();
         joint2Motor.stopMotor();
         gripperMotor.stopMotor();
@@ -279,6 +311,8 @@ public class ArmSubsystem extends SubsystemBase {
             endEffector = armType.getEndEffector(this);
             gripperEndAngle = armType.getGripperAngle(this);
         }
+
+        Logger.log("/ArmSubsystem/desiredEndEffector", new double[] {endEffector.getX(), endEffector.getY()});
 
         // Find the joint angles needed to reach the end effector
         Matrix<N3, N1> armAndWristAngles = inverseKinematics(endEffector, gripperEndAngle);
@@ -371,7 +405,7 @@ public class ArmSubsystem extends SubsystemBase {
             startMotors();
         }
 
-        if (!brakingActivated) {
+        if (armState != ArmState.COAST && armState != ArmState.BRAKE) {
             executePIDFeedforward();
         }
 
@@ -391,6 +425,7 @@ public class ArmSubsystem extends SubsystemBase {
         Logger.log("/ArmSubsystem/joint2DesiredPosition", joint2DesiredMotorPosition);
         Logger.log("/ArmSubsystem/gripperDesiredPosition", gripperDesiredMotorPosition);
         Logger.log("/ArmSubsystem/isBraking", brakingActivated);
+        Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
         Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
     }
 
@@ -425,12 +460,17 @@ public class ArmSubsystem extends SubsystemBase {
 
     @Override
     public void simulationPeriodic() {
-        if (brakingActivated) return;
+        if (brakingActivated == true) return;
 
         Matrix<N2, N1> angles = VecBuilder.fill(arm1Angle, arm2Angle);
         Matrix<N2, N1> speeds = VecBuilder.fill(arm1Speed, arm2Speed);
         Matrix<N2, N1> voltages = VecBuilder.fill(joint1Motor.get() * 12, joint2Motor.get() * 12);
-        Matrix<N2, N1> acceleration = simFeedforward
+        Matrix<N2, N1> acceleration;
+        if (armState == ArmState.COAST) {
+            acceleration = simFeedforward.calculateArmInertiaMatrix(angles)
+                .inv().times(simFeedforward.calculateGravityMatrix(angles).plus(simFeedforward.calculateCoriolisMatrix(speeds, angles).times(speeds)).times(-1));
+        } else {
+        acceleration = simFeedforward
                 .calculateArmInertiaMatrix(angles)
                 .inv()
                 .times((simFeedforward.calculateMotorTorqueMatrix().times(voltages))
@@ -439,6 +479,7 @@ public class ArmSubsystem extends SubsystemBase {
                                 .times(speeds))
                         .minus(simFeedforward.calculateGravityMatrix(angles))
                         .minus(simFeedforward.calculateBackEmfMatrix().times(speeds)));
+        }
         angles = angles.plus(speeds.times(0.02)).plus(acceleration.times(.5 * 0.02 * 0.02));
         speeds = speeds.plus(acceleration.times(0.02)).times(1);
 
@@ -452,7 +493,35 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Translation2d getDynamicArmPosition() {
-        return new Translation2d(0.5, 0).rotateBy(new Rotation2d(Timer.getFPGATimestamp()));
+        PlacementLocation targetLocation =
+                    FieldConstants.getNearestPlacementLocation(robotPoseSupplier.get());
+
+            ArmState armState = getState();
+            Pose3d targetPose3d;
+
+            switch (armState) {
+                case HYBRID:
+                    targetPose3d = targetLocation.getHybridPose();
+                    break;
+                case MID:
+                    targetPose3d = targetLocation.getMidPose();
+                    break;
+                case HIGH:
+                    targetPose3d = targetLocation.getHighPose();
+                    break;
+                default:
+                    targetPose3d = targetLocation.getHybridPose();
+                    break;
+            }
+
+            Translation3d robotToGoalTranslation = targetPose3d.minus(new Pose3d(robotPoseSupplier.get())).getTranslation();
+
+            Translation2d targetEndEffector = new Translation2d(
+                Math.hypot(robotToGoalTranslation.getX(), robotToGoalTranslation.getY()) - ArmConstants.robotToArm.getY(),
+                robotToGoalTranslation.getZ() - ArmConstants.robotToArm.getZ()
+            );
+
+            return targetEndEffector;
     }
 
     public Translation2d getNetworkTablesArmPosition() {
@@ -473,17 +542,28 @@ public class ArmSubsystem extends SubsystemBase {
         }
     }
 
+    public void setPoseSupplier(Supplier<Pose2d> robotPoseSupplier) {
+        this.robotPoseSupplier = robotPoseSupplier;
+    }
+
+    public Transform3d getArmEndEffectorTransform3d() {
+        Translation2d endEffector = forwardKinematics(arm1.getLength(), Rotation2d.fromRadians(arm1Angle), arm2.getLength(), Rotation2d.fromRadians(arm2Angle), gripper.getLength(), Rotation2d.fromRadians(gripperAngle));
+        double gripperAbsoluteRotation = arm1Angle + arm2Angle + gripperAngle;
+        return new Transform3d(new Translation3d(endEffector.getX(), 0, endEffector.getY()), new Rotation3d(0, gripperAbsoluteRotation, 0));
+    }
+
     public enum ArmState {
         AWAITING_PIECE(new Static(0.20, 0.07, new Rotation2d())),
         AWAITING_DEPLOYMENT(new Static(0.22, 0.27, new Rotation2d())),
-        // HYBRID(0.5, 0.05),
-        // MID(0.7, 0.6),
-        // HIGH(1.0, 1.1),
-        HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())),
-        MID(new Dynamic(a -> a.getDynamicArmPosition(), new Rotation2d())),
-        HIGH(new Dynamic(a -> a.getDynamicArmPosition(), new Rotation2d())),
-        DANCE(new Dynamic(a -> new Translation2d(Math.cos(Timer.getFPGATimestamp()), .2), new Rotation2d())),
+        HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX, FieldConstants.midConeZ, new Rotation2d())),
+        MID_MANUAL(Static.fromBumper(FieldConstants.midX, FieldConstants.midConeZ, new Rotation2d())),
+        HIGH_MANUAL(Static.fromBumper(FieldConstants.highX, FieldConstants.highConeZ, new Rotation2d())),
+        HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
+        MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
+        HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())), // name my variables
+        DANCE(new Dynamic(sussiest -> new Translation2d(Math.cos(Timer.getFPGATimestamp()), .2), new Rotation2d())), //what i want
         NETWORK_TABLES_AIM(new NetworkTablesAim()),
+        COAST(new Coast()),
         BRAKE(new Brake());
 
         private Object type;
@@ -497,11 +577,22 @@ public class ArmSubsystem extends SubsystemBase {
         }
     }
 
-    private static class Brake {}
+    private static class Brake {
+    }
+
+    private static class Coast {};
 
     private static class Static {
         private Translation2d endEffector;
         private Rotation2d angle;
+
+        public static Static fromBumper(double absoluteX, double absoluteY, Rotation2d gripperAngle) {
+            return new Static(
+                FieldConstants.outerX - absoluteX + SwerveConstants.lengthWithBumpers / 2 - ArmConstants.robotToArm.getX(),
+                absoluteY - ArmConstants.robotToArm.getZ(),
+                gripperAngle
+            );
+        }
 
         public Static(double x, double y, Rotation2d gripperAngle) {
             endEffector = new Translation2d(x, y);
