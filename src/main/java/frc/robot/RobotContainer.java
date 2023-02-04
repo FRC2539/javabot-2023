@@ -132,6 +132,8 @@ public class RobotContainer {
             return targetPose;
         };
 
+        armSubsystem.setPoseSupplier(() -> swerveDriveSubsystem.getPose());
+
         rightDriveController
                 .getLeftThumb()
                 .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
