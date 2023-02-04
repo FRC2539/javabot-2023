@@ -55,7 +55,7 @@ public class RobotContainer {
     private void configureBindings() {
         leftDriveController.getXAxis().setScale(Constants.SwerveConstants.maxSpeed);
         leftDriveController.getYAxis().setScale(Constants.SwerveConstants.maxSpeed);
-        rightDriveController.getXAxis().setScale(Constants.SwerveConstants.maxAngularVelocity);
+        rightDriveController.getXAxis().setScale(Constants.SwerveConstants.maxAngularVelocity * 0.75);
         leftDriveController.getXAxis().setInverted(true);
         leftDriveController.getYAxis().setInverted(true);
         rightDriveController.getXAxis().setInverted(true);
@@ -72,6 +72,7 @@ public class RobotContainer {
         leftDriveController
                 .getLeftTopRight()
                 .onTrue(runOnce(() -> swerveDriveSubsystem.setPose(new Pose2d()), swerveDriveSubsystem));
+        leftDriveController.getLeftTopMiddle().onTrue(runOnce(swerveDriveSubsystem::switchToBackupGyro));
         leftDriveController
                 .getBottomThumb()
                 .whileTrue(swerveDriveSubsystem.preciseDriveCommand(

@@ -27,6 +27,7 @@ import frc.lib.math.MathUtils;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
+import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
@@ -44,12 +45,12 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     private SwerveModule[] modules;
 
-    private final GenericGyro gyro;
+    private GenericGyro gyro;
 
     boolean isCharacterizing = false;
 
     public SwerveDriveSubsystem() {
-        if (SwerveConstants.hasPigeon) gyro = new PigeonGyro(SwerveConstants.PIGEON_PORT);
+        if (SwerveConstants.hasPigeon) gyro = new PigeonGyro(SwerveConstants.PIGEON_PORT, GlobalConstants.CANIVORE_NAME);
         else gyro = new NavXGyro();
 
         modules = new SwerveModule[] {
@@ -162,6 +163,10 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                         velocitySupplier)
                 .beforeStarting(() -> isCharacterizing = true)
                 .finallyDo((boolean interrupted) -> isCharacterizing = false);
+    }
+
+    public void switchToBackupGyro() {
+        gyro = new NavXGyro();
     }
 
     public Pose2d getPose() {
@@ -330,11 +335,20 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         Logger.log("/SwerveDriveSubsystem/Velocity", velocity);
         Logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);
 
+        Logger.log("/SwerveDriveSubsystem/Velocity Magnitude", getVelocityMagnitude());
+
         Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
             modules[0].getPosition().angle.getDegrees(),
             modules[1].getPosition().angle.getDegrees(),
             modules[2].getPosition().angle.getDegrees(),
             modules[3].getPosition().angle.getDegrees()
+        });
+
+        Logger.log("/SwerveDriveSubsystem/CANCoder Angles", new double[] {
+            modules[0].getCanCoder().getDegrees(),
+            modules[1].getCanCoder().getDegrees(),
+            modules[2].getCanCoder().getDegrees(),
+            modules[3].getCanCoder().getDegrees()
         });
 
         Logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
