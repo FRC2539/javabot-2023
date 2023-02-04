@@ -270,6 +270,11 @@ public final class Constants {
         public static final double ka = 0;
 
         public static double encoderOffset = 0;
+
+        public static int FORWARD_CHANNEL = 0;
+        public static int REVERSE_CHANNEL = 1;
+
+        public static int GRIPPER_MOTOR = 50;
     }
 
     public static final class VisionConstants {
