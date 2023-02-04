@@ -449,6 +449,9 @@ public final class Constants {
         public static final boolean hasPigeon = true;
         public static final int PIGEON_PORT = 29;
 
+        public static final double lengthWithBumpers = Units.inchesToMeters(26 + 3.5 * 2);
+        public static final double widthWithBumpers = Units.inchesToMeters(26 + 3.5 * 2);
+
         public static final double trackWidth = Units.inchesToMeters(19.5);
         public static final double wheelBase = Units.inchesToMeters(19.5);
         public static final double wheelDiameter = Units.inchesToMeters(4.0);
