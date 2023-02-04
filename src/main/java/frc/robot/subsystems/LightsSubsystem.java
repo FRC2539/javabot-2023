@@ -14,10 +14,11 @@ import com.ctre.phoenix.led.SingleFadeAnimation;
 import com.ctre.phoenix.led.StrobeAnimation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.LightsConstants;
 
 public class LightsSubsystem extends SubsystemBase {
-    private static final CANdle candle = new CANdle(LightsConstants.CANDLE_PORT);
+    private static final CANdle candle = new CANdle(LightsConstants.CANDLE_PORT, GlobalConstants.CANIVORE_NAME);
 
     // Team colors
     public static final Color orange = new Color(255, 25, 0);
@@ -49,7 +50,11 @@ public class LightsSubsystem extends SubsystemBase {
 
     public Command defaultCommand() {
         return runOnce(() -> {
-            LEDSegment.MainStrip.setFlowAnimation(orange, 1);
+            clearSegmentCommand(LEDSegment.BatteryIndicator);
+            clearSegmentCommand(LEDSegment.PressureIndicator);
+            clearSegmentCommand(LEDSegment.CANdleBottomHalf);
+
+            // LEDSegment.MainStrip.setFlowAnimation(orange, 1);
         });
     }
 
@@ -61,8 +66,11 @@ public class LightsSubsystem extends SubsystemBase {
     }
 
     public static enum LEDSegment {
-        CANdle(0, 8, 0),
-        MainStrip(8, 300, 1);
+        BatteryIndicator(0, 2, 0),
+        PressureIndicator(2, 2, 1),
+        CANdleBottomHalf(4, 4, 2);
+        // CANdle(0, 8, 0);
+        // MainStrip(8, 300, 1);
 
         public final int startIndex;
         public final int segmentSize;
