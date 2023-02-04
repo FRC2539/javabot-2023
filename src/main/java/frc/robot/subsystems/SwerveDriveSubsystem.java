@@ -308,7 +308,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
             // Set the angle of each module only
             for (int i = 0; i < moduleStates.length; i++) {
-                modules[i].setDesiredAngleOnly(moduleStates[i].angle);
+                modules[i].setDesiredAngleOnly(moduleStates[i].angle, true);
             }
         } else {
             setModuleStates(moduleStates, isDriveSignalStopped(driveSignal) ? true : driveSignal.isOpenLoop());

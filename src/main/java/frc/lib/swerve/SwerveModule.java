@@ -96,8 +96,12 @@ public class SwerveModule {
         lastAngle = angle;
     }
 
-    public void setDesiredAngleOnly(Rotation2d desiredAngle) {
+    public void setDesiredAngleOnly(Rotation2d desiredAngle, boolean optimized) {
         // Set the module to face forwards
+        if (optimized) {
+            desiredAngle = CTREModuleState.optimize(new SwerveModuleState(1, desiredAngle), getState().angle).angle;
+        }
+        
         angleMotor.set(
                 ControlMode.Position,
                 Conversions.degreesToFalcon(desiredAngle.getDegrees(), Constants.SwerveConstants.angleGearRatio));
