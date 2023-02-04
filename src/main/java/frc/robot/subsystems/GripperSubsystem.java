@@ -16,7 +16,7 @@ import frc.robot.Constants.GripperConstants;
 
 public class GripperSubsystem extends SubsystemBase {
     private DoubleSolenoid gripperSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, GripperConstants.FORWARD_CHANNEL, GripperConstants.REVERSE_CHANNEL);
-    private WPI_TalonSRX gripperMotor = new WPI_TalonSRX(GripperConstants.GRIPPER_MOTOR);
+    private WPI_TalonSRX gripperMotor = new WPI_TalonSRX(GripperConstants.gripperMotor);
 
     private GripperState gripperState = GripperState.OPEN;
 

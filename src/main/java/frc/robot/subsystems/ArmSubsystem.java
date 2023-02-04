@@ -115,9 +115,9 @@ public class ArmSubsystem extends SubsystemBase {
         arm2Angle = ArmConstants.arm2StartingAngle.getRadians();
         gripperAngle = GripperConstants.startingAngle.getRadians();
 
-        joint1Motor = new WPI_TalonFX(14555);
-        joint2Motor = new WPI_TalonFX(14556);
-        gripperMotor = new WPI_TalonSRX(14557);
+        joint1Motor = new WPI_TalonFX(ArmConstants.mastMotorPort);
+        joint2Motor = new WPI_TalonFX(ArmConstants.boomMotorPort);
+        gripperMotor = new WPI_TalonSRX(ArmConstants.wristMotorPort); // wrist motor
         gripperEncoder = new DutyCycleEncoder(0);
 
         joint1Motor.setSelectedSensorPosition(

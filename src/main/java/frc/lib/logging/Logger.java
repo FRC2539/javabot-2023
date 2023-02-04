@@ -16,7 +16,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class Logger {
-    private static int queueCapacity = 50 * 5; // ~ 5 seconds
+    private static int queueCapacity = 50 * 2; // ~ 5 seconds
 
     private static Map<String, LogValue> updatesMap = new HashMap<>();
 

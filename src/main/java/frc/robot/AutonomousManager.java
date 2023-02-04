@@ -23,7 +23,7 @@ public class AutonomousManager {
 
     private SwerveAutoBuilder autoBuilder;
 
-    private final AutonomousOption defaultAuto = AutonomousOption.DEMO;
+    private final AutonomousOption defaultAuto = AutonomousOption.PLACE1ANDCLIMB;
 
     SwerveDriveSubsystem swerveDriveSubsystem;
 
@@ -66,6 +66,8 @@ public class AutonomousManager {
         AUTOCLIMB("autoclimb", new PathConstraints(3, 2)),
         PLACE1ANDCLIMB("place1andclimb", new PathConstraints(5, 4)),
         PLACE2ANDCLIMB("place2andclimb", new PathConstraints(5, 4)),
+        PLACE3ANDCLIMB("place3andclimb", new PathConstraints(6, 5)),
+        FIVEPIECE("fivepiece", new PathConstraints(5, 6)),
         COLLISIONTESTING("collisiontesting", new PathConstraints(4, 3));
 
         private List<PathPlannerTrajectory> path;
