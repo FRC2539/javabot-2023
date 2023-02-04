@@ -68,13 +68,13 @@ public class VisionSubsystem extends SubsystemBase {
                     LLRetroreflectiveEstimate.get().estimatedPose.toPose2d());
         }
 
-        photonVisionEstimate = calculatePhotonVisionEstimate();
-        if (photonVisionEstimate.isPresent()) {
-            addVisionPoseEstimate(photonVisionEstimate.get());
-            Logger.log(
-                    "/VisionSubsystem/photonVisionPose",
-                    photonVisionEstimate.get().estimatedPose.toPose2d());
-        }
+        // photonVisionEstimate = calculatePhotonVisionEstimate();
+        // if (photonVisionEstimate.isPresent()) {
+        //     addVisionPoseEstimate(photonVisionEstimate.get());
+        //     Logger.log(
+        //             "/VisionSubsystem/photonVisionPose",
+        //             photonVisionEstimate.get().estimatedPose.toPose2d());
+        // }
     }
 
     public void setLimelightMode(LimelightMode limelightMode) {

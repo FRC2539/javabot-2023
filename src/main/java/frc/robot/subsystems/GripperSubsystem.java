@@ -66,6 +66,8 @@ public class GripperSubsystem extends SubsystemBase {
                 gripperMotor.set(gripperEjectSpeed.getDouble());
                 break;
         }
+
+        Logger.log("/Gripper/Current", gripperMotor.getSupplyCurrent());
     }
 
     private void setState(GripperState gripperState) {

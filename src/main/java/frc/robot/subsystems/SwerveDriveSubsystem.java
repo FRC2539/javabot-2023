@@ -44,7 +44,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     private SwerveModule[] modules;
 
-    private final GenericGyro gyro;
+    private GenericGyro gyro;
 
     boolean isCharacterizing = false;
 
@@ -162,6 +162,10 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                         velocitySupplier)
                 .beforeStarting(() -> isCharacterizing = true)
                 .finallyDo((boolean interrupted) -> isCharacterizing = false);
+    }
+
+    public void switchToBackupGyro() {
+        gyro = new NavXGyro();
     }
 
     public Pose2d getPose() {
@@ -329,6 +333,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         Logger.log("/SwerveDriveSubsystem/Pose", pose);
         Logger.log("/SwerveDriveSubsystem/Velocity", velocity);
         Logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);
+
+        Logger.log("/SwerveDriveSubsystem/Velocity Magnitude", getVelocityMagnitude());
 
         Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
             modules[0].getPosition().angle.getDegrees(),

@@ -72,6 +72,7 @@ public class RobotContainer {
         leftDriveController
                 .getLeftTopRight()
                 .onTrue(runOnce(() -> swerveDriveSubsystem.setPose(new Pose2d()), swerveDriveSubsystem));
+        leftDriveController.getLeftTopMiddle().onTrue(runOnce(swerveDriveSubsystem::switchToBackupGyro));
         leftDriveController
                 .getBottomThumb()
                 .whileTrue(swerveDriveSubsystem.preciseDriveCommand(
