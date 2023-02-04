@@ -98,7 +98,9 @@ public class ArmSubsystem extends SubsystemBase {
 
     private Supplier<Pose2d> robotPoseSupplier;
 
-    public ArmSubsystem() {
+    public ArmSubsystem(Supplier<Pose2d> robotPoseSupplier) {
+        this.robotPoseSupplier = robotPoseSupplier;
+
         arm1 = root.append(
                 new MechanismLigament2d("Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
         arm2 = arm1.append(
@@ -540,10 +542,6 @@ public class ArmSubsystem extends SubsystemBase {
         } catch (Exception e) {
             return Rotation2d.fromDegrees(0);
         }
-    }
-
-    public void setPoseSupplier(Supplier<Pose2d> robotPoseSupplier) {
-        this.robotPoseSupplier = robotPoseSupplier;
     }
 
     public Transform3d getArmEndEffectorTransform3d() {

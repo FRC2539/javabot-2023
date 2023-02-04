@@ -37,7 +37,7 @@ public class RobotContainer {
     // private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
     private final VisionSubsystem visionSubsystem =
             new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
-    private final ArmSubsystem armSubsystem = new ArmSubsystem();
+    private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose);
 
     private AutonomousManager autonomousManager;
     private UpdateManager updateManager;
@@ -133,8 +133,6 @@ public class RobotContainer {
             return targetPose;
         };
 
-        armSubsystem.setPoseSupplier(() -> swerveDriveSubsystem.getPose());
-
         rightDriveController
                 .getLeftThumb()
                 .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
@@ -145,7 +143,7 @@ public class RobotContainer {
         rightDriveController
                 .getBottomThumb()
                 .whileTrue(new AssistedDriveToPositionCommand(
-                        swerveDriveSubsystem, targetAimPoseSupplier, getDriveForwardAxis()));
+                        swerveDriveSubsystem, targetPoseSupplier, getDriveForwardAxis()));
         rightDriveController.nameLeftThumb("Drive to Pose");
         rightDriveController.nameRightThumb("Aim at Pose");
         rightDriveController.nameBottomThumb("Assisted Drive");
