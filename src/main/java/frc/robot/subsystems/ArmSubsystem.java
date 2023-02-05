@@ -87,7 +87,7 @@ public class ArmSubsystem extends SubsystemBase {
     private Translation2d endEffector = new Translation2d();
     private Rotation2d gripperEndAngle = new Rotation2d();
 
-    private ArmState armState = ArmState.HYBRID_MANUAL;
+    private ArmState armState = ArmState.NETWORK_TABLES_AIM;
     private boolean doCycleMode = false;
     private Timer cycleModeTimer = new Timer();
     private int cycleModeIndex = 0;
@@ -491,7 +491,7 @@ public class ArmSubsystem extends SubsystemBase {
 
         arm1Speed = speeds.get(0, 0);
         arm2Speed = speeds.get(1, 0);
-        gripperSpeed = gripperMotorController.getSetpoint().velocity;
+        gripperSpeed = gripperMotorController.getSetpoint().velocity + gripperMotor.get() / 10;
     }
 
     public Translation2d getDynamicArmPosition() {
