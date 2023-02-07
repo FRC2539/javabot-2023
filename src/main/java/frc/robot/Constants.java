@@ -315,7 +315,7 @@ public final class Constants {
         public static final Transform3d limelightRobotToCamera = limelightCameraToRobot.inverse();
     }
 
-    public static final class SwerveConstants extends DevelopmentBotConstants {}
+    public static final class SwerveConstants extends CompBotConstants {}
 
     public static class DevelopmentBotConstants {
         // See https://github.com/Team364/BaseFalconSwerve for getting these values.
