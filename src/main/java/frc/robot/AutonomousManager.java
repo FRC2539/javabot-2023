@@ -34,8 +34,7 @@ public class AutonomousManager {
         // Determine all of the game piece options for this starting position
         long[] gamePieceOptions = Stream.of(AutonomousOption.values())
                 .filter(option -> option.startPosition.equals(defaultAuto.startPosition))
-                .map(option -> option.gamePieces)
-                .mapToLong(i -> i)
+                .mapToLong(option -> option.gamePieces)
                 .toArray();
 
         Logger.log("/Autonomous/Game Piece Options", gamePieceOptions);
@@ -46,7 +45,7 @@ public class AutonomousManager {
 
     private SwerveAutoBuilder autoBuilder;
 
-    private List<PathPlannerTrajectory> chosenAuto;
+    private List<PathPlannerTrajectory> chosenAuto = defaultAuto.getPath();
 
     SwerveDriveSubsystem swerveDriveSubsystem;
 
@@ -101,8 +100,7 @@ public class AutonomousManager {
             // Determine all of the game piece options for this starting position
             long[] gamePieceOptions = Stream.of(AutonomousOption.values())
                     .filter(option -> option.startPosition.name().equals(newStartPosition))
-                    .map(option -> option.gamePieces)
-                    .mapToLong(i -> i)
+                    .mapToLong(option -> option.gamePieces)
                     .toArray();
 
             Logger.log("/Autonomous/Game Piece Options", gamePieceOptions);

@@ -166,3 +166,5 @@ simgui.json
 # Simulation data logging
 *.wpilog
 .DataLogTool
+
+networktables.json
