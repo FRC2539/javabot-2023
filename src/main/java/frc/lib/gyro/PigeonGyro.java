@@ -26,4 +26,12 @@ public class PigeonGyro implements GenericGyro {
         //         Units.degreesToRadians(pigeon.getRoll()), Units.degreesToRadians(pigeon.getPitch() + 2), 0);
         return new Rotation3d(Units.degreesToRadians(pigeon.getRoll()), Units.degreesToRadians(pigeon.getPitch()), 0);
     }
+
+    public Rotation3d getRotationRates3d() {
+        double[] rawXYZ = new double[3];
+
+        pigeon.getRawGyro(rawXYZ);
+
+        return new Rotation3d(rawXYZ[0], rawXYZ[1], rawXYZ[2]);
+    }
 }

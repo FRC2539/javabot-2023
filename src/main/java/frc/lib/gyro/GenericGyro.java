@@ -7,4 +7,6 @@ public interface GenericGyro {
     Rotation2d getRotation2d();
 
     Rotation3d getRotation3d();
+
+    Rotation3d getRotationRates3d();
 }

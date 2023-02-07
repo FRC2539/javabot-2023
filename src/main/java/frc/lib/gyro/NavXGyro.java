@@ -17,4 +17,8 @@ public class NavXGyro implements GenericGyro {
     public Rotation3d getRotation3d() {
         return new Rotation3d(Units.degreesToRadians(navX.getRoll()), Units.degreesToRadians(navX.getPitch()), 0);
     }
+
+    public Rotation3d getRotationRates3d() {
+        return new Rotation3d(navX.getRawGyroX(), navX.getRawGyroY(), navX.getRawGyroZ());
+    }
 }
