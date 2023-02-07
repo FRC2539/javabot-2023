@@ -19,11 +19,34 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class AutonomousManager {
-    private LoggedReceiver selectedAuto;
+    private static final AutonomousOption defaultAuto = AutonomousOption.PLACE1ANDCLIMB;
+
+    // Add tunables for all autonomous configuration options
+    LoggedReceiver waitDuration = Logger.tunable("/Autonomous/Wait Duration", 0.0);
+    LoggedReceiver startPosition =
+            Logger.tunable("/Autonomous/Start Position", defaultAuto.startPosition); // 0 = Left, 1 = Center, 2 = Right
+    LoggedReceiver gamePieces = Logger.tunable("/Autonomous/Game Pieces", defaultAuto.gamePieces);
+    LoggedReceiver shouldClimb = Logger.tunable("/Autonomous/Should Climb", true);
+
+    static {
+        Logger.log("Autonomous/Start Position Options", new long[] {0, 1, 2});
+
+        // Determine all of the game piece options for this starting position
+        long[] gamePieceOptions = Stream.of(AutonomousOption.values())
+                .filter(option -> option.startPosition == defaultAuto.startPosition)
+                .map(option -> option.gamePieces)
+                .mapToLong(i -> i)
+                .toArray();
+
+        Logger.log("/Autonomous/Game Piece Options", gamePieceOptions);
+    }
+
+    private int previousStartPosition = defaultAuto.startPosition;
+    private int previousGamePieces = defaultAuto.gamePieces;
 
     private SwerveAutoBuilder autoBuilder;
 
-    private final AutonomousOption defaultAuto = AutonomousOption.PLACE1ANDCLIMB;
+    private List<PathPlannerTrajectory> chosenAuto;
 
     SwerveDriveSubsystem swerveDriveSubsystem;
 
@@ -31,12 +54,12 @@ public class AutonomousManager {
         swerveDriveSubsystem = container.getSwerveDriveSubsystem();
         ArmSubsystem armSubsystem = container.getArmSubsystem();
 
-        // Allow the custom driver station to select an auto
-        initializeNetworkTablesValues();
-
         // Create an event map for use in all autos
         HashMap<String, Command> eventMap = new HashMap<>();
         eventMap.put("stop", runOnce(swerveDriveSubsystem::stop, swerveDriveSubsystem));
+        eventMap.put(
+                "shouldClimb",
+                either(none(), run(swerveDriveSubsystem::stop, swerveDriveSubsystem), () -> shouldClimb.getBoolean()));
         eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommand());
         eventMap.put(
                 "placeHigh",
@@ -61,47 +84,72 @@ public class AutonomousManager {
         }
     }
 
-    private enum AutonomousOption {
-        DEMO("demo2", new PathConstraints(2, 3)),
-        AUTOCLIMB("autoclimb", new PathConstraints(3, 2)),
-        PLACE1ANDCLIMB("place1andclimb", new PathConstraints(5, 4)),
-        PLACE2ANDCLIMB("place2andclimb", new PathConstraints(5, 4)),
-        PLACE3ANDCLIMB("place3andclimb", new PathConstraints(6, 5)),
-        FIVEPIECE("fivepiece", new PathConstraints(5, 6)),
-        COLLISIONTESTING("collisiontesting", new PathConstraints(4, 3));
+    public void update() {
+        var newStartPosition = gamePieces.getInteger(); 
+        var newGamePieces = gamePieces.getInteger();
 
-        private List<PathPlannerTrajectory> path;
+        // TODO Flip auto side depending on alliance color
+        // Thinking of using an enum based on bump, charge station, and carpet
 
-        private AutonomousOption(String pathName, PathConstraints constraints) {
-            this.path = PathPlanner.loadPathGroup(pathName, constraints);
-        }
+        // Only update the chosen auto if a different option has been chosen
+        if (previousStartPosition != newStartPosition || previousGamePieces != newGamePieces) {
+            // Match the auto based on the dashboard configuration
+            List<AutonomousOption> options = Stream.of(AutonomousOption.values())
+                    .filter(option -> option.startPosition == newStartPosition && option.gamePieces == newGamePieces)
+                    .toList();
 
-        public Command getCommand(SwerveAutoBuilder autoBuilder) {
-            return autoBuilder.fullAuto(path);
+            if (options.size() == 1) chosenAuto = options.get(0).getPath();
+            else chosenAuto = defaultAuto.getPath();
+
+            // Determine all of the game piece options for this starting position
+            long[] gamePieceOptions = Stream.of(AutonomousOption.values())
+                    .filter(option -> option.startPosition == newStartPosition)
+                    .map(option -> option.gamePieces)
+                    .mapToLong(i -> i)
+                    .toArray();
+
+            Logger.log("/Autonomous/Game Piece Options", gamePieceOptions);
+
+            previousStartPosition = (int) newStartPosition;
+            previousGamePieces = (int) newGamePieces;
         }
     }
 
     public Command getAutonomousCommand() {
-        String nameOfSelectedAuto = selectedAuto.getString();
+        Command chosenPathCommand = autoBuilder.fullAuto(chosenAuto);
 
-        Command autonomousCommand;
+        var chosenWaitDuration = waitDuration.getInteger();
 
-        // Run the default auto if an invalid auto has been chosen
-        try {
-            autonomousCommand = AutonomousOption.valueOf(nameOfSelectedAuto).getCommand(autoBuilder);
-        } catch (Exception e) {
-            autonomousCommand = AutonomousOption.valueOf(defaultAuto.name()).getCommand(autoBuilder);
-        }
+        if (chosenWaitDuration > 0) chosenPathCommand.beforeStarting(waitSeconds(chosenWaitDuration));
 
-        // Return an empty command group if no auto is specified
-        return autonomousCommand;
+        return chosenPathCommand;
     }
 
-    private void initializeNetworkTablesValues() {
-        // Insert all of the auto options into the network tables
-        Logger.log("/Autonomous/autos", getAutonomousOptionNames());
+    private enum AutonomousOption {
+        PLACE1ANDCLIMB(0, 1, "place1andclimb", new PathConstraints(5, 4)),
+        PLACE2ANDCLIMB(0, 2, "place2andclimb", new PathConstraints(5, 4)),
+        PLACE3ANDCLIMB(0, 3, "place3andclimb", new PathConstraints(6, 5)),
+        FIVEPIECE(0, 5, "fivepiece", new PathConstraints(5, 6));
 
-        selectedAuto = Logger.tunable("/Autonomous/selectedAuto", defaultAuto.name());
+        private List<PathPlannerTrajectory> path;
+        private String pathName;
+        private PathConstraints constraints;
+        public int startPosition;
+        public int gamePieces;
+
+        private AutonomousOption(int startPosition, int gamePieces, String pathName, PathConstraints constraints) {
+            this.startPosition = startPosition;
+            this.gamePieces = gamePieces;
+            this.pathName = pathName;
+            this.constraints = constraints;
+        }
+
+        public List<PathPlannerTrajectory> getPath() {
+            // Lazy load the path
+            if (path == null) path = PathPlanner.loadPathGroup(pathName, constraints);
+
+            return path;
+        }
     }
 
     public static String[] getAutonomousOptionNames() {

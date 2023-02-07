@@ -101,7 +101,7 @@ public class SwerveModule {
         if (optimized) {
             desiredAngle = CTREModuleState.optimize(new SwerveModuleState(1, desiredAngle), getState().angle).angle;
         }
-        
+
         angleMotor.set(
                 ControlMode.Position,
                 Conversions.degreesToFalcon(desiredAngle.getDegrees(), Constants.SwerveConstants.angleGearRatio));

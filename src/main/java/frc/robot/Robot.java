@@ -51,6 +51,9 @@ public class Robot extends TimesliceRobot {
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
 
+        Logger.log("/Robot/Battery Voltage", RobotController.getBatteryVoltage());
+        Logger.log("/Robot/Pressure", compressor.getPressure());
+
         Logger.update();
     }
 
@@ -85,17 +88,17 @@ public class Robot extends TimesliceRobot {
 
     @Override
     public void disabledPeriodic() {
+        robotContainer.autonomousManager.update();
+
         // Indicate if the battery is at voltage
         if (RobotController.getBatteryVoltage() > GlobalConstants.batteryVoltageThreshold)
             LEDSegment.BatteryIndicator.setColor(LightsSubsystem.green);
-        else
-            LEDSegment.BatteryIndicator.setColor(LightsSubsystem.red);
+        else LEDSegment.BatteryIndicator.setColor(LightsSubsystem.red);
 
         // Indicate if there is enough pressure in the pneumatic system
         if (compressor.getPressure() > GlobalConstants.pressureThreshold)
             LEDSegment.PressureIndicator.setColor(LightsSubsystem.blue);
-        else
-            LEDSegment.PressureIndicator.setColor(LightsSubsystem.red);
+        else LEDSegment.PressureIndicator.setColor(LightsSubsystem.red);
     }
 
     @Override

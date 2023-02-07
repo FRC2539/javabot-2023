@@ -39,7 +39,7 @@ public class RobotContainer {
             new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
     private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose);
 
-    private AutonomousManager autonomousManager;
+    public AutonomousManager autonomousManager;
     private UpdateManager updateManager;
 
     public RobotContainer(TimesliceRobot robot) {

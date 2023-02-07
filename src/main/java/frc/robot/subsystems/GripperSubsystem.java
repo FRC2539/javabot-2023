@@ -3,10 +3,9 @@ package frc.robot.subsystems;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-
 import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
@@ -15,7 +14,8 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 
 public class GripperSubsystem extends SubsystemBase {
-    private DoubleSolenoid gripperSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, GripperConstants.FORWARD_CHANNEL, GripperConstants.REVERSE_CHANNEL);
+    private DoubleSolenoid gripperSolenoid = new DoubleSolenoid(
+            PneumaticsModuleType.CTREPCM, GripperConstants.FORWARD_CHANNEL, GripperConstants.REVERSE_CHANNEL);
     private WPI_TalonSRX gripperMotor = new WPI_TalonSRX(GripperConstants.gripperMotor);
 
     private GripperState gripperState = GripperState.OPEN;
@@ -29,11 +29,7 @@ public class GripperSubsystem extends SubsystemBase {
         gripperMotor.enableVoltageCompensation(true);
         gripperMotor.setInverted(true);
 
-        SupplyCurrentLimitConfiguration supplyLimit = new SupplyCurrentLimitConfiguration(
-                true,
-                20,
-                30,
-                0.1);
+        SupplyCurrentLimitConfiguration supplyLimit = new SupplyCurrentLimitConfiguration(true, 20, 30, 0.1);
 
         gripperMotor.configSupplyCurrentLimit(supplyLimit);
     }
@@ -75,8 +71,8 @@ public class GripperSubsystem extends SubsystemBase {
     }
 
     private enum GripperState {
-        OPEN,    // Open without spinning motor
-        CLOSED,  // Closed and spin motor until supply limit
-        EJECT    // Reverse motors and then open
+        OPEN, // Open without spinning motor
+        CLOSED, // Closed and spin motor until supply limit
+        EJECT // Reverse motors and then open
     }
 }

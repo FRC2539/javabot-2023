@@ -1,21 +1,19 @@
-//LimelightHelpers v1.0 (Feb 2, 2023)
+// LimelightHelpers v1.0 (Feb 2, 2023)
 
 package frc.lib.vision;
-
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.concurrent.CompletableFuture;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.concurrent.CompletableFuture;
 
 class LimelightTarget_Retro {
 
@@ -59,7 +57,6 @@ class LimelightTarget_Retro {
         targetPose_CameraSpace = new double[6];
         targetPose_RobotSpace = new double[6];
     }
-
 }
 
 class LimelightTarget_Fiducial {
@@ -112,9 +109,7 @@ class LimelightTarget_Fiducial {
     }
 }
 
-class LimelightTarget_Barcode {
-
-}
+class LimelightTarget_Barcode {}
 
 class LimelightTarget_Classifier {
 
@@ -142,8 +137,7 @@ class LimelightTarget_Classifier {
     @JsonProperty("typ")
     double ty_pixels;
 
-    LimelightTarget_Classifier() {
-    }
+    LimelightTarget_Classifier() {}
 }
 
 class LimelightTarget_Detector {
@@ -172,8 +166,7 @@ class LimelightTarget_Detector {
     @JsonProperty("typ")
     double ty_pixels;
 
-    LimelightTarget_Detector() {
-    }
+    LimelightTarget_Detector() {}
 }
 
 class Results {
@@ -231,7 +224,6 @@ class Results {
         targets_Classifier = new LimelightTarget_Classifier[0];
         targets_Detector = new LimelightTarget_Detector[0];
         targets_Barcode = new LimelightTarget_Barcode[0];
-
     }
 }
 
@@ -330,46 +322,45 @@ public class LimelightHelpers {
         return getLimelightNTString(limelightName, "json");
     }
 
-    public static double[] getBotpose(String limelightName){
-        return getLimelightNTDoubleArray(limelightName, "botpose");   
-    }
-    
-    public static double[] getBotpose_wpiRed(String limelightName){
-        return getLimelightNTDoubleArray(limelightName, "botpose_wpired");   
-    }
-    
-    public static double[] getBotpose_wpiBlue(String limelightName){
-        return getLimelightNTDoubleArray(limelightName, "botpose_wpiblue");   
+    public static double[] getBotpose(String limelightName) {
+        return getLimelightNTDoubleArray(limelightName, "botpose");
     }
 
-    public static double[] getBotPose_TargetSpace(String limelightName){
-        return getLimelightNTDoubleArray(limelightName, "botpose_targetSpace");   
-    }
-   
-    public static double[] getCameraPose_TargetSpace(String limelightName){
-        return getLimelightNTDoubleArray(limelightName, "camerapose_targetspace");   
+    public static double[] getBotpose_wpiRed(String limelightName) {
+        return getLimelightNTDoubleArray(limelightName, "botpose_wpired");
     }
 
-    public static double[] getTargetPose_CameraSpace(String limelightName){
-        return getLimelightNTDoubleArray(limelightName, "targetpose_cameraspace");   
+    public static double[] getBotpose_wpiBlue(String limelightName) {
+        return getLimelightNTDoubleArray(limelightName, "botpose_wpiblue");
     }
 
-    public static double[] getTargetPose_RobotSpace(String limelightName){
-        return getLimelightNTDoubleArray(limelightName, "targetpose_robotspace");   
+    public static double[] getBotPose_TargetSpace(String limelightName) {
+        return getLimelightNTDoubleArray(limelightName, "botpose_targetSpace");
     }
 
-    public static double[] getTargetColor(String limelightName){
-        return getLimelightNTDoubleArray(limelightName, "tc");   
+    public static double[] getCameraPose_TargetSpace(String limelightName) {
+        return getLimelightNTDoubleArray(limelightName, "camerapose_targetspace");
     }
 
-    public static double getFiducialID(String limelightName){
-        return getLimelightNTDouble(limelightName, "tid");   
+    public static double[] getTargetPose_CameraSpace(String limelightName) {
+        return getLimelightNTDoubleArray(limelightName, "targetpose_cameraspace");
     }
 
-    public static double getNeuralClassID(String limelightName){
-        return getLimelightNTDouble(limelightName, "tclass");   
+    public static double[] getTargetPose_RobotSpace(String limelightName) {
+        return getLimelightNTDoubleArray(limelightName, "targetpose_robotspace");
     }
 
+    public static double[] getTargetColor(String limelightName) {
+        return getLimelightNTDoubleArray(limelightName, "tc");
+    }
+
+    public static double getFiducialID(String limelightName) {
+        return getLimelightNTDouble(limelightName, "tid");
+    }
+
+    public static double getNeuralClassID(String limelightName) {
+        return getLimelightNTDouble(limelightName, "tclass");
+    }
 
     /////
     /////
@@ -414,8 +405,8 @@ public class LimelightHelpers {
      * Sets the crop window. The crop window in the UI must be completely open for
      * dynamic cropping to work.
      */
-    public static void setCropWindow(String limelightName, double cropXMin, double cropXMax, double cropYMin,
-            double cropYMax) {
+    public static void setCropWindow(
+            String limelightName, double cropXMin, double cropXMax, double cropYMin, double cropYMax) {
         double[] entries = new double[4];
         entries[0] = cropXMin;
         entries[1] = cropXMax;

@@ -18,7 +18,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.lib.swerve.SecondOrderSwerveKinematics;
 import frc.lib.swerve.SwerveModuleConstants;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
@@ -71,7 +70,6 @@ public final class Constants {
         public static final double highConeZ = Units.inchesToMeters(46.0);
         public static final double midConeZ = Units.inchesToMeters(34.0);
 
-        
         public static class PlacementLocation {
             public Pose2d robotPlacementPose;
             public boolean isCone;
@@ -251,7 +249,8 @@ public final class Constants {
         public static final double stallCurrent = 257;
         public static final double freeSpeed = 630;
 
-        public static final Transform3d robotToArm = new Transform3d(new Translation3d(0,0,Units.inchesToMeters(7)), new Rotation3d());
+        public static final Transform3d robotToArm =
+                new Transform3d(new Translation3d(0, 0, Units.inchesToMeters(7)), new Rotation3d());
 
         // Rotation relative to positive x-axis, counterclockwise-positive
         public static final Rotation2d arm1StartingAngle = Rotation2d.fromDegrees(100);
@@ -316,7 +315,7 @@ public final class Constants {
         public static final Transform3d limelightRobotToCamera = limelightCameraToRobot.inverse();
     }
 
-    public static final class SwerveConstants extends CompBotConstants {}
+    public static final class SwerveConstants extends DevelopmentBotConstants {}
 
     public static class DevelopmentBotConstants {
         // See https://github.com/Team364/BaseFalconSwerve for getting these values.
@@ -329,7 +328,7 @@ public final class Constants {
         public static final double wheelDiameter = 0.10033;
         public static final double wheelCircumference = wheelDiameter * Math.PI;
 
-        //robot size
+        // robot size
         public static final double widthWithBumpers = Units.inchesToMeters(30 + 3.5 * 2);
         public static final double lengthWithBumpers = Units.inchesToMeters(30 + 3.5 * 2);
 
@@ -516,10 +515,10 @@ public final class Constants {
         /* Swerve Profiling Values */
         public static final double maxSpeed = 6.52; // meters per second
         public static final double maxAngularVelocity = maxSpeed // rad/s
-            / Arrays.stream(moduleTranslations)
-                .map(translation -> translation.getNorm())
-                .max(Double::compare)
-                .get();
+                / Arrays.stream(moduleTranslations)
+                        .map(translation -> translation.getNorm())
+                        .max(Double::compare)
+                        .get();
 
         /* Precise Driving Mode Values */
         public static final double preciseDrivingModeSpeedMultiplier = 0.2;
@@ -546,7 +545,7 @@ public final class Constants {
             public static final int driveMotorID = 0;
             public static final int angleMotorID = 4;
             public static final int canCoderID = 24;
-            public static final double angleOffset = 256.201;//-104.5898 + 360;
+            public static final double angleOffset = 256.201; // -104.5898 + 360;
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);
@@ -557,7 +556,7 @@ public final class Constants {
             public static final int driveMotorID = 2;
             public static final int angleMotorID = 6;
             public static final int canCoderID = 26;
-            public static final double angleOffset = 92.636;//91.582; // 348.135;
+            public static final double angleOffset = 92.636; // 91.582; // 348.135;
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);
@@ -568,7 +567,7 @@ public final class Constants {
             public static final int driveMotorID = 1;
             public static final int angleMotorID = 5;
             public static final int canCoderID = 25;
-            public static final double angleOffset = 39.111;//37.617;
+            public static final double angleOffset = 39.111; // 37.617;
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);
@@ -579,7 +578,7 @@ public final class Constants {
             public static final int driveMotorID = 3;
             public static final int angleMotorID = 7;
             public static final int canCoderID = 27;
-            public static final double angleOffset = 309.814;//-50.9766 + 360; // 94.043;
+            public static final double angleOffset = 309.814; // -50.9766 + 360; // 94.043;
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);
