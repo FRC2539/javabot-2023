@@ -22,11 +22,10 @@ public class AutonomousManager {
     private static final AutonomousOption defaultAuto = AutonomousOption.PLACE1ANDCLIMB;
 
     // Add tunables for all autonomous configuration options
-    LoggedReceiver waitDuration = Logger.tunable("/Autonomous/Wait Duration", 0.0);
-    LoggedReceiver startPosition = Logger.tunable(
-            "/Autonomous/Start Position", defaultAuto.startPosition.name()); // 0 = Left, 1 = Center, 2 = Right
-    LoggedReceiver gamePieces = Logger.tunable("/Autonomous/Game Pieces", defaultAuto.gamePieces);
-    LoggedReceiver shouldClimb = Logger.tunable("/Autonomous/Should Climb", true);
+    LoggedReceiver waitDuration;
+    LoggedReceiver startPosition;
+    LoggedReceiver gamePieces;
+    LoggedReceiver shouldClimb;
 
     private String previousStartPosition = defaultAuto.startPosition.name();
     private int previousGamePieces = defaultAuto.gamePieces;
@@ -112,6 +111,11 @@ public class AutonomousManager {
     }
 
     private void initializeNetworkTables() {
+        waitDuration = Logger.tunable("/Autonomous/Wait Duration", 0.0);
+        startPosition = Logger.tunable("/Autonomous/Start Position", defaultAuto.startPosition.name()); // 0 = Left, 1 = Center, 2 = Right
+        gamePieces = Logger.tunable("/Autonomous/Game Pieces", defaultAuto.gamePieces);
+        shouldClimb = Logger.tunable("/Autonomous/Should Climb", true);
+
         Logger.log("/Autonomous/Start Position Options", getStartingLocations());
 
         // Determine all of the game piece options for this starting position
