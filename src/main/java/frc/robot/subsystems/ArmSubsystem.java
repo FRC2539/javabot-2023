@@ -387,6 +387,10 @@ public class ArmSubsystem extends SubsystemBase {
         setState(ArmState.BRAKE);
     }
 
+    public void setCoast() {
+        setState(ArmState.COAST);
+    }
+
     @Override
     public void periodic() {
         // Update internal model with real motor values
