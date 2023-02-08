@@ -23,8 +23,8 @@ public class AutonomousManager {
 
     // Add tunables for all autonomous configuration options
     LoggedReceiver waitDuration = Logger.tunable("/Autonomous/Wait Duration", 0.0);
-    LoggedReceiver startPosition =
-            Logger.tunable("/Autonomous/Start Position", defaultAuto.startPosition.name()); // 0 = Left, 1 = Center, 2 = Right
+    LoggedReceiver startPosition = Logger.tunable(
+            "/Autonomous/Start Position", defaultAuto.startPosition.name()); // 0 = Left, 1 = Center, 2 = Right
     LoggedReceiver gamePieces = Logger.tunable("/Autonomous/Game Pieces", defaultAuto.gamePieces);
     LoggedReceiver shouldClimb = Logger.tunable("/Autonomous/Should Climb", true);
 
@@ -84,14 +84,15 @@ public class AutonomousManager {
     }
 
     public void update() {
-        var newStartPosition = startPosition.getString(); 
+        var newStartPosition = startPosition.getString();
         var newGamePieces = gamePieces.getInteger();
 
         // Only update the chosen auto if a different option has been chosen
         if (previousStartPosition != newStartPosition || previousGamePieces != newGamePieces) {
             // Match the auto based on the dashboard configuration
             List<AutonomousOption> options = Stream.of(AutonomousOption.values())
-                    .filter(option -> option.startPosition.name() == newStartPosition && option.gamePieces == newGamePieces)
+                    .filter(option ->
+                            option.startPosition.name() == newStartPosition && option.gamePieces == newGamePieces)
                     .toList();
 
             if (options.size() == 1) chosenAuto = options.get(0).getPath();
@@ -132,7 +133,8 @@ public class AutonomousManager {
         public StartingLocation startPosition;
         public int gamePieces;
 
-        private AutonomousOption(StartingLocation startPosition, int gamePieces, String pathName, PathConstraints constraints) {
+        private AutonomousOption(
+                StartingLocation startPosition, int gamePieces, String pathName, PathConstraints constraints) {
             this.startPosition = startPosition;
             this.gamePieces = gamePieces;
             this.pathName = pathName;

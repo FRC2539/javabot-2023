@@ -363,6 +363,18 @@ public class ArmSubsystem extends SubsystemBase {
         setState(ArmState.HIGH);
     }
 
+    public void setHybridManual() {
+        setState(ArmState.HYBRID_MANUAL);
+    }
+
+    public void setMidManual() {
+        setState(ArmState.MID_MANUAL);
+    }
+
+    public void setHighManual() {
+        setState(ArmState.HIGH_MANUAL);
+    }
+
     public void setDance() {
         setState(ArmState.DANCE);
     }

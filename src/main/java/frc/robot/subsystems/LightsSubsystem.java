@@ -42,6 +42,8 @@ public class LightsSubsystem extends SubsystemBase {
         candleConfiguration.brightnessScalar = 1.0;
         candleConfiguration.vBatOutputMode = VBatOutputMode.Modulated;
         candle.configAllSettings(candleConfiguration, 100);
+
+        setDefaultCommand(defaultCommand());
     }
 
     public void setBrightness(double percent) {
@@ -54,7 +56,7 @@ public class LightsSubsystem extends SubsystemBase {
             clearSegmentCommand(LEDSegment.PressureIndicator);
             clearSegmentCommand(LEDSegment.CANdleBottomHalf);
 
-            // LEDSegment.MainStrip.setFlowAnimation(orange, 1);
+            LEDSegment.MainStrip.setFlowAnimation(orange, 1);
         });
     }
 
@@ -68,9 +70,8 @@ public class LightsSubsystem extends SubsystemBase {
     public static enum LEDSegment {
         BatteryIndicator(0, 2, 0),
         PressureIndicator(2, 2, 1),
-        CANdleBottomHalf(4, 4, 2);
-        // CANdle(0, 8, 0);
-        // MainStrip(8, 300, 1);
+        CANdleBottomHalf(4, 4, 2),
+        MainStrip(8, 300, 1);
 
         public final int startIndex;
         public final int segmentSize;

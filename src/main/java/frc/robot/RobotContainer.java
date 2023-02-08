@@ -34,7 +34,7 @@ public class RobotContainer {
             new LogitechController(ControllerConstants.OPERATOR_CONTROLLER);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
-    // private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
+    private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
     private final VisionSubsystem visionSubsystem =
             new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
     private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose);
@@ -61,7 +61,6 @@ public class RobotContainer {
         rightDriveController.getXAxis().setInverted(true);
 
         /* Set default commands */
-        // lightsSubsystem.setDefaultCommand(lightsSubsystem.defaultCommand());
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
 
@@ -157,6 +156,25 @@ public class RobotContainer {
         operatorController.nameB("Place Mid");
         operatorController.nameY("Place High");
         operatorController.nameX("Protect Arm");
+
+        // Manual arm controls, no sussy stuff here
+        operatorController.getDPadDown().onTrue(runOnce(armSubsystem::setHybridManual, armSubsystem));
+        operatorController.getDPadLeft().onTrue(runOnce(armSubsystem::setMidManual, armSubsystem));
+        operatorController.getDPadUp().onTrue(runOnce(armSubsystem::setHighManual, armSubsystem));
+        operatorController.nameA("Hybrid Manual");
+        operatorController.nameB("Mid Manual");
+        operatorController.nameY("High Manual");
+
+        operatorController
+                .getRightTrigger()
+                .whileTrue(run(
+                        () -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.yellow), lightsSubsystem));
+        operatorController
+                .getLeftTrigger()
+                .whileTrue(run(
+                        () -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.purple), lightsSubsystem));
+        operatorController.nameRightTrigger("Indicate Cone");
+        operatorController.nameLeftTrigger("Indicate Cube");
 
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();
