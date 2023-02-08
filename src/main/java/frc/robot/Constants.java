@@ -33,8 +33,8 @@ public final class Constants {
         public static final double batteryVoltageThreshold = 12.5;
 
         public static final double pressureThreshold = 90; // PSI
-        public static final double minimumPressure = 105;
-        public static final double maximumPressure = 120;
+        public static final double minimumPressure = 100;
+        public static final double maximumPressure = 115; // try 120
     }
 
     public static final class ControllerConstants {
