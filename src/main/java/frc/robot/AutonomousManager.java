@@ -28,18 +28,6 @@ public class AutonomousManager {
     LoggedReceiver gamePieces = Logger.tunable("/Autonomous/Game Pieces", defaultAuto.gamePieces);
     LoggedReceiver shouldClimb = Logger.tunable("/Autonomous/Should Climb", true);
 
-    static {
-        Logger.log("Autonomous/Start Position Options", getStartingLocations());
-
-        // Determine all of the game piece options for this starting position
-        long[] gamePieceOptions = Stream.of(AutonomousOption.values())
-                .filter(option -> option.startPosition.equals(defaultAuto.startPosition))
-                .mapToLong(option -> option.gamePieces)
-                .toArray();
-
-        Logger.log("/Autonomous/Game Piece Options", gamePieceOptions);
-    }
-
     private String previousStartPosition = defaultAuto.startPosition.name();
     private int previousGamePieces = defaultAuto.gamePieces;
 
@@ -52,6 +40,8 @@ public class AutonomousManager {
     public AutonomousManager(RobotContainer container) {
         swerveDriveSubsystem = container.getSwerveDriveSubsystem();
         ArmSubsystem armSubsystem = container.getArmSubsystem();
+
+        initializeNetworkTables();
 
         // Create an event map for use in all autos
         HashMap<String, Command> eventMap = new HashMap<>();
@@ -119,6 +109,18 @@ public class AutonomousManager {
         if (chosenWaitDuration > 0) chosenPathCommand.beforeStarting(waitSeconds(chosenWaitDuration));
 
         return chosenPathCommand;
+    }
+
+    private void initializeNetworkTables() {
+        Logger.log("/Autonomous/Start Position Options", getStartingLocations());
+
+        // Determine all of the game piece options for this starting position
+        long[] gamePieceOptions = Stream.of(AutonomousOption.values())
+                .filter(option -> option.startPosition.equals(defaultAuto.startPosition))
+                .mapToLong(option -> option.gamePieces)
+                .toArray();
+
+        Logger.log("/Autonomous/Game Piece Options", gamePieceOptions);
     }
 
     private enum AutonomousOption {
