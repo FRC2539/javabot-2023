@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
@@ -39,6 +40,8 @@ import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
+
+import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -339,6 +342,19 @@ public class ArmSubsystem extends SubsystemBase {
                         gripperAngle, gripperDesiredMotorPosition, ArmConstants.angularTolerance);
     }
 
+    private void passthroughMotorSpeeds(double shoulderPercent, double elbowPercent, double wristPercent) {
+        joint1Motor.set(shoulderPercent);
+        joint2Motor.set(elbowPercent);
+        gripperMotor.set(wristPercent);
+    }
+
+    public Command passthroughCommand(DoubleSupplier shoulderPercent, DoubleSupplier elbowPercent, DoubleSupplier wristSupplier) {
+        return runEnd(
+            () -> passthroughMotorSpeeds(shoulderPercent.getAsDouble(), elbowPercent.getAsDouble(), wristSupplier.getAsDouble()),
+            () -> setAwaitingPiece()
+        ).beforeStarting(runOnce(() -> setPassthrough()));
+    }
+
     public ArmState getState() {
         return armState;
     }
@@ -383,6 +399,10 @@ public class ArmSubsystem extends SubsystemBase {
         setState(ArmState.NETWORK_TABLES_AIM);
     }
 
+    public void setPassthrough() {
+        setState(ArmState.PASSTHROUGH);
+    }
+
     public void setBrake() {
         setState(ArmState.BRAKE);
     }
@@ -422,7 +442,7 @@ public class ArmSubsystem extends SubsystemBase {
             startMotors();
         }
 
-        if (armState != ArmState.COAST && armState != ArmState.BRAKE) {
+        if (armState != ArmState.COAST && armState != ArmState.BRAKE && armState != ArmState.PASSTHROUGH) {
             executePIDFeedforward();
         }
 
@@ -593,6 +613,7 @@ public class ArmSubsystem extends SubsystemBase {
                 sussiest -> new Translation2d(Math.cos(Timer.getFPGATimestamp()), .2),
                 new Rotation2d())), // what i want
         NETWORK_TABLES_AIM(new NetworkTablesAim()),
+        PASSTHROUGH(new PassthroughAim()),
         COAST(new Coast()),
         BRAKE(new Brake());
 
@@ -667,5 +688,8 @@ public class ArmSubsystem extends SubsystemBase {
         public Rotation2d getGripperAngle(ArmSubsystem armSubsystem) {
             return armSubsystem.getNetworkTablesGripperRotation();
         }
+    }
+
+    private static class PassthroughAim {
     }
 }

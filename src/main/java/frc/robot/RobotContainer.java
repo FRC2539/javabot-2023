@@ -64,6 +64,8 @@ public class RobotContainer {
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
 
+        armSubsystem.setDefaultCommand(armSubsystem.passthroughCommand(getDriveForwardAxis(), getDriveRotationAxis(), getDriveForwardAxis()));
+        
         /* Set non-button, multi-subsystem triggers */
 
         /* Set left joystick bindings */
