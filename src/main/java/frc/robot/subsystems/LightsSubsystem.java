@@ -56,7 +56,7 @@ public class LightsSubsystem extends SubsystemBase {
             clearSegmentCommand(LEDSegment.PressureIndicator);
             clearSegmentCommand(LEDSegment.CANdleBottomHalf);
 
-            LEDSegment.MainStrip.setFlowAnimation(orange, 1);
+            LEDSegment.MainStrip.setColor(orange);
         });
     }
 
