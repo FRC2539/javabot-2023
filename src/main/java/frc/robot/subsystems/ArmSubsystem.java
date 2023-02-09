@@ -400,6 +400,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public void setPassthrough() {
+
         setState(ArmState.PASSTHROUGH);
     }
 
@@ -436,7 +437,7 @@ public class ArmSubsystem extends SubsystemBase {
             updateArmDesiredPosition();
         }
 
-        if (isArmAtGoal() || armState.getType() instanceof Brake) {
+        if ((isArmAtGoal() || armState.getType() instanceof Brake) && !(armState.getType() instanceof PassthroughAim)) {
             stopMotors();
         } else {
             startMotors();
@@ -631,7 +632,6 @@ public class ArmSubsystem extends SubsystemBase {
     private static class Brake {}
 
     private static class Coast {}
-    ;
 
     private static class Static {
         private Translation2d endEffector;
