@@ -263,6 +263,15 @@ public final class Constants {
         public static final int mastMotorPort = 9;
         public static final int boomMotorPort = 8;
         public static final int wristMotorPort = 13;
+
+        // Store the channels for through bore encoders
+        public static final int mastEncoderChannel = 0;
+        public static final int boomEncoderChannel = 1;
+        public static final int gripperEncoderChannel = 2;
+
+        // Store offsets for the through bore encoders (measured - offset = absolute position)
+        public static final double mastEncoderOffset = 0;
+        public static final double boomEncoderOffset = 0;
     }
 
     public static final class GripperConstants {

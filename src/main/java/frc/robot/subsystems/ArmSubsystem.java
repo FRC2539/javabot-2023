@@ -33,14 +33,12 @@ import frc.lib.logging.Logger;
 import frc.lib.math.Conversions;
 import frc.lib.math.MathUtils;
 import frc.lib.math.TwoJointedArmFeedforward;
-import frc.lib.swerve.ProfiledPIDControllerPlus;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
-
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -72,11 +70,17 @@ public class ArmSubsystem extends SubsystemBase {
     private WPI_TalonFX joint1Motor;
     private WPI_TalonFX joint2Motor;
     private WPI_TalonSRX gripperMotor;
-    private DutyCycleEncoder gripperEncoder;
 
-    private boolean brakingActivated;
+    // Used for correctly offsetting integrated encoders
+    private DutyCycleEncoder joint1AbsoluteEncoder;
+    private DutyCycleEncoder joint2AbsoluteEncoder;
+
+    // Wrist isn't run on a falcon, so this is used as the main encoder
+    private DutyCycleEncoder gripperAbsoluteEncoder;
 
     private double lastGripperPosition;
+
+    private boolean brakingActivated;
 
     private ProfiledPIDController motor1Controller;
     private ProfiledPIDController motor2Controller;
@@ -135,14 +139,14 @@ public class ArmSubsystem extends SubsystemBase {
         joint1Motor = new WPI_TalonFX(ArmConstants.mastMotorPort);
         joint2Motor = new WPI_TalonFX(ArmConstants.boomMotorPort);
         gripperMotor = new WPI_TalonSRX(ArmConstants.wristMotorPort); // wrist motor
-        gripperEncoder = new DutyCycleEncoder(0);
+        joint1AbsoluteEncoder = new DutyCycleEncoder(ArmConstants.mastEncoderChannel);
+        joint2AbsoluteEncoder = new DutyCycleEncoder(ArmConstants.boomEncoderChannel);
+        gripperAbsoluteEncoder = new DutyCycleEncoder(ArmConstants.gripperEncoderChannel);
 
         joint1Motor.setSelectedSensorPosition(
                 Conversions.radiansToFalcon(ArmConstants.arm1StartingAngle.getRadians(), ArmConstants.arm1GearRatio));
         joint2Motor.setSelectedSensorPosition(
                 Conversions.radiansToFalcon(ArmConstants.arm2StartingAngle.getRadians(), ArmConstants.arm2GearRatio));
-        gripperMotor.setSelectedSensorPosition(
-                Conversions.radiansToFalcon(GripperConstants.startingAngle.getRadians(), GripperConstants.gearRatio));
 
         gripperEndAngle = GripperConstants.startingAngle;
 
@@ -196,9 +200,9 @@ public class ArmSubsystem extends SubsystemBase {
         gripperJointFeedforward =
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
-        motor1Controller = new ProfiledPIDControllerPlus(10, 0, 0, motor1Constraints);
-        motor2Controller = new ProfiledPIDControllerPlus(10, 0, 0, motor2Constraints);
-        gripperMotorController = new ProfiledPIDControllerPlus(10, 0, 0, wristProfileConstraints);
+        motor1Controller = new ProfiledPIDController(10, 0, 0, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(10, 0, 0, motor2Constraints);
+        gripperMotorController = new ProfiledPIDController(10, 0, 0, wristProfileConstraints);
 
         motor1Controller.reset(arm1Angle);
         motor2Controller.reset(arm2Angle);
@@ -332,7 +336,15 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     private double getGripperEncoderAngle() {
-        return gripperEncoder.getAbsolutePosition() * 2 * Math.PI - GripperConstants.encoderOffset;
+        return gripperAbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI - GripperConstants.encoderOffset;
+    }
+
+    private double getJoint1EncoderAngle() {
+        return joint1AbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI - ArmConstants.mastEncoderOffset;
+    }
+
+    private double getJoint2EncoderAngle() {
+        return joint2AbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI - ArmConstants.boomEncoderOffset;
     }
 
     private boolean isArmAtGoal() {
@@ -348,68 +360,13 @@ public class ArmSubsystem extends SubsystemBase {
         gripperMotor.set(wristPercent);
     }
 
-    public Command passthroughCommand(DoubleSupplier shoulderPercent, DoubleSupplier elbowPercent, DoubleSupplier wristSupplier) {
+    public Command passthroughCommand(
+            DoubleSupplier shoulderPercent, DoubleSupplier elbowPercent, DoubleSupplier wristSupplier) {
         return runEnd(
-            () -> passthroughMotorSpeeds(shoulderPercent.getAsDouble(), elbowPercent.getAsDouble(), wristSupplier.getAsDouble()),
-            () -> setAwaitingPiece()
-        ).beforeStarting(runOnce(() -> setPassthrough()));
-    }
-
-    public ArmState getState() {
-        return armState;
-    }
-
-    public void setAwaitingPiece() {
-        setState(ArmState.AWAITING_PIECE);
-    }
-
-    public void setAwaitingDeployment() {
-        setState(ArmState.AWAITING_DEPLOYMENT);
-    }
-
-    public void setHybrid() {
-        setState(ArmState.HYBRID);
-    }
-
-    public void setMid() {
-        setState(ArmState.MID);
-    }
-
-    public void setHigh() {
-        setState(ArmState.HIGH);
-    }
-
-    public void setHybridManual() {
-        setState(ArmState.HYBRID_MANUAL);
-    }
-
-    public void setMidManual() {
-        setState(ArmState.MID_MANUAL);
-    }
-
-    public void setHighManual() {
-        setState(ArmState.HIGH_MANUAL);
-    }
-
-    public void setDance() {
-        setState(ArmState.DANCE);
-    }
-
-    public void setNetworkTablesMode() {
-        setState(ArmState.NETWORK_TABLES_AIM);
-    }
-
-    public void setPassthrough() {
-
-        setState(ArmState.PASSTHROUGH);
-    }
-
-    public void setBrake() {
-        setState(ArmState.BRAKE);
-    }
-
-    public void setCoast() {
-        setState(ArmState.COAST);
+                        () -> passthroughMotorSpeeds(
+                                shoulderPercent.getAsDouble(), elbowPercent.getAsDouble(), wristSupplier.getAsDouble()),
+                        () -> setAwaitingPiece())
+                .beforeStarting(runOnce(() -> setPassthrough()));
     }
 
     @Override
@@ -433,20 +390,32 @@ public class ArmSubsystem extends SubsystemBase {
         arm2.setAngle(Math.toDegrees(arm2Angle));
         gripper.setAngle(Math.toDegrees(gripperAngle));
 
+        // Run inverse kinematics and update the desired joint angles
         if (armState.getType() instanceof Dynamic || armState.getType() instanceof NetworkTablesAim) {
             updateArmDesiredPosition();
         }
 
+        // Enable brake mode when the joints are at the right position
         if ((isArmAtGoal() || armState.getType() instanceof Brake) && !(armState.getType() instanceof PassthroughAim)) {
             stopMotors();
+
+            // Update falcon encoders using absolute encoders
+            if (Robot.isReal()) {
+                joint1Motor.setSelectedSensorPosition(
+                        Conversions.radiansToFalcon(getJoint1EncoderAngle(), ArmConstants.arm1GearRatio));
+                joint2Motor.setSelectedSensorPosition(
+                        Conversions.radiansToFalcon(getJoint2EncoderAngle(), ArmConstants.arm2GearRatio));
+            }
         } else {
             startMotors();
         }
 
+        // Run the PIDF system unless we are in one of the "special" modes
         if (armState != ArmState.COAST && armState != ArmState.BRAKE && armState != ArmState.PASSTHROUGH) {
             executePIDFeedforward();
         }
 
+        // We still have this for some reason
         if (doCycleMode && cycleModeTimer.advanceIfElapsed(3)) {
             setState(ArmState.values()[cycleModeIndex]);
             cycleModeIndex++;
@@ -462,6 +431,8 @@ public class ArmSubsystem extends SubsystemBase {
         Logger.log("/ArmSubsystem/joint1DesiredPosition", joint1DesiredMotorPosition);
         Logger.log("/ArmSubsystem/joint2DesiredPosition", joint2DesiredMotorPosition);
         Logger.log("/ArmSubsystem/gripperDesiredPosition", gripperDesiredMotorPosition);
+        Logger.log("/ArmSubsystem/arm1EncoderPosition", getJoint1EncoderAngle());
+        Logger.log("/ArmSubsystem/arm2EncoderPosition", getJoint2EncoderAngle());
         Logger.log("/ArmSubsystem/isBraking", brakingActivated);
         Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
         Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
@@ -601,6 +572,63 @@ public class ArmSubsystem extends SubsystemBase {
                 new Rotation3d(0, gripperAbsoluteRotation, 0));
     }
 
+    public ArmState getState() {
+        return armState;
+    }
+
+    public void setAwaitingPiece() {
+        setState(ArmState.AWAITING_PIECE);
+    }
+
+    public void setAwaitingDeployment() {
+        setState(ArmState.AWAITING_DEPLOYMENT);
+    }
+
+    public void setHybrid() {
+        setState(ArmState.HYBRID);
+    }
+
+    public void setMid() {
+        setState(ArmState.MID);
+    }
+
+    public void setHigh() {
+        setState(ArmState.HIGH);
+    }
+
+    public void setHybridManual() {
+        setState(ArmState.HYBRID_MANUAL);
+    }
+
+    public void setMidManual() {
+        setState(ArmState.MID_MANUAL);
+    }
+
+    public void setHighManual() {
+        setState(ArmState.HIGH_MANUAL);
+    }
+
+    public void setDance() {
+        setState(ArmState.DANCE);
+    }
+
+    public void setNetworkTablesMode() {
+        setState(ArmState.NETWORK_TABLES_AIM);
+    }
+
+    public void setPassthrough() {
+
+        setState(ArmState.PASSTHROUGH);
+    }
+
+    public void setBrake() {
+        setState(ArmState.BRAKE);
+    }
+
+    public void setCoast() {
+        setState(ArmState.COAST);
+    }
+
     public enum ArmState {
         AWAITING_PIECE(new Static(0.20, 0.07, new Rotation2d())),
         AWAITING_DEPLOYMENT(new Static(0.22, 0.27, new Rotation2d())),
@@ -690,6 +718,5 @@ public class ArmSubsystem extends SubsystemBase {
         }
     }
 
-    private static class PassthroughAim {
-    }
+    private static class PassthroughAim {}
 }

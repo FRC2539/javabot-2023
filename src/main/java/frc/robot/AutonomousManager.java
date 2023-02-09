@@ -112,7 +112,8 @@ public class AutonomousManager {
 
     private void initializeNetworkTables() {
         waitDuration = Logger.tunable("/Autonomous/Wait Duration", 0.0);
-        startPosition = Logger.tunable("/Autonomous/Start Position", defaultAuto.startPosition.name()); // 0 = Left, 1 = Center, 2 = Right
+        startPosition = Logger.tunable(
+                "/Autonomous/Start Position", defaultAuto.startPosition.name()); // 0 = Left, 1 = Center, 2 = Right
         gamePieces = Logger.tunable("/Autonomous/Game Pieces", defaultAuto.gamePieces);
         shouldClimb = Logger.tunable("/Autonomous/Should Climb", true);
 

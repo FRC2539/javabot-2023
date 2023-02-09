@@ -44,6 +44,8 @@ public class VisionSubsystem extends SubsystemBase {
     private BiConsumer<Pose2d, Double> addVisionMeasurement;
     private Supplier<Pose2d> robotPoseSupplier;
 
+    private static boolean visionDisabled = true;
+
     public VisionSubsystem(BiConsumer<Pose2d, Double> addVisionMeasurement, Supplier<Pose2d> robotPoseSupplier) {
         this.addVisionMeasurement = addVisionMeasurement;
         this.robotPoseSupplier = robotPoseSupplier;
@@ -52,29 +54,29 @@ public class VisionSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // LLApriltagEstimate = calculateLLApriltagEstimate();
-        // if (LLApriltagEstimate.isPresent()) {
-        //     addVisionPoseEstimate(LLApriltagEstimate.get());
-        //     Logger.log(
-        //             "/VisionSubsystem/LLApriltagPose",
-        //             LLApriltagEstimate.get().estimatedPose.toPose2d());
-        // }
+        LLApriltagEstimate = calculateLLApriltagEstimate();
+        if (LLApriltagEstimate.isPresent()) {
+            addVisionPoseEstimate(LLApriltagEstimate.get());
+            Logger.log(
+                    "/VisionSubsystem/LLApriltagPose",
+                    LLApriltagEstimate.get().estimatedPose.toPose2d());
+        }
 
-        // LLRetroreflectiveEstimate = calculateLLRetroreflectiveEstimate();
-        // if (LLRetroreflectiveEstimate.isPresent()) {
-        //     addVisionPoseEstimate(LLRetroreflectiveEstimate.get());
-        //     Logger.log(
-        //             "/VisionSubsystem/LLRetroreflectivePose",
-        //             LLRetroreflectiveEstimate.get().estimatedPose.toPose2d());
-        // }
+        LLRetroreflectiveEstimate = calculateLLRetroreflectiveEstimate();
+        if (LLRetroreflectiveEstimate.isPresent()) {
+            addVisionPoseEstimate(LLRetroreflectiveEstimate.get());
+            Logger.log(
+                    "/VisionSubsystem/LLRetroreflectivePose",
+                    LLRetroreflectiveEstimate.get().estimatedPose.toPose2d());
+        }
 
-        // photonVisionEstimate = calculatePhotonVisionEstimate();
-        // if (photonVisionEstimate.isPresent()) {
-        //     addVisionPoseEstimate(photonVisionEstimate.get());
-        //     Logger.log(
-        //             "/VisionSubsystem/photonVisionPose",
-        //             photonVisionEstimate.get().estimatedPose.toPose2d());
-        // }
+        photonVisionEstimate = calculatePhotonVisionEstimate();
+        if (photonVisionEstimate.isPresent()) {
+            addVisionPoseEstimate(photonVisionEstimate.get());
+            Logger.log(
+                    "/VisionSubsystem/photonVisionPose",
+                    photonVisionEstimate.get().estimatedPose.toPose2d());
+        }
     }
 
     public void setLimelightMode(LimelightMode limelightMode) {
@@ -108,6 +110,8 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     private Optional<EstimatedRobotPose> calculatePhotonVisionEstimate() {
+        if (visionDisabled) return Optional.empty();
+
         // Set the reference pose to the current estimated pose from the swerve drive subsystem
         photonPoseEstimator.setReferencePose(robotPoseSupplier.get());
         return photonPoseEstimator.update();
@@ -148,7 +152,7 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     private Optional<EstimatedRobotPose> calculateLLApriltagEstimate() {
-        if (getLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
+        if (visionDisabled || getLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
 
         // gets the botpose array from the limelight and a timestamp
         double[] botposeArray = DriverStation.getAlliance() == Alliance.Red
