@@ -345,10 +345,11 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     private void calibrateJointMotors() {
+        // Wrap around at 360 degrees to keep the talon encoders relatively continuous
         joint1Motor.setSelectedSensorPosition(
-                Conversions.radiansToFalcon(getJoint1EncoderAngle(), ArmConstants.arm1GearRatio));
+                Conversions.radiansToFalcon(getJoint1EncoderAngle() % (2 * Math.PI), ArmConstants.arm1GearRatio));
         joint2Motor.setSelectedSensorPosition(
-                Conversions.radiansToFalcon(getJoint2EncoderAngle(), ArmConstants.arm2GearRatio));
+                Conversions.radiansToFalcon(getJoint2EncoderAngle() % (2 * Math.PI), ArmConstants.arm2GearRatio));
     }
 
     private double getGripperEncoderAngle() {
