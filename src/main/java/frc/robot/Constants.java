@@ -236,8 +236,8 @@ public final class Constants {
         public static final double arm1MomentOfInertia = 2;
         public static final double arm2MomentOfInertia = 2;
 
-        public static final double arm1GearRatio = 60;
-        public static final double arm2GearRatio = 60;
+        public static final double arm1GearRatio = 64;
+        public static final double arm2GearRatio = 64;
 
         public static final double arm1MinimumAngle = 0;
         public static final double arm1MaximumAngle = Math.toRadians(160);
@@ -305,7 +305,7 @@ public final class Constants {
         public static final double minimumAngle = Math.toDegrees(-90);
         public static final double maximumAngle = Math.toDegrees(90);
 
-        public static final double gearRatio = 60;
+        public static final double gearRatio = 140;
 
         public static final double ks = 0;
         public static final double kg = 0;
