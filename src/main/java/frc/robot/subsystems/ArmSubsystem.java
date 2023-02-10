@@ -143,10 +143,19 @@ public class ArmSubsystem extends SubsystemBase {
         joint2AbsoluteEncoder = new DutyCycleEncoder(ArmConstants.boomEncoderChannel);
         gripperAbsoluteEncoder = new DutyCycleEncoder(ArmConstants.gripperEncoderChannel);
 
-        joint1Motor.setSelectedSensorPosition(
-                Conversions.radiansToFalcon(ArmConstants.arm1StartingAngle.getRadians(), ArmConstants.arm1GearRatio));
-        joint2Motor.setSelectedSensorPosition(
-                Conversions.radiansToFalcon(ArmConstants.arm2StartingAngle.getRadians(), ArmConstants.arm2GearRatio));
+        joint1Motor.setInverted(ArmConstants.invertMastMotor);
+        joint2Motor.setInverted(ArmConstants.invertBoomMotor);
+        gripperMotor.setInverted(ArmConstants.invertWristMotor);
+
+        // Calibrate the joint motors
+        if (Robot.isSimulation()) {
+            joint1Motor.setSelectedSensorPosition(Conversions.radiansToFalcon(
+                    ArmConstants.arm1StartingAngle.getRadians(), ArmConstants.arm1GearRatio));
+            joint2Motor.setSelectedSensorPosition(Conversions.radiansToFalcon(
+                    ArmConstants.arm2StartingAngle.getRadians(), ArmConstants.arm2GearRatio));
+        } else {
+            calibrateJointMotors();
+        }
 
         gripperEndAngle = GripperConstants.startingAngle;
 
@@ -212,9 +221,9 @@ public class ArmSubsystem extends SubsystemBase {
         motor2Controller.setTolerance(ArmConstants.angularTolerance);
         gripperMotorController.setTolerance(ArmConstants.angularTolerance);
 
-        // motor1Controller.enableContinuousInput(-Math.PI, Math.PI);
-        // motor2Controller.enableContinuousInput(-Math.PI, Math.PI);
-        // wristMotorController.enableContinuousInput(-Math.PI, Math.PI);
+        motor1Controller.enableContinuousInput(0, 2 * Math.PI);
+        motor2Controller.enableContinuousInput(0, 2 * Math.PI);
+        gripperMotorController.enableContinuousInput(0, 2 * Math.PI);
 
         desiredNetworkTablesArmPosition = Logger.tunable("/ArmSubsystem/ArmPose", new double[] {1, 0, 0});
 
@@ -335,16 +344,26 @@ public class ArmSubsystem extends SubsystemBase {
         ghostGripper.setAngle(Math.toDegrees(armAndWristAngles.get(2, 0)));
     }
 
+    private void calibrateJointMotors() {
+        joint1Motor.setSelectedSensorPosition(
+                Conversions.radiansToFalcon(getJoint1EncoderAngle(), ArmConstants.arm1GearRatio));
+        joint2Motor.setSelectedSensorPosition(
+                Conversions.radiansToFalcon(getJoint2EncoderAngle(), ArmConstants.arm2GearRatio));
+    }
+
     private double getGripperEncoderAngle() {
-        return gripperAbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI - GripperConstants.encoderOffset;
+        return ArmConstants.gripperEncoderMultiplier * gripperAbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI
+                + ArmConstants.gripperEncoderOffset;
     }
 
     private double getJoint1EncoderAngle() {
-        return joint1AbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI - ArmConstants.mastEncoderOffset;
+        return ArmConstants.mastEncoderMultiplier * joint1AbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI
+                + ArmConstants.mastEncoderOffset;
     }
 
     private double getJoint2EncoderAngle() {
-        return joint2AbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI - ArmConstants.boomEncoderOffset;
+        return ArmConstants.boomEncoderMultiplier * joint2AbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI
+                + ArmConstants.boomEncoderOffset;
     }
 
     private boolean isArmAtGoal() {
@@ -401,10 +420,7 @@ public class ArmSubsystem extends SubsystemBase {
 
             // Update falcon encoders using absolute encoders
             if (Robot.isReal()) {
-                joint1Motor.setSelectedSensorPosition(
-                        Conversions.radiansToFalcon(getJoint1EncoderAngle(), ArmConstants.arm1GearRatio));
-                joint2Motor.setSelectedSensorPosition(
-                        Conversions.radiansToFalcon(getJoint2EncoderAngle(), ArmConstants.arm2GearRatio));
+                calibrateJointMotors();
             }
         } else {
             startMotors();

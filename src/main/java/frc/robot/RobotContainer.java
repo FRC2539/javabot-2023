@@ -128,8 +128,9 @@ public class RobotContainer {
                     break;
             }
 
-            var targetPose =
-                    targetPose3d.toPose2d().plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180)));
+            var targetPose = targetPose3d
+                    .toPose2d()
+                    .plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(0))); // was 180
 
             Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
             return targetPose;

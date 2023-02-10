@@ -260,8 +260,8 @@ public final class Constants {
 
         public static final double angularTolerance = Math.toRadians(1);
 
-        public static final int mastMotorPort = 9;
-        public static final int boomMotorPort = 8;
+        public static final int mastMotorPort = 8;
+        public static final int boomMotorPort = 9;
         public static final int wristMotorPort = 13;
 
         // Store the channels for through bore encoders
@@ -270,8 +270,26 @@ public final class Constants {
         public static final int gripperEncoderChannel = 2;
 
         // Store offsets for the through bore encoders (measured - offset = absolute position)
-        public static final double mastEncoderOffset = 0;
-        public static final double boomEncoderOffset = 0;
+        // Measurement Guide
+        //
+        // - Orient mast arm facing straight upwards (+90 degrees relative to straight forward)
+        // - Orient boom arm fully inside of mast arm (180 degrees relative to mast arm)
+        // - Orient gripper fully inside of boom arm (180 degrees relative to boom arm)
+        //
+        // When measuring values, replace the 0 in the offset with the value measured
+        public static final double mastEncoderOffset = 0; // Math.PI / 2 - 0;
+        public static final double boomEncoderOffset = 0; // Math.PI - 0;
+        public static final double gripperEncoderOffset = 0; // Math.PI - 0;
+
+        // Set these to -1 to invert the encoder measurements (find offsets again)
+        public static final int mastEncoderMultiplier = 1;
+        public static final int boomEncoderMultiplier = 1;
+        public static final int gripperEncoderMultiplier = 1;
+
+        // Set these to true if a positive voltage makes the arm turn clockwise (we want ccw+)
+        public static final boolean invertMastMotor = false;
+        public static final boolean invertBoomMotor = false;
+        public static final boolean invertWristMotor = false;
     }
 
     public static final class GripperConstants {
@@ -294,12 +312,10 @@ public final class Constants {
         public static final double kv = 0;
         public static final double ka = 0;
 
-        public static double encoderOffset = 0;
+        public static final int FORWARD_CHANNEL = 0;
+        public static final int REVERSE_CHANNEL = 1;
 
-        public static int FORWARD_CHANNEL = 0;
-        public static int REVERSE_CHANNEL = 1;
-
-        public static int gripperMotor = 14;
+        public static final int gripperMotor = 14;
     }
 
     public static final class VisionConstants {
