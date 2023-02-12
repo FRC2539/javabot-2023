@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -15,26 +14,31 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 
 public class GripperSubsystem extends SubsystemBase {
-    private DoubleSolenoid gripperSolenoid = new DoubleSolenoid(
-            PneumaticsModuleType.CTREPCM, GripperConstants.FORWARD_CHANNEL, GripperConstants.REVERSE_CHANNEL);
+    private DoubleSolenoid gripperSolenoid;
     private WPI_TalonSRX gripperMotor = new WPI_TalonSRX(GripperConstants.gripperMotor);
 
-    private GripperState gripperState = GripperState.CLOSED;
+    private GripperState gripperState = GripperState.DISABLED;
 
-    private LoggedReceiver gripperIntakeSpeed = Logger.receive("/Gripper/Intake Speed", 0.2);
-    private LoggedReceiver gripperEjectSpeed = Logger.receive("/Gripper/Intake Speed", -0.2);
+    private LoggedReceiver gripperIntakeSpeed;
+    private LoggedReceiver gripperEjectSpeed;
 
     public GripperSubsystem() {
+        gripperSolenoid = new DoubleSolenoid(GlobalConstants.PCM_ID,
+            PneumaticsModuleType.REVPH, GripperConstants.FORWARD_CHANNEL, GripperConstants.REVERSE_CHANNEL);
+
         gripperMotor.setNeutralMode(NeutralMode.Brake);
         gripperMotor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
         gripperMotor.enableVoltageCompensation(true);
-        gripperMotor.setInverted(true);
+        gripperMotor.setInverted(false);
 
-        SupplyCurrentLimitConfiguration supplyLimit = new SupplyCurrentLimitConfiguration(true, 20, 30, 0.1);
+        // SupplyCurrentLimitConfiguration supplyLimit = new SupplyCurrentLimitConfiguration(true, 20, 30, 0.1);
 
-        gripperMotor.configSupplyCurrentLimit(supplyLimit);
+        // gripperMotor.configSupplyCurrentLimit(supplyLimit);
 
-        setDefaultCommand(closeGripperCommand());
+        // setDefaultCommand(closeGripperCommand());
+
+        gripperIntakeSpeed = Logger.tunable("/Gripper/Intake Speed", 1.0);
+        gripperEjectSpeed = Logger.tunable("/Gripper/Eject Speed", -1.0);
     }
 
     public Command openGripperCommand() {
@@ -52,6 +56,10 @@ public class GripperSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         switch (gripperState) {
+            case DISABLED:
+                gripperSolenoid.set(Value.kReverse);
+                gripperMotor.stopMotor();
+                break;
             case OPEN:
                 gripperSolenoid.set(Value.kReverse);
                 gripperMotor.set(gripperIntakeSpeed.getDouble());
@@ -66,7 +74,7 @@ public class GripperSubsystem extends SubsystemBase {
                 break;
         }
 
-        Logger.log("/Gripper/Current", gripperMotor.getSupplyCurrent());
+        // Logger.log("/Gripper/Current", gripperMotor.getSupplyCurrent());
         Logger.log("/Gripper/State", gripperState.name());
     }
 
@@ -75,7 +83,8 @@ public class GripperSubsystem extends SubsystemBase {
     }
 
     private enum GripperState {
-        OPEN, // Open without spinning motor
+        DISABLED,
+        OPEN, // Open with spinning motor
         CLOSED, // Closed and spin motor until supply limit
         EJECT // Reverse motors and then open
     }

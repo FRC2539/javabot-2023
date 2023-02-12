@@ -23,7 +23,6 @@ import frc.lib.gyro.PigeonGyro;
 import frc.lib.interpolation.MovingAverageVelocity;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
-import frc.lib.loops.Updatable;
 import frc.lib.math.MathUtils;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
@@ -36,11 +35,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 
-public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
+public class SwerveDriveSubsystem extends SubsystemBase {
     private final SwerveDrivePoseEstimator swervePoseEstimator;
 
     private Pose2d pose = new Pose2d();
-    private final MovingAverageVelocity velocityEstimator = new MovingAverageVelocity(15);
+    private final MovingAverageVelocity velocityEstimator = new MovingAverageVelocity(3);
     private ChassisSpeeds velocity = new ChassisSpeeds();
     private SwerveDriveSignal driveSignal = new SwerveDriveSignal();
 
@@ -268,7 +267,6 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         driveSignal = new SwerveDriveSignal(true);
     }
 
-    @Override
     public void update() {
         updateOdometry();
 
@@ -338,6 +336,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     @Override
     public void periodic() {
+        update();
+
         Logger.log("/SwerveDriveSubsystem/Pose", pose);
         Logger.log("/SwerveDriveSubsystem/Velocity", velocity);
         Logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);

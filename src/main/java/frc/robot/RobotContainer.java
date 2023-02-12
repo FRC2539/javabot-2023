@@ -7,17 +7,15 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.TimesliceRobot;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.controller.Axis;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
 import frc.lib.logging.Logger;
-import frc.lib.loops.UpdateManager;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
-import frc.robot.Constants.TimesliceConstants;
 import frc.robot.commands.AimAtPoseCommand;
 import frc.robot.commands.AssistedDriveToPositionCommand;
 import frc.robot.commands.DriveToPositionCommand;
@@ -41,14 +39,9 @@ public class RobotContainer {
     private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose);
 
     public AutonomousManager autonomousManager;
-    private UpdateManager updateManager;
 
-    public RobotContainer(TimesliceRobot robot) {
-        updateManager = new UpdateManager(robot);
+    public RobotContainer(TimedRobot robot) {
         autonomousManager = new AutonomousManager(this);
-
-        // Allocate timeslices
-        updateManager.schedule(swerveDriveSubsystem, TimesliceConstants.DRIVETRAIN_PERIOD);
 
         configureBindings();
     }
@@ -81,7 +74,8 @@ public class RobotContainer {
         leftDriveController.nameLeftTopRight("Reset Pose");
         leftDriveController.nameBottomThumb("Precise Driving");
 
-        leftDriveController.getTrigger().onTrue(gripperSubsystem.openGripperCommand());
+        leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
+        rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
 
         leftDriveController
                 .getRightTopRight()
@@ -184,9 +178,13 @@ public class RobotContainer {
                 .getLeftTrigger()
                 .whileTrue(run(
                         () -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.purple), lightsSubsystem));
+
+        // operatorController.getRightTrigger().whileTrue(lightsSubsystem.indicateConeCommand());
+        // operatorController.getLeftTrigger().whileTrue(lightsSubsystem.indicateCubeCommand());
         operatorController.nameRightTrigger("Indicate Cone");
         operatorController.nameLeftTrigger("Indicate Cube");
 
+        // 20.5
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();
         operatorController.sendButtonNamesToNT();

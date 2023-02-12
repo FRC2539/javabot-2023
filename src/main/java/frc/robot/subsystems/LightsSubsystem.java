@@ -58,6 +58,8 @@ public class LightsSubsystem extends SubsystemBase {
             LEDSegment.WristEncoderIndicator.fullClear();
 
             LEDSegment.MainStrip.setColor(orange);
+
+            // runDefaultMainStripAnimation();
         });
     }
 
@@ -68,14 +70,71 @@ public class LightsSubsystem extends SubsystemBase {
         });
     }
 
+    // public Command indicateConeCommand() {
+    //     return buildSideStripCommand(() -> {
+    //         LEDSegment.BackRightStrip.setColor(LightsSubsystem.yellow);
+    //         LEDSegment.BackLeftStrip.setColor(LightsSubsystem.yellow);
+    //         LEDSegment.FrontLeftStrip.setColor(LightsSubsystem.yellow);
+    //         LEDSegment.FrontRightStrip.setColor(LightsSubsystem.yellow);
+    //     });
+    // }
+
+    // public Command indicateCubeCommand() {
+    //     return buildSideStripCommand(() -> {
+    //         LEDSegment.BackRightStrip.setColor(LightsSubsystem.purple);
+    //         LEDSegment.BackLeftStrip.setColor(LightsSubsystem.purple);
+    //         LEDSegment.FrontLeftStrip.setColor(LightsSubsystem.purple);
+    //         LEDSegment.FrontRightStrip.setColor(LightsSubsystem.purple);
+    //     });
+    // }
+
+    // private Command buildSideStripCommand(Runnable runnable) {
+    //     return startEnd(runnable, LightsSubsystem::runDefaultSideAnimation);
+    //     // return run(runnable).finallyDo((interrupted) -> {
+    //     //     runDefaultSideAnimation();
+    //     // });
+    // }
+
+    // private Command buildTopStripCommand(Runnable runnable) {
+    //     return startEnd(runnable, LightsSubsystem::runDefaultTopAnimation);
+    //     // return run(runnable).finallyDo((interrupted) -> {
+    //     //     runDefaultTopAnimation();
+    //     // });
+    // }
+
+    // public static void runDefaultMainStripAnimation() {
+    //     runDefaultSideAnimation();
+    //     runDefaultTopAnimation();
+    // }
+
+    // public static void runDefaultSideAnimation() {
+    //     LEDSegment.BackRightStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
+    //     LEDSegment.BackLeftStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
+    //     LEDSegment.FrontLeftStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
+    //     LEDSegment.FrontRightStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
+    // }
+
+    // public static void runDefaultTopAnimation() {
+    //     LEDSegment.BackTopStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
+    //     LEDSegment.FrontTopStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
+    // }
+
     public static enum LEDSegment {
         BatteryIndicator(0, 2, 0),
         PressureIndicator(2, 2, 1),
-        MastEncoderIndicator(4, 1, 2),
-        BoomEncoderIndicator(5, 1, 3),
-        WristEncoderIndicator(6, 1, 4),
-        MainStrip(8, 296, 5);
+        MastEncoderIndicator(4, 1, -1),
+        BoomEncoderIndicator(5, 1, -1),
+        WristEncoderIndicator(6, 1, -1),
+        // BackRightStrip(8, 54, 2), // Looking from back to front (arm faces back)
+        // BackTopStrip(62, 33, 3),
+        // BackLeftStrip(95, 54, 4),
+        // FrontLeftStrip(149, 54, 5),
+        // FrontTopStrip(203, 33, 6),
+        // FrontRightStrip(236, 60, 7);
+        MainStrip(8, 296, 2);
 
+        // 33 on top
+        // 13 past on right side
         public final int startIndex;
         public final int segmentSize;
         public final int animationSlot;
@@ -144,6 +203,13 @@ public class LightsSubsystem extends SubsystemBase {
             this.blue = blue;
         }
 
+        /**
+         * Highly imperfect way of dimming the LEDs. It does not maintain color or
+         * accurately adjust perceived brightness. 
+         * 
+         * @param amount
+         * @return
+         */
         public Color dim(double amount) {
             return new Color((int) (red / amount), (int) (green / amount), (int) (blue / amount));
         }

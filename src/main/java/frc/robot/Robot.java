@@ -5,18 +5,17 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.TimesliceRobot;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.lib.logging.Logger;
 import frc.lib.swerve.CTREConfigs;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.GlobalConstants;
-import frc.robot.Constants.TimesliceConstants;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.LightsSubsystem.LEDSegment;
 
-public class Robot extends TimesliceRobot {
+public class Robot extends TimedRobot {
     public static CTREConfigs ctreConfigs = new CTREConfigs();
 
     public static Compressor compressor = new Compressor(GlobalConstants.PCM_ID, PneumaticsModuleType.REVPH);
@@ -25,9 +24,7 @@ public class Robot extends TimesliceRobot {
 
     private Command autonomousCommand;
 
-    public Robot() {
-        super(TimesliceConstants.ROBOT_PERIODIC_ALLOCATION, TimesliceConstants.CONTROLLER_PERIOD);
-    }
+    public Robot() {}
 
     @Override
     public void robotInit() {
@@ -95,7 +92,6 @@ public class Robot extends TimesliceRobot {
             LEDSegment.BatteryIndicator.setColor(LightsSubsystem.green.dim(4));
         else LEDSegment.BatteryIndicator.setFadeAnimation(LightsSubsystem.green.dim(4), 1);
 
-
         // Indicate if there is enough pressure in the pneumatic system
         if (compressor.getPressure() > GlobalConstants.minimumPressure)
             LEDSegment.PressureIndicator.setColor(LightsSubsystem.purple.dim(4));
@@ -116,6 +112,7 @@ public class Robot extends TimesliceRobot {
 
         // Passive Main LED Mode
         LEDSegment.MainStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
+        // LightsSubsystem.runDefaultMainStripAnimation();
     }
 
     @Override

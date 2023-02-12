@@ -53,7 +53,7 @@ public class AutonomousManager {
                 "placeHigh",
                 sequence(
                         runOnce(armSubsystem::setHigh, armSubsystem),
-                        waitSeconds(1),
+                        waitSeconds(2),
                         runOnce(armSubsystem::setAwaitingPiece, armSubsystem)));
 
         autoBuilder = new SwerveAutoBuilder(

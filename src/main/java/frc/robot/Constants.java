@@ -41,13 +41,6 @@ public final class Constants {
         public static final int OPERATOR_CONTROLLER = 2;
     }
 
-    public static final class TimesliceConstants {
-        public static final double ROBOT_PERIODIC_ALLOCATION = 0.007;
-        public static final double CONTROLLER_PERIOD = 0.010;
-
-        public static final double DRIVETRAIN_PERIOD = 0.0025;
-    }
-
     public static final class FieldConstants {
         public static final double fieldLength = Units.inchesToMeters(651.25);
         public static final double fieldWidth = Units.inchesToMeters(315.5);
@@ -225,7 +218,7 @@ public final class Constants {
 
         // Length from starting joint to center of mass of respective arm segments
         public static final double arm1CenterOfMass = Units.inchesToMeters(20.06);
-        public static final double arm2CenterOfMass = Units.inchesToMeters(12.1);
+        public static final double arm2CenterOfMass = Units.inchesToMeters(20.5);
 
         // arm
         public static final double arm1Mass = Units.lbsToKilograms(11.47);
@@ -237,11 +230,11 @@ public final class Constants {
         public static final double arm1GearRatio = 64 * 2; // Gearbox is 64:1, sprocket is 2:1
         public static final double arm2GearRatio = 64 * 2;
 
-        public static final double arm1MinimumAngle = Math.toRadians(30);
-        public static final double arm1MaximumAngle = Math.toRadians(100);
+        public static final double arm1MinimumAngle = Math.toRadians(36.36);
+        public static final double arm1MaximumAngle = Math.toRadians(103.35);
 
         public static final double arm2MinimumAngle = Math.toRadians(-180);
-        public static final double arm2MaximumAngle = Math.toRadians(-20);
+        public static final double arm2MaximumAngle = Math.toRadians(-56.24);
 
         public static final double stallTorque = 4.69;
         public static final double stallCurrent = 257;
@@ -251,12 +244,12 @@ public final class Constants {
                 new Transform3d(new Translation3d(0, 0, Units.inchesToMeters(8)), new Rotation3d());
 
         // Rotation relative to positive x-axis, counterclockwise-positive
-        public static final Rotation2d arm1StartingAngle = Rotation2d.fromDegrees(100);
+        public static final Rotation2d arm1StartingAngle = Rotation2d.fromDegrees(103.35);
 
         // Rotation relative to first arm
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-180);
 
-        public static final double angularTolerance = Math.toRadians(1);
+        public static final double angularTolerance = Math.toRadians(5);
 
         public static final int mastMotorPort = 8;
         public static final int boomMotorPort = 9;
@@ -287,7 +280,7 @@ public final class Constants {
         // Set these to true if a positive voltage makes the arm turn clockwise (we want ccw+)
         public static final boolean invertMastMotor = false;
         public static final boolean invertBoomMotor = true;
-        public static final boolean invertWristMotor = false;
+        public static final boolean invertWristMotor = true;
     }
 
     public static final class GripperConstants {
@@ -306,7 +299,7 @@ public final class Constants {
         public static final double gearRatio = 5 * 4 * 7; // 3 gear boxes
 
         public static final double ks = 0;
-        public static final double kg = 0.19;
+        public static final double kg = 2*0.19;
         public static final double kv = 1.22;
         public static final double ka = 0;
 
