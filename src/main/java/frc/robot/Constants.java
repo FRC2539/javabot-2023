@@ -12,7 +12,6 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -32,9 +31,8 @@ public final class Constants {
 
         public static final double batteryVoltageThreshold = 12.5;
 
-        public static final double pressureThreshold = 90; // PSI
-        public static final double minimumPressure = 100;
-        public static final double maximumPressure = 115; // try 120
+        public static final double minimumPressure = 100; // PSI
+        public static final double maximumPressure = 120; // try 120
     }
 
     public static final class ControllerConstants {
@@ -221,42 +219,42 @@ public final class Constants {
 
     public static final class ArmConstants {
         // Length of the first arm segment
-        public static final double arm1Length = Units.inchesToMeters(30);
+        public static final double arm1Length = Units.inchesToMeters(40.5);
         // Length of the second arm segment
         public static final double arm2Length = Units.inchesToMeters(30);
 
         // Length from starting joint to center of mass of respective arm segments
-        public static final double arm1CenterOfMass = Units.inchesToMeters(15);
-        public static final double arm2CenterOfMass = Units.inchesToMeters(15);
+        public static final double arm1CenterOfMass = Units.inchesToMeters(20.06);
+        public static final double arm2CenterOfMass = Units.inchesToMeters(12.1);
 
         // arm
-        public static final double arm1Mass = Units.lbsToKilograms(15);
-        public static final double arm2Mass = Units.lbsToKilograms(15);
+        public static final double arm1Mass = Units.lbsToKilograms(11.47);
+        public static final double arm2Mass = Units.lbsToKilograms(8.16);
 
-        public static final double arm1MomentOfInertia = 2;
-        public static final double arm2MomentOfInertia = 2;
+        public static final double arm1MomentOfInertia = 2.3;
+        public static final double arm2MomentOfInertia = 2.44;
 
-        public static final double arm1GearRatio = 64;
-        public static final double arm2GearRatio = 64;
+        public static final double arm1GearRatio = 64 * 2; // Gearbox is 64:1, sprocket is 2:1
+        public static final double arm2GearRatio = 64 * 2;
 
-        public static final double arm1MinimumAngle = 0;
-        public static final double arm1MaximumAngle = Math.toRadians(160);
+        public static final double arm1MinimumAngle = Math.toRadians(30);
+        public static final double arm1MaximumAngle = Math.toRadians(100);
 
-        public static final double arm2MinimumAngle = Math.toRadians(-160);
-        public static final double arm2MaximumAngle = Math.toRadians(160);
+        public static final double arm2MinimumAngle = Math.toRadians(-180);
+        public static final double arm2MaximumAngle = Math.toRadians(-20);
 
         public static final double stallTorque = 4.69;
         public static final double stallCurrent = 257;
-        public static final double freeSpeed = 630;
+        public static final double freeSpeed = 6380;
 
         public static final Transform3d robotToArm =
-                new Transform3d(new Translation3d(0, 0, Units.inchesToMeters(7)), new Rotation3d());
+                new Transform3d(new Translation3d(0, 0, Units.inchesToMeters(8)), new Rotation3d());
 
         // Rotation relative to positive x-axis, counterclockwise-positive
         public static final Rotation2d arm1StartingAngle = Rotation2d.fromDegrees(100);
 
         // Rotation relative to first arm
-        public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-160);
+        public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-180);
 
         public static final double angularTolerance = Math.toRadians(1);
 
@@ -273,13 +271,13 @@ public final class Constants {
         // Measurement Guide
         //
         // - Orient mast arm facing straight upwards (+90 degrees relative to straight forward)
-        // - Orient boom arm fully inside of mast arm (180 degrees relative to mast arm)
+        // - Orient boom arm fully inside of mast arm (-180 degrees relative to mast arm)
         // - Orient gripper fully inside of boom arm (180 degrees relative to boom arm)
         //
         // When measuring values, replace the 0 in the offset with the value measured
-        public static final double mastEncoderOffset = 0; // Math.PI / 2 - 0;
-        public static final double boomEncoderOffset = 0; // Math.PI - 0;
-        public static final double gripperEncoderOffset = 0; // Math.PI - 0;
+        public static final double mastEncoderOffset = -2.108 + Math.PI / 2;
+        public static final double boomEncoderOffset = -(-1.865) + -Math.PI;
+        public static final double gripperEncoderOffset = -(-0.665) + Math.PI;
 
         // Set these to -1 to invert the encoder measurements (find offsets again)
         public static final int mastEncoderMultiplier = 1;
@@ -288,32 +286,32 @@ public final class Constants {
 
         // Set these to true if a positive voltage makes the arm turn clockwise (we want ccw+)
         public static final boolean invertMastMotor = false;
-        public static final boolean invertBoomMotor = false;
+        public static final boolean invertBoomMotor = true;
         public static final boolean invertWristMotor = false;
     }
 
     public static final class GripperConstants {
-        public static final double length = Units.inchesToMeters(14);
-        public static final double centerOfMass = Units.inchesToMeters(7);
+        public static final double length = Units.inchesToMeters(9.625);
+        public static final double centerOfMass = Units.inchesToMeters(2);
 
-        public static final double mass = Units.lbsToKilograms(4);
+        public static final double mass = Units.lbsToKilograms(4.21);
 
-        public static final double momentOfInertia = 1;
+        public static final double momentOfInertia = 0.02;
 
-        public static final Rotation2d startingAngle = Rotation2d.fromDegrees(90);
+        public static final Rotation2d startingAngle = Rotation2d.fromDegrees(180);
 
         public static final double minimumAngle = Math.toDegrees(-90);
-        public static final double maximumAngle = Math.toDegrees(90);
+        public static final double maximumAngle = Math.toDegrees(180);
 
-        public static final double gearRatio = 140;
+        public static final double gearRatio = 5 * 4 * 7; // 3 gear boxes
 
         public static final double ks = 0;
-        public static final double kg = 0;
-        public static final double kv = 0;
+        public static final double kg = 0.19;
+        public static final double kv = 1.22;
         public static final double ka = 0;
 
-        public static final int FORWARD_CHANNEL = 0;
-        public static final int REVERSE_CHANNEL = 1;
+        public static final int FORWARD_CHANNEL = 4; // Tory made a mistake lol
+        public static final int REVERSE_CHANNEL = 5;
 
         public static final int gripperMotor = 14;
     }
@@ -379,6 +377,10 @@ public final class Constants {
         public static final int drivePeakCurrentLimit = 60;
         public static final double drivePeakCurrentDuration = 0.1;
         public static final boolean driveEnableCurrentLimit = true;
+
+        /* Motor Information */
+        public static final double driveMotorFreeSpeed = 6380; // RPM of Falcon 500
+        public static final double angleMotorFreeSpeed = 6380; // RPM of Falcon 500
 
         /* Angle Motor PID Values */
         public static final double angleKP = 0.2;
@@ -500,7 +502,8 @@ public final class Constants {
             new Translation2d(-wheelBase / 2.0, -trackWidth / 2.0)
         };
 
-        public static final SwerveDriveKinematics swerveKinematics = new SwerveDriveKinematics(moduleTranslations);
+        public static final SecondOrderSwerveKinematics swerveKinematics =
+                new SecondOrderSwerveKinematics(moduleTranslations);
 
         /* Swerve Current Limiting */
         public static final int angleContinuousCurrentLimit = 25;
@@ -525,6 +528,10 @@ public final class Constants {
         public static final double driveKD = 0.0;
         public static final double driveKF = 0.0;
 
+        /* Motor Information */
+        public static final double driveMotorFreeSpeed = 6380; // RPM of Falcon 500
+        public static final double angleMotorFreeSpeed = 6380; // RPM of Falcon 500
+
         /* Drive Motor Characterization Values */
         public static final double driveKS =
                 (0.667 / 12); // divide by 12 to convert from volts to percent output for CTRE
@@ -539,11 +546,19 @@ public final class Constants {
 
         /* Swerve Profiling Values */
         public static final double maxSpeed = 6.52; // meters per second
+        public static final double maxAcceleration = 16.52; // meters per second^2
         public static final double maxAngularVelocity = maxSpeed // rad/s
                 / Arrays.stream(moduleTranslations)
                         .map(translation -> translation.getNorm())
                         .max(Double::compare)
                         .get();
+
+        /* Calculated Characterization Values */
+        public static final double calculatedDriveKS = 0;
+        public static final double calculatedDriveKV = (12 / maxSpeed) / GlobalConstants.targetVoltage;
+        public static final double calculatedDriveKA = (12 / maxAcceleration) / GlobalConstants.targetVoltage;
+        public static final double calculatedAngleKV =
+                (12 * 60) / (angleMotorFreeSpeed * Math.toRadians(360 / angleGearRatio));
 
         /* Precise Driving Mode Values */
         public static final double preciseDrivingModeSpeedMultiplier = 0.2;

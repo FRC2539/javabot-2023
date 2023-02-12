@@ -21,10 +21,13 @@ public class SwerveModule {
     private double lastAngle;
 
     SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(
-            Constants.SwerveConstants.driveKS, Constants.SwerveConstants.driveKV, Constants.SwerveConstants.driveKA);
+            Constants.SwerveConstants.calculatedDriveKS,
+            Constants.SwerveConstants.calculatedDriveKV,
+            Constants.SwerveConstants.calculatedDriveKA);
 
-    SimpleMotorFeedforward angleFeedforward = new SimpleMotorFeedforward(
-            Constants.SwerveConstants.angleKS, Constants.SwerveConstants.angleKV, Constants.SwerveConstants.angleKA);
+    // Testing a calculation method
+    // SimpleMotorFeedforward angleFeedforward = new SimpleMotorFeedforward(
+    //         Constants.SwerveConstants.angleKS, Constants.SwerveConstants.angleKV, Constants.SwerveConstants.angleKA);
 
     public SwerveModule(int moduleNumber, SwerveModuleConstants moduleConstants) {
         this.moduleNumber = moduleNumber;
@@ -86,8 +89,8 @@ public class SwerveModule {
                     ControlMode.Position,
                     Conversions.degreesToFalcon(0, Constants.SwerveConstants.angleGearRatio),
                     DemandType.ArbitraryFeedForward,
-                    angleFeedforward.calculate(
-                            ((SecondOrderSwerveModuleState) desiredState).angularVelocityRadiansPerSecond));
+                    ((SecondOrderSwerveModuleState) desiredState).angularVelocityRadiansPerSecond
+                            * Constants.SwerveConstants.calculatedAngleKV);
         } else {
             angleMotor.set(
                     ControlMode.Position, Conversions.degreesToFalcon(angle, Constants.SwerveConstants.angleGearRatio));

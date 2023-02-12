@@ -35,8 +35,9 @@ public class RobotContainer {
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
-    private final VisionSubsystem visionSubsystem =
-            new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
+    private final GripperSubsystem gripperSubsystem = new GripperSubsystem();
+    // private final VisionSubsystem visionSubsystem =
+    //         new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
     private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose);
 
     public AutonomousManager autonomousManager;
@@ -64,9 +65,6 @@ public class RobotContainer {
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
 
-        // armSubsystem.setDefaultCommand(armSubsystem.passthroughCommand(getDriveForwardAxis(), getDriveRotationAxis(),
-        // getDriveForwardAxis()));
-
         /* Set non-button, multi-subsystem triggers */
 
         /* Set left joystick bindings */
@@ -82,6 +80,15 @@ public class RobotContainer {
         leftDriveController.nameLeftTopLeft("Reset Gyro Angle");
         leftDriveController.nameLeftTopRight("Reset Pose");
         leftDriveController.nameBottomThumb("Precise Driving");
+
+        leftDriveController.getTrigger().onTrue(gripperSubsystem.openGripperCommand());
+
+        leftDriveController
+                .getRightTopRight()
+                .toggleOnTrue(armSubsystem.passthroughCommand(
+                        operatorController.getLeftXAxis(),
+                        operatorController.getLeftYAxis(),
+                        operatorController.getRightXAxis()));
 
         // Leveling
         leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommand());
@@ -209,9 +216,9 @@ public class RobotContainer {
         return lightsSubsystem;
     }
 
-    public VisionSubsystem getVisionSubsystem() {
-        return visionSubsystem;
-    }
+    // public VisionSubsystem getVisionSubsystem() {
+    //     return visionSubsystem;
+    // }
 
     public ArmSubsystem getArmSubsystem() {
         return armSubsystem;

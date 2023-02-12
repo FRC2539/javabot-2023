@@ -21,6 +21,7 @@ import frc.lib.gyro.GenericGyro;
 import frc.lib.gyro.NavXGyro;
 import frc.lib.gyro.PigeonGyro;
 import frc.lib.interpolation.MovingAverageVelocity;
+import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.lib.loops.Updatable;
 import frc.lib.math.MathUtils;
@@ -49,6 +50,8 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
 
     boolean isCharacterizing = false;
 
+    private LoggedReceiver isSecondOrder;
+
     public SwerveDriveSubsystem() {
         if (SwerveConstants.hasPigeon)
             gyro = new PigeonGyro(SwerveConstants.PIGEON_PORT, GlobalConstants.CANIVORE_NAME);
@@ -74,6 +77,9 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
                 new Pose2d(),
                 VecBuilder.fill(0.01, 0.01, 0.01),
                 VecBuilder.fill(0.8, 0.8, 0.8));
+
+        // Allow us to toggle on second order kinematics
+        isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", false);
     }
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
@@ -320,7 +326,7 @@ public class SwerveDriveSubsystem extends SubsystemBase implements Updatable {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.SwerveConstants.maxSpeed);
 
         for (SwerveModule module : modules) {
-            module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop, false);
+            module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop, isSecondOrder.getBoolean());
         }
     }
 

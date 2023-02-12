@@ -14,11 +14,10 @@ import com.ctre.phoenix.led.SingleFadeAnimation;
 import com.ctre.phoenix.led.StrobeAnimation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.LightsConstants;
 
 public class LightsSubsystem extends SubsystemBase {
-    private static final CANdle candle = new CANdle(LightsConstants.CANDLE_PORT, GlobalConstants.CANIVORE_NAME);
+    private static final CANdle candle = new CANdle(LightsConstants.CANDLE_PORT);
 
     // Team colors
     public static final Color orange = new Color(255, 25, 0);
@@ -52,9 +51,11 @@ public class LightsSubsystem extends SubsystemBase {
 
     public Command defaultCommand() {
         return runOnce(() -> {
-            clearSegmentCommand(LEDSegment.BatteryIndicator);
-            clearSegmentCommand(LEDSegment.PressureIndicator);
-            clearSegmentCommand(LEDSegment.CANdleBottomHalf);
+            LEDSegment.BatteryIndicator.fullClear();
+            LEDSegment.PressureIndicator.fullClear();
+            LEDSegment.MastEncoderIndicator.fullClear();
+            LEDSegment.BoomEncoderIndicator.fullClear();
+            LEDSegment.WristEncoderIndicator.fullClear();
 
             LEDSegment.MainStrip.setColor(orange);
         });
@@ -70,8 +71,10 @@ public class LightsSubsystem extends SubsystemBase {
     public static enum LEDSegment {
         BatteryIndicator(0, 2, 0),
         PressureIndicator(2, 2, 1),
-        CANdleBottomHalf(4, 4, 2),
-        MainStrip(8, 300, 1);
+        MastEncoderIndicator(4, 1, 2),
+        BoomEncoderIndicator(5, 1, 3),
+        WristEncoderIndicator(6, 1, 4),
+        MainStrip(8, 296, 5);
 
         public final int startIndex;
         public final int segmentSize;
@@ -91,6 +94,11 @@ public class LightsSubsystem extends SubsystemBase {
 
         private void setAnimation(Animation animation) {
             candle.animate(animation, animationSlot);
+        }
+
+        public void fullClear() {
+            clearAnimation();
+            disableLEDs();
         }
 
         public void clearAnimation() {
@@ -134,6 +142,10 @@ public class LightsSubsystem extends SubsystemBase {
             this.red = red;
             this.green = green;
             this.blue = blue;
+        }
+
+        public Color dim(double amount) {
+            return new Color((int) (red / amount), (int) (green / amount), (int) (blue / amount));
         }
     }
 }

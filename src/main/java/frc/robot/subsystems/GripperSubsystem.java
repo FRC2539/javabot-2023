@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -18,7 +19,7 @@ public class GripperSubsystem extends SubsystemBase {
             PneumaticsModuleType.CTREPCM, GripperConstants.FORWARD_CHANNEL, GripperConstants.REVERSE_CHANNEL);
     private WPI_TalonSRX gripperMotor = new WPI_TalonSRX(GripperConstants.gripperMotor);
 
-    private GripperState gripperState = GripperState.OPEN;
+    private GripperState gripperState = GripperState.CLOSED;
 
     private LoggedReceiver gripperIntakeSpeed = Logger.receive("/Gripper/Intake Speed", 0.2);
     private LoggedReceiver gripperEjectSpeed = Logger.receive("/Gripper/Intake Speed", -0.2);
@@ -32,10 +33,12 @@ public class GripperSubsystem extends SubsystemBase {
         SupplyCurrentLimitConfiguration supplyLimit = new SupplyCurrentLimitConfiguration(true, 20, 30, 0.1);
 
         gripperMotor.configSupplyCurrentLimit(supplyLimit);
+
+        setDefaultCommand(closeGripperCommand());
     }
 
     public Command openGripperCommand() {
-        return runOnce(() -> setState(GripperState.OPEN));
+        return run(() -> setState(GripperState.OPEN));
     }
 
     public Command closeGripperCommand() {
@@ -43,7 +46,7 @@ public class GripperSubsystem extends SubsystemBase {
     }
 
     public Command ejectFromGripperCommand() {
-        return runOnce(() -> setState(GripperState.EJECT));
+        return run(() -> setState(GripperState.EJECT));
     }
 
     @Override
@@ -51,11 +54,11 @@ public class GripperSubsystem extends SubsystemBase {
         switch (gripperState) {
             case OPEN:
                 gripperSolenoid.set(Value.kReverse);
-                gripperMotor.stopMotor();
+                gripperMotor.set(gripperIntakeSpeed.getDouble());
                 break;
             case CLOSED:
                 gripperSolenoid.set(Value.kForward);
-                gripperMotor.set(gripperIntakeSpeed.getDouble());
+                gripperMotor.stopMotor();
                 break;
             case EJECT:
                 gripperSolenoid.set(Value.kReverse);
@@ -64,6 +67,7 @@ public class GripperSubsystem extends SubsystemBase {
         }
 
         Logger.log("/Gripper/Current", gripperMotor.getSupplyCurrent());
+        Logger.log("/Gripper/State", gripperState.name());
     }
 
     private void setState(GripperState gripperState) {
