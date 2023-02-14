@@ -7,6 +7,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -32,7 +33,7 @@ import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.lib.math.Conversions;
 import frc.lib.math.MathUtils;
-import frc.lib.math.TwoJointedArmFeedforward;
+import frc.lib.math.TwoJointedFourBarArmFeedforward;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
@@ -66,6 +67,11 @@ public class ArmSubsystem extends SubsystemBase {
     private double arm1Speed = 0; // radians / second
     private double arm2Speed = 0;
     private double gripperSpeed = 0;
+
+    private LinearFilter arm1SpeedFilter = LinearFilter.movingAverage(10);
+    private LinearFilter arm2SpeedFilter = LinearFilter.movingAverage(10);
+    private LinearFilter arm1SpeedFilter2 = LinearFilter.movingAverage(10);
+    private LinearFilter arm2SpeedFilter2 = LinearFilter.movingAverage(10);
 
     private Rotation2d lastGripperPosition;
     private Rotation2d lastArm1Position;
@@ -106,8 +112,8 @@ public class ArmSubsystem extends SubsystemBase {
     private Timer cycleModeTimer = new Timer();
     private int cycleModeIndex = 0;
 
-    private TwoJointedArmFeedforward simFeedforward;
-    private TwoJointedArmFeedforward feedforward;
+    private TwoJointedFourBarArmFeedforward simFeedforward;
+    private TwoJointedFourBarArmFeedforward feedforward;
     private ArmFeedforward gripperJointFeedforward;
 
     private Supplier<Pose2d> robotPoseSupplier;
@@ -191,11 +197,11 @@ public class ArmSubsystem extends SubsystemBase {
                 GripperConstants.length,
                 GripperConstants.startingAngle);
 
-        SmartDashboard.putData("Arm Mechanism", mechanism);
-
         desiredNetworkTablesArmPosition = Logger.tunable("/ArmSubsystem/Arm Pose", new double[] {1, 0, 0});
 
-        simFeedforward = new TwoJointedArmFeedforward(
+        SmartDashboard.putData("Arm Mechanism", mechanism);
+
+        simFeedforward = new TwoJointedFourBarArmFeedforward(
                 ArmConstants.arm1Length,
                 ArmConstants.arm2Length,
                 ArmConstants.arm1CenterOfMass,
@@ -214,7 +220,7 @@ public class ArmSubsystem extends SubsystemBase {
                 9.81);
 
         // for testing
-        feedforward = new TwoJointedArmFeedforward(
+        feedforward = new TwoJointedFourBarArmFeedforward(
                 ArmConstants.arm1Length,
                 ArmConstants.arm2Length,
                 ArmConstants.arm1CenterOfMass,
@@ -235,13 +241,14 @@ public class ArmSubsystem extends SubsystemBase {
         gripperJointFeedforward =
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
-        motor1Controller = new ProfiledPIDController(0.3, 0, 0.01, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(0.3, 0, 0.01, motor2Constraints);
-        gripperMotorController = new ProfiledPIDController(0.3, 0, 0, wristProfileConstraints);
+        motor1Controller = new ProfiledPIDController(0.45, 0, 0.01, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(0.35, 0, 0.05, motor2Constraints);
+        gripperMotorController = new ProfiledPIDController(0.35, 0, 0, wristProfileConstraints);
 
-        motor1Controller.reset(arm1Angle.getRadians());
-        motor2Controller.reset(arm2Angle.getRadians());
-        gripperMotorController.reset(gripperAngle.getRadians());
+        resetPIDControllers();
+
+        // Don't die when arm is backwards slightly
+        motor2Controller.enableContinuousInput(-Math.PI, Math.PI);
 
         motor1Controller.setTolerance(ArmConstants.angularTolerance);
         motor2Controller.setTolerance(ArmConstants.angularTolerance);
@@ -250,6 +257,15 @@ public class ArmSubsystem extends SubsystemBase {
         cycleModeTimer.start();
 
         setState(armState);
+
+        //Translation2d(X: -0.12, Y: 0.50)
+        //System.out.println(forwardKinematics(arm1.getLength(), arm1Angle, arm2.getLength(), arm2Angle, gripper.getLength(), gripperAngle));
+    }
+
+    public void resetPIDControllers() {
+        motor1Controller.reset(arm1Angle.getRadians());
+        motor2Controller.reset(arm2Angle.getRadians());
+        gripperMotorController.reset(gripperAngle.getRadians());
     }
 
     private Matrix<N3, N1> inverseKinematics(Translation2d gripperEndEffector, Rotation2d gripperAngle) {
@@ -363,11 +379,6 @@ public class ArmSubsystem extends SubsystemBase {
         ghostArm1.setAngle(Math.toDegrees(armAndWristAngles.get(0, 0)));
         ghostArm2.setAngle(Math.toDegrees(armAndWristAngles.get(1, 0)));
         ghostGripper.setAngle(Math.toDegrees(armAndWristAngles.get(2, 0)));
-
-        // Reset PID controllers
-        // motor1Controller.reset(arm1Angle.getRadians());
-        // motor2Controller.reset(arm2Angle.getRadians());
-        // gripperMotorController.reset(gripperAngle.getRadians());
     }
 
     public boolean isMastThroughBoreConnected() {
@@ -487,8 +498,10 @@ public class ArmSubsystem extends SubsystemBase {
                     "/ArmSubsystem/arm2IntegratedSpeed",
                     Conversions.falconToRadPS(joint2Motor.getSelectedSensorVelocity(), ArmConstants.arm1GearRatio));
 
-            arm1Speed = arm1Angle.minus(lastArm1Position).getRadians() / 0.02;
-            arm2Speed = arm2Angle.minus(lastArm2Position).getRadians() / 0.02;
+            // arm1Speed = arm1Angle.minus(lastArm1Position).getRadians() / 0.02;
+            // arm2Speed = arm2Angle.minus(lastArm2Position).getRadians() / 0.02;
+            arm1Speed = arm1SpeedFilter2.calculate(arm1SpeedFilter.calculate(arm1Angle.minus(lastArm1Position).getRadians() / 0.02));
+            arm2Speed = arm2SpeedFilter2.calculate(arm2SpeedFilter.calculate(arm2Angle.minus(lastArm2Position).getRadians() / 0.02));
             gripperSpeed = gripperAngle.minus(lastGripperPosition).getRadians() / 0.02;
         }
 
@@ -537,14 +550,6 @@ public class ArmSubsystem extends SubsystemBase {
         Logger.log("/ArmSubsystem/isBraking", brakingActivated);
         Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
         Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
-
-        // Log motor currents
-        // Logger.log("/ArmSubsystem/arm1SupplyCurrent", joint1Motor.getSupplyCurrent());
-        // Logger.log("/ArmSubsystem/arm2SupplyCurrent", joint2Motor.getSupplyCurrent());
-        // Logger.log("/ArmSubsystem/gripperSupplyCurrent", gripperMotor.getSupplyCurrent());
-        // Logger.log("/ArmSubsystem/arm1StatorCurrent", joint1Motor.getStatorCurrent());
-        // Logger.log("/ArmSubsystem/arm2StatorCurrent", joint2Motor.getStatorCurrent());
-        // Logger.log("/ArmSubsystem/gripperStatorCurrent", gripperMotor.getStatorCurrent());
     }
 
     private void executePIDFeedforward() {
@@ -563,13 +568,31 @@ public class ArmSubsystem extends SubsystemBase {
         double gripperDesiredSpeed = gripperMotorController.getSetpoint().velocity;
 
         // Calculate the arm motor feedforward voltages
+        // double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
+        //         arm1Angle.getRadians(),
+        //         arm2Angle.getRadians(),
+        //         arm1DesiredSpeed,
+        //         arm2DesiredSpeed,
+        //         (arm1DesiredSpeed - arm1Speed) / 0.02,
+        //         (arm2DesiredSpeed - arm2Speed) / 0.02);
+
+        // A little bounce at the end
+        // double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
+        //         arm1Angle.getRadians(),
+        //         arm2Angle.getRadians(),
+        //         arm1DesiredSpeed,
+        //         arm2DesiredSpeed,
+        //         0,
+        //         0);
+
+        // Pretty darn close
         double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
                 arm1Angle.getRadians(),
                 arm2Angle.getRadians(),
-                arm1DesiredSpeed,
-                arm2DesiredSpeed,
-                (arm1DesiredSpeed - arm1Speed) / 0.02,
-                (arm2DesiredSpeed - arm2Speed) / 0.02);
+                0,
+                0,
+                0,
+                0);
 
         // Calculate the wrist motor voltages
         double gripperVoltage = gripperJointFeedforward.calculate(
@@ -577,12 +600,12 @@ public class ArmSubsystem extends SubsystemBase {
                 gripperDesiredSpeed,
                 (gripperDesiredSpeed - gripperSpeed) / 0.02);
 
-        // joint1Motor.set(arm1VoltageCorrection + MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1));
-        // joint2Motor.set(arm2VoltageCorrection + MathUtils.ensureRange(ffVoltages[1] / 12, -1, 1));
+        joint1Motor.set(arm1VoltageCorrection + MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1));
+        joint2Motor.set(arm2VoltageCorrection + MathUtils.ensureRange(ffVoltages[1] / 12, -1, 1));
         gripperMotor.set(wristVoltageCorrection + MathUtils.ensureRange(gripperVoltage / 12, -1, 1));
 
-        joint1Motor.set(arm1VoltageCorrection);
-        joint2Motor.set(arm2VoltageCorrection);
+        // joint1Motor.set(arm1VoltageCorrection);
+        // joint2Motor.set(arm2VoltageCorrection);
         // gripperMotor.set(wristVoltageCorrection);
 
         // joint1Motor.set(MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1));
@@ -592,9 +615,12 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/arm1Voltage", ffVoltages[0]);
         // Logger.log("/ArmSubsystem/arm2Voltage", ffVoltages[1]);
         // Logger.log("/ArmSubsystem/gripperVoltage", gripperVoltage);
-        Logger.log("/ArmSubsystem/arm1Voltage", arm1VoltageCorrection);
-        Logger.log("/ArmSubsystem/arm2Voltage", arm2VoltageCorrection);
-        Logger.log("/ArmSubsystem/gripperVoltage", wristVoltageCorrection);
+        Logger.log("/ArmSubsystem/arm1AngleSetpoint", motor1Controller.getSetpoint().position);
+        Logger.log("/ArmSubsystem/arm2AngleSetpoint", motor2Controller.getSetpoint().position);
+        Logger.log("/ArmSubsystem/gripperPositionSetpoint", gripperMotorController.getSetpoint().position);
+        Logger.log("/ArmSubsystem/arm1SpeedSetpoint", motor1Controller.getSetpoint().velocity);
+        Logger.log("/ArmSubsystem/arm2SpeedSetpoint", motor2Controller.getSetpoint().velocity);
+        Logger.log("/ArmSubsystem/gripperSpeedSetpoint", gripperMotorController.getSetpoint().velocity);
     }
 
     @Override

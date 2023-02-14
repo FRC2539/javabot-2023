@@ -29,7 +29,7 @@ public final class Constants {
         public static final int PCM_ID = 19;
         public static final double targetVoltage = 12.0; // Used for voltage compensation
 
-        public static final double batteryVoltageThreshold = 12.5;
+        public static final double batteryVoltageThreshold = 12.3;
 
         public static final double minimumPressure = 100; // PSI
         public static final double maximumPressure = 120; // try 120
@@ -249,7 +249,7 @@ public final class Constants {
         // Rotation relative to first arm
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-180);
 
-        public static final double angularTolerance = Math.toRadians(5);
+        public static final double angularTolerance = Math.toRadians(2);
 
         public static final int mastMotorPort = 8;
         public static final int boomMotorPort = 9;

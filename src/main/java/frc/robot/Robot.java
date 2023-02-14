@@ -56,6 +56,9 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousInit() {
+        // Reset arm pid controllers
+        robotContainer.getArmSubsystem().resetPIDControllers();
+
         // Set april tags to use the correct origin (red or blue corner)
         FieldConstants.setAprilTagOrigin();
 
@@ -75,6 +78,9 @@ public class Robot extends TimedRobot {
 
         // Prevent any autonomous code from overrunning into teleop
         if (autonomousCommand != null) autonomousCommand.cancel();
+
+        // Reset arm pid controllers
+        robotContainer.getArmSubsystem().resetPIDControllers();
     }
 
     @Override
