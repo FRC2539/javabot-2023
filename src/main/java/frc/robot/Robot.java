@@ -95,25 +95,25 @@ public class Robot extends TimedRobot {
 
         // Indicate if the battery is at voltage
         if (RobotController.getBatteryVoltage() > GlobalConstants.batteryVoltageThreshold)
-            LEDSegment.BatteryIndicator.setColor(LightsSubsystem.green.dim(4));
-        else LEDSegment.BatteryIndicator.setFadeAnimation(LightsSubsystem.green.dim(4), 1);
+            LEDSegment.BatteryIndicator.setColor(LightsSubsystem.green.dim(0.25));
+        else LEDSegment.BatteryIndicator.setFadeAnimation(LightsSubsystem.green.dim(0.25), 1);
 
         // Indicate if there is enough pressure in the pneumatic system
         if (compressor.getPressure() > GlobalConstants.minimumPressure)
-            LEDSegment.PressureIndicator.setColor(LightsSubsystem.purple.dim(4));
-        else LEDSegment.PressureIndicator.setFadeAnimation(LightsSubsystem.purple.dim(4), 1);
+            LEDSegment.PressureIndicator.setColor(LightsSubsystem.purple.dim(0.25));
+        else LEDSegment.PressureIndicator.setFadeAnimation(LightsSubsystem.purple.dim(0.25), 1);
 
         // Verify that all absolute encoders are connected
         if (robotContainer.getArmSubsystem().isMastThroughBoreConnected())
-            LEDSegment.MastEncoderIndicator.setColor(LightsSubsystem.white.dim(4));
+            LEDSegment.MastEncoderIndicator.setColor(LightsSubsystem.white.dim(0.25));
         else LEDSegment.MastEncoderIndicator.fullClear();
 
         if (robotContainer.getArmSubsystem().isBoomThroughBoreConnected())
-            LEDSegment.BoomEncoderIndicator.setColor(LightsSubsystem.white.dim(4));
+            LEDSegment.BoomEncoderIndicator.setColor(LightsSubsystem.white.dim(0.25));
         else LEDSegment.BoomEncoderIndicator.fullClear();
 
         if (robotContainer.getArmSubsystem().isWristThroughBoreConnected())
-            LEDSegment.WristEncoderIndicator.setColor(LightsSubsystem.white.dim(4));
+            LEDSegment.WristEncoderIndicator.setColor(LightsSubsystem.white.dim(0.25));
         else LEDSegment.WristEncoderIndicator.fullClear();
 
         // Passive Main LED Mode

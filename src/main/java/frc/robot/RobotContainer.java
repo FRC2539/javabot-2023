@@ -23,6 +23,9 @@ import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
 
+import com.ctre.phoenix.ErrorCode;
+import com.ctre.phoenix.music.Orchestra;
+
 public class RobotContainer {
     private final ThrustmasterJoystick leftDriveController =
             new ThrustmasterJoystick(ControllerConstants.LEFT_DRIVE_CONTROLLER);
@@ -30,6 +33,8 @@ public class RobotContainer {
             new ThrustmasterJoystick(ControllerConstants.RIGHT_DRIVE_CONTROLLER);
     private final LogitechController operatorController =
             new LogitechController(ControllerConstants.OPERATOR_CONTROLLER);
+
+    public static Orchestra orchestra = new Orchestra();
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
@@ -95,6 +100,18 @@ public class RobotContainer {
         rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
         rightDriveController.nameRightBottomMiddle("Characterize Forwards");
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
+
+        rightDriveController.getRightTopLeft().whileTrue(startEnd(() -> {
+            armSubsystem.setBrake();
+ 
+            ErrorCode error = orchestra.loadMusic("acdc.chrp");
+
+            System.out.println(error.value);
+
+            orchestra.play();
+        }, () -> {
+            orchestra.stop();
+        }, swerveDriveSubsystem, armSubsystem));
 
         Supplier<Pose2d> targetPoseSupplier = () -> {
             PlacementLocation targetLocation =
@@ -162,13 +179,17 @@ public class RobotContainer {
         operatorController.nameY("Place High");
         operatorController.nameX("Protect Arm");
 
+        operatorController.getBack().onTrue(runOnce(armSubsystem::setNetworkTablesMode, armSubsystem));
+
         // Manual arm controls, no sussy stuff here
         operatorController.getDPadDown().onTrue(runOnce(armSubsystem::setHybridManual, armSubsystem));
-        operatorController.getDPadLeft().onTrue(runOnce(armSubsystem::setMidManual, armSubsystem));
+        operatorController.getDPadLeft().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
         operatorController.getDPadUp().onTrue(runOnce(armSubsystem::setHighManual, armSubsystem));
-        operatorController.nameA("Hybrid Manual");
-        operatorController.nameB("Mid Manual");
-        operatorController.nameY("High Manual");
+        operatorController.getDPadRight().onTrue(runOnce(armSubsystem::setMidManual, armSubsystem));
+        operatorController.nameDPadDown("Hybrid Manual");
+        operatorController.nameDPadLeft("Mid Manual");
+        operatorController.nameDPadUp("High Manual");
+        operatorController.nameDPadRight("Pickup");
 
         operatorController
                 .getRightTrigger()

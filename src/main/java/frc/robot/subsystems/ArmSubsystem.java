@@ -41,6 +41,8 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
+import frc.robot.RobotContainer;
+
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -96,9 +98,9 @@ public class ArmSubsystem extends SubsystemBase {
     private ProfiledPIDController motor2Controller;
     private ProfiledPIDController gripperMotorController;
 
-    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(1, 1);
-    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(1, 1);
-    private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(1, 1);
+    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(4, 3);
+    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(2, 1);
+    private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(4, 3);
     // private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(12, 6);
     // private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(12, 6);
     // private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(12,
@@ -107,7 +109,7 @@ public class ArmSubsystem extends SubsystemBase {
     private Translation2d endEffector = new Translation2d();
     private Rotation2d gripperEndAngle = new Rotation2d();
 
-    private ArmState armState = ArmState.NETWORK_TABLES_AIM;
+    private ArmState armState = ArmState.AWAITING_DEPLOYMENT;
     private boolean doCycleMode = false;
     private Timer cycleModeTimer = new Timer();
     private int cycleModeIndex = 0;
@@ -154,6 +156,10 @@ public class ArmSubsystem extends SubsystemBase {
         joint2Motor = new WPI_TalonFX(ArmConstants.boomMotorPort, GlobalConstants.CANIVORE_NAME);
         gripperMotor = new WPI_TalonSRX(ArmConstants.wristMotorPort); // wrist motor
 
+        // Add the motors to orchestra
+        RobotContainer.orchestra.addInstrument(joint1Motor);
+        RobotContainer.orchestra.addInstrument(joint2Motor);
+
         joint1Motor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
         joint2Motor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
         gripperMotor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
@@ -197,7 +203,7 @@ public class ArmSubsystem extends SubsystemBase {
                 GripperConstants.length,
                 GripperConstants.startingAngle);
 
-        desiredNetworkTablesArmPosition = Logger.tunable("/ArmSubsystem/Arm Pose", new double[] {1, 0, 0});
+        desiredNetworkTablesArmPosition = Logger.tunable("/ArmSubsystem/Arm Pose", new double[] {1, 0.1, 0});
 
         SmartDashboard.putData("Arm Mechanism", mechanism);
 
@@ -241,9 +247,9 @@ public class ArmSubsystem extends SubsystemBase {
         gripperJointFeedforward =
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
-        motor1Controller = new ProfiledPIDController(0.45, 0, 0.01, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(0.35, 0, 0.05, motor2Constraints);
-        gripperMotorController = new ProfiledPIDController(0.35, 0, 0, wristProfileConstraints);
+        motor1Controller = new ProfiledPIDController(0.6, 0, 0.01, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(0.25, 0, 0.05, motor2Constraints);
+        gripperMotorController = new ProfiledPIDController(0.3, 0, 0, wristProfileConstraints);
 
         resetPIDControllers();
 
@@ -258,8 +264,9 @@ public class ArmSubsystem extends SubsystemBase {
 
         setState(armState);
 
-        //Translation2d(X: -0.12, Y: 0.50)
-        //System.out.println(forwardKinematics(arm1.getLength(), arm1Angle, arm2.getLength(), arm2Angle, gripper.getLength(), gripperAngle));
+        // Translation2d(X: -0.12, Y: 0.50)
+        System.out.println(forwardKinematics(arm1.getLength(), Rotation2d.fromDegrees(90), arm2.getLength(), Rotation2d.fromDegrees(-180),
+        gripper.getLength(), new Rotation2d()));
     }
 
     public void resetPIDControllers() {
@@ -379,6 +386,9 @@ public class ArmSubsystem extends SubsystemBase {
         ghostArm1.setAngle(Math.toDegrees(armAndWristAngles.get(0, 0)));
         ghostArm2.setAngle(Math.toDegrees(armAndWristAngles.get(1, 0)));
         ghostGripper.setAngle(Math.toDegrees(armAndWristAngles.get(2, 0)));
+
+        // Calibrate integrated encoders each time we go to a new position
+        calibrateIntegratedEncoders();
     }
 
     public boolean isMastThroughBoreConnected() {
@@ -414,12 +424,14 @@ public class ArmSubsystem extends SubsystemBase {
 
     private Rotation2d getJoint1IntegratedAngle() {
         // These motors don't loop around after a full rotation so no need to change scope
-        return new Rotation2d(Conversions.falconToRadians(joint1Motor.getSelectedSensorPosition(), ArmConstants.arm1GearRatio));
+        return new Rotation2d(
+                Conversions.falconToRadians(joint1Motor.getSelectedSensorPosition(), ArmConstants.arm1GearRatio));
     }
 
     private Rotation2d getJoint2IntegratedAngle() {
         // These motors don't loop around after a full rotation so no need to change scope
-        return new Rotation2d(Conversions.falconToRadians(joint2Motor.getSelectedSensorPosition(), ArmConstants.arm2GearRatio));
+        return new Rotation2d(
+                Conversions.falconToRadians(joint2Motor.getSelectedSensorPosition(), ArmConstants.arm2GearRatio));
     }
 
     private Rotation2d putAngleInto180Scope(double radians) {
@@ -434,7 +446,7 @@ public class ArmSubsystem extends SubsystemBase {
 
         // Inverted because inverted motor needs uninverted measurement first
         joint2Motor.setSelectedSensorPosition(
-                Conversions.radiansToFalcon(-getJoint2EncoderAngle().getRadians(), ArmConstants.arm2GearRatio));        
+                Conversions.radiansToFalcon(-getJoint2EncoderAngle().getRadians(), ArmConstants.arm2GearRatio));
     }
 
     private boolean isArmAtGoal() {
@@ -500,8 +512,10 @@ public class ArmSubsystem extends SubsystemBase {
 
             // arm1Speed = arm1Angle.minus(lastArm1Position).getRadians() / 0.02;
             // arm2Speed = arm2Angle.minus(lastArm2Position).getRadians() / 0.02;
-            arm1Speed = arm1SpeedFilter2.calculate(arm1SpeedFilter.calculate(arm1Angle.minus(lastArm1Position).getRadians() / 0.02));
-            arm2Speed = arm2SpeedFilter2.calculate(arm2SpeedFilter.calculate(arm2Angle.minus(lastArm2Position).getRadians() / 0.02));
+            arm1Speed = arm1SpeedFilter2.calculate(
+                    arm1SpeedFilter.calculate(arm1Angle.minus(lastArm1Position).getRadians() / 0.02));
+            arm2Speed = arm2SpeedFilter2.calculate(
+                    arm2SpeedFilter.calculate(arm2Angle.minus(lastArm2Position).getRadians() / 0.02));
             gripperSpeed = gripperAngle.minus(lastGripperPosition).getRadians() / 0.02;
         }
 
@@ -577,28 +591,21 @@ public class ArmSubsystem extends SubsystemBase {
         //         (arm2DesiredSpeed - arm2Speed) / 0.02);
 
         // A little bounce at the end
+        double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
+                arm1Angle.getRadians(), arm2Angle.getRadians(), arm1DesiredSpeed, arm2DesiredSpeed, 0, 0);
+
+        // Pretty darn close
         // double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
         //         arm1Angle.getRadians(),
         //         arm2Angle.getRadians(),
-        //         arm1DesiredSpeed,
-        //         arm2DesiredSpeed,
+        //         0,
+        //         0,
         //         0,
         //         0);
 
-        // Pretty darn close
-        double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
-                arm1Angle.getRadians(),
-                arm2Angle.getRadians(),
-                0,
-                0,
-                0,
-                0);
-
         // Calculate the wrist motor voltages
         double gripperVoltage = gripperJointFeedforward.calculate(
-                gripperAngle.plus(arm1Angle).plus(arm2Angle).getRadians(),
-                gripperDesiredSpeed,
-                (gripperDesiredSpeed - gripperSpeed) / 0.02);
+                gripperAngle.plus(arm1Angle).plus(arm2Angle).getRadians(), gripperDesiredSpeed, 0);
 
         joint1Motor.set(arm1VoltageCorrection + MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1));
         joint2Motor.set(arm2VoltageCorrection + MathUtils.ensureRange(ffVoltages[1] / 12, -1, 1));
@@ -729,6 +736,10 @@ public class ArmSubsystem extends SubsystemBase {
         return armState;
     }
 
+    public void setPickup() {
+        setState(ArmState.PICKUP);
+    }
+
     public void setAwaitingPiece() {
         setState(ArmState.AWAITING_PIECE);
     }
@@ -770,7 +781,6 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public void setPassthrough() {
-
         setState(ArmState.PASSTHROUGH);
     }
 
@@ -783,11 +793,24 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public enum ArmState {
+        // PICKUP(new Static(0.7, 0, Rotation2d.fromDegrees(-50))),
+        PICKUP(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
-        AWAITING_DEPLOYMENT(new Static(0.24, 0.27, new Rotation2d())),
-        HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX, FieldConstants.midConeZ - 0.2, new Rotation2d())),
-        MID_MANUAL(Static.fromBumper(FieldConstants.midX, FieldConstants.midConeZ, new Rotation2d())),
-        HIGH_MANUAL(Static.fromBumper(FieldConstants.highX, FieldConstants.highConeZ, new Rotation2d())),
+        AWAITING_DEPLOYMENT(new Static(0.4, 0.27, new Rotation2d())),
+        HYBRID_MANUAL(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
+        // HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX + 0.5, 0.1, Rotation2d.fromDegrees(20))),
+        // MID_MANUAL(Static.fromBumper(
+        //         FieldConstants.midX,
+        //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
+        //         Rotation2d.fromDegrees(20))),
+        MID_MANUAL(Static.fromBumper(
+                FieldConstants.highX,
+                FieldConstants.highConeZ + ArmConstants.placementHeightOffset,
+                Rotation2d.fromDegrees(20))),
+        HIGH_MANUAL(Static.fromBumper(
+            FieldConstants.highX,
+            FieldConstants.highConeZ + ArmConstants.placementHeightOffset,
+            Rotation2d.fromDegrees(20))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
         HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())), // name my variables

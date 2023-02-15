@@ -27,6 +27,7 @@ import frc.lib.math.MathUtils;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
+import frc.robot.RobotContainer;
 import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.FeedForwardCharacterization;
@@ -66,6 +67,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         // Reset each module using its absolute encoder to avoid having modules fail to align
         for (SwerveModule module : modules) {
             module.resetToAbsolute();
+        }
+
+        // Add all motors to orchestra lol
+        for (SwerveModule module : modules) {
+            RobotContainer.orchestra.addInstrument(module.getDriveMotor());
+            RobotContainer.orchestra.addInstrument(module.getAngleMotor());
         }
 
         // Initialize the swerve drive pose estimator with access to the module positions.

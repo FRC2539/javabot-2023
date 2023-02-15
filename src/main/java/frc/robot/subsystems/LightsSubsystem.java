@@ -14,6 +14,7 @@ import com.ctre.phoenix.led.SingleFadeAnimation;
 import com.ctre.phoenix.led.StrobeAnimation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.math.MathUtils;
 import frc.robot.Constants.LightsConstants;
 
 public class LightsSubsystem extends SubsystemBase {
@@ -205,13 +206,17 @@ public class LightsSubsystem extends SubsystemBase {
 
         /**
          * Highly imperfect way of dimming the LEDs. It does not maintain color or
-         * accurately adjust perceived brightness. 
-         * 
-         * @param amount
-         * @return
+         * accurately adjust perceived brightness.
+         *
+         * @param dimFactor
+         * @return The dimmed color
          */
-        public Color dim(double amount) {
-            return new Color((int) (red / amount), (int) (green / amount), (int) (blue / amount));
+        public Color dim(double dimFactor) {
+            int newRed = (int)(MathUtils.ensureRange(red * dimFactor, 0, 200));
+            int newGreen = (int)(MathUtils.ensureRange(green * dimFactor, 0, 200));
+            int newBlue = (int)(MathUtils.ensureRange(blue * dimFactor, 0, 200));
+
+            return new Color(newRed, newGreen, newBlue);
         }
     }
 }

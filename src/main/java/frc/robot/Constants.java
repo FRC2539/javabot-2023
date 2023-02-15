@@ -281,6 +281,8 @@ public final class Constants {
         public static final boolean invertMastMotor = false;
         public static final boolean invertBoomMotor = true;
         public static final boolean invertWristMotor = true;
+
+        public static final double placementHeightOffset = 0.2;
     }
 
     public static final class GripperConstants {
@@ -299,7 +301,7 @@ public final class Constants {
         public static final double gearRatio = 5 * 4 * 7; // 3 gear boxes
 
         public static final double ks = 0;
-        public static final double kg = 2*0.19;
+        public static final double kg = 2 * 0.19;
         public static final double kv = 1.22;
         public static final double ka = 0;
 

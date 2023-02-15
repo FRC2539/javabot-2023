@@ -169,6 +169,14 @@ public class SwerveModule {
         return Rotation2d.fromDegrees(angleEncoder.getAbsolutePosition());
     }
 
+    public WPI_TalonFX getDriveMotor() {
+        return driveMotor;
+    }
+
+    public WPI_TalonFX getAngleMotor() {
+        return angleMotor;
+    }
+
     public SwerveModuleState getState() {
         double velocity = Conversions.falconToMPS(
                 driveMotor.getSelectedSensorVelocity(),
