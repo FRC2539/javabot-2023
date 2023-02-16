@@ -249,7 +249,7 @@ public final class Constants {
         // Rotation relative to first arm
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-180);
 
-        public static final double angularTolerance = Math.toRadians(2);
+        public static final double angularTolerance = Math.toRadians(10);
 
         public static final int mastMotorPort = 8;
         public static final int boomMotorPort = 9;
@@ -282,7 +282,7 @@ public final class Constants {
         public static final boolean invertBoomMotor = true;
         public static final boolean invertWristMotor = true;
 
-        public static final double placementHeightOffset = 0.2;
+        public static final double placementHeightOffset = 0.1;
     }
 
     public static final class GripperConstants {

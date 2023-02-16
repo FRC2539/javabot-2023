@@ -85,7 +85,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 VecBuilder.fill(0.8, 0.8, 0.8));
 
         // Allow us to toggle on second order kinematics
-        isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", false);
+        isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);
     }
 
     public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {

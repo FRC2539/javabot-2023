@@ -45,7 +45,7 @@ public class GripperSubsystem extends SubsystemBase {
         setDefaultCommand(closeGripperCommand());
 
         gripperIntakeSpeed = Logger.tunable("/Gripper/Intake Speed", 1.0);
-        gripperEjectSpeed = Logger.tunable("/Gripper/Eject Speed", -0.1);
+        gripperEjectSpeed = Logger.tunable("/Gripper/Eject Speed", -0.3);
     }
 
     private boolean hasGamePiece() {

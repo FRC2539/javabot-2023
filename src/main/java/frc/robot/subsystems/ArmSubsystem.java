@@ -41,7 +41,6 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
-import frc.robot.RobotContainer;
 
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
@@ -98,9 +97,9 @@ public class ArmSubsystem extends SubsystemBase {
     private ProfiledPIDController motor2Controller;
     private ProfiledPIDController gripperMotorController;
 
-    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(4, 3);
-    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(2, 1);
-    private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(4, 3);
+    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(5, 4);
+    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(3, 1);
+    private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(3, 3);
     // private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(12, 6);
     // private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(12, 6);
     // private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(12,
@@ -157,8 +156,8 @@ public class ArmSubsystem extends SubsystemBase {
         gripperMotor = new WPI_TalonSRX(ArmConstants.wristMotorPort); // wrist motor
 
         // Add the motors to orchestra
-        RobotContainer.orchestra.addInstrument(joint1Motor);
-        RobotContainer.orchestra.addInstrument(joint2Motor);
+        // RobotContainer.orchestra.addInstrument(joint1Motor);
+        // RobotContainer.orchestra.addInstrument(joint2Motor);
 
         joint1Motor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
         joint2Motor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
@@ -247,8 +246,8 @@ public class ArmSubsystem extends SubsystemBase {
         gripperJointFeedforward =
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
-        motor1Controller = new ProfiledPIDController(0.6, 0, 0.01, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(0.25, 0, 0.05, motor2Constraints);
+        motor1Controller = new ProfiledPIDController(0.65, 0, 0.01, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(0.2, 0, 0.1, motor2Constraints);
         gripperMotorController = new ProfiledPIDController(0.3, 0, 0, wristProfileConstraints);
 
         resetPIDControllers();
@@ -265,7 +264,7 @@ public class ArmSubsystem extends SubsystemBase {
         setState(armState);
 
         // Translation2d(X: -0.12, Y: 0.50)
-        System.out.println(forwardKinematics(arm1.getLength(), Rotation2d.fromDegrees(90), arm2.getLength(), Rotation2d.fromDegrees(-180),
+        System.out.println(forwardKinematics(arm1.getLength(), new Rotation2d(0.873), arm2.getLength(), new Rotation2d(-2.4),
         gripper.getLength(), new Rotation2d()));
     }
 
@@ -531,7 +530,7 @@ public class ArmSubsystem extends SubsystemBase {
 
         // Enable brake mode when the joints are at the right position
         if ((isArmAtGoal() || armState.getType() instanceof Brake) && !(armState.getType() instanceof PassthroughAim)) {
-            stopMotors();
+            // stopMotors();
 
             calibrateIntegratedEncoders();
         } else {
@@ -804,13 +803,13 @@ public class ArmSubsystem extends SubsystemBase {
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
         //         Rotation2d.fromDegrees(20))),
         MID_MANUAL(Static.fromBumper(
-                FieldConstants.highX,
-                FieldConstants.highConeZ + ArmConstants.placementHeightOffset,
-                Rotation2d.fromDegrees(20))),
+                FieldConstants.midX - 0.1,
+                FieldConstants.highConeZ,
+                Rotation2d.fromDegrees(30))),
         HIGH_MANUAL(Static.fromBumper(
-            FieldConstants.highX,
-            FieldConstants.highConeZ + ArmConstants.placementHeightOffset,
-            Rotation2d.fromDegrees(20))),
+                FieldConstants.highX + 0.25,
+                FieldConstants.highConeZ + ArmConstants.placementHeightOffset + 0.3,
+                Rotation2d.fromDegrees(60))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
         HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())), // name my variables

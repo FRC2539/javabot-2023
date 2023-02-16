@@ -154,7 +154,9 @@ public class TwoJointedFourBarArmFeedforward {
                 // calculateArmInertiaMatrix(motorAngles).times(motorAccelerations)
                 // .plus(calculateCoriolisMatrix(motorSpeeds, motorAngles).times(motorSpeeds))
                 transposeJacobianInverseMatrix
-                        .times(calculateGravityMatrix(motorAngles))
+                        .times(calculateGravityMatrix(motorAngles)
+                        .plus(calculateCoriolisMatrix(motorSpeeds, motorAngles).times(motorSpeeds)))
+                        .plus(calculateArmInertiaMatrix(motorAngles).times(motorAccelerations))
                         .plus(backEmfMatrix.times(jacobianMatrix.times(motorSpeeds))));
     }
 

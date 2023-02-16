@@ -104,7 +104,7 @@ public class RobotContainer {
         rightDriveController.getRightTopLeft().whileTrue(startEnd(() -> {
             armSubsystem.setBrake();
  
-            ErrorCode error = orchestra.loadMusic("acdc.chrp");
+            ErrorCode error = orchestra.loadMusic("thunderstruck.chrp");
 
             System.out.println(error.value);
 
@@ -187,7 +187,7 @@ public class RobotContainer {
         operatorController.getDPadUp().onTrue(runOnce(armSubsystem::setHighManual, armSubsystem));
         operatorController.getDPadRight().onTrue(runOnce(armSubsystem::setMidManual, armSubsystem));
         operatorController.nameDPadDown("Hybrid Manual");
-        operatorController.nameDPadLeft("Mid Manual");
+        operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
         operatorController.nameDPadRight("Pickup");
 
