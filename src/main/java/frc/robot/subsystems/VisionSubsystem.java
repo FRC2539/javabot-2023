@@ -2,7 +2,9 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
@@ -40,6 +42,7 @@ public class VisionSubsystem extends SubsystemBase {
     private Optional<EstimatedRobotPose> LLApriltagEstimate = Optional.empty();
     private Optional<EstimatedRobotPose> LLRetroreflectiveEstimate = Optional.empty();
     private Optional<EstimatedRobotPose> photonVisionEstimate = Optional.empty();
+    private Optional<Translation2d> LLRobotRelativeRetroreflectiveEstimate = Optional.empty();
 
     private BiConsumer<Pose2d, Double> addVisionMeasurement;
     private Supplier<Pose2d> robotPoseSupplier;
@@ -77,6 +80,8 @@ public class VisionSubsystem extends SubsystemBase {
                     "/VisionSubsystem/photonVisionPose",
                     photonVisionEstimate.get().estimatedPose.toPose2d());
         }
+
+        LLRobotRelativeRetroreflectiveEstimate = calculateLLRobotRelativeRetroreflectiveEstimate();
     }
 
     public void setLimelightMode(LimelightMode limelightMode) {
@@ -116,6 +121,42 @@ public class VisionSubsystem extends SubsystemBase {
         photonPoseEstimator.setReferencePose(robotPoseSupplier.get());
         return photonPoseEstimator.update();
     }
+    
+    public boolean hasLLRobotRelativeRetroflectiveEstimate() {
+        return LLRobotRelativeRetroreflectiveEstimate.isPresent();
+    }
+
+    public Optional<Translation2d> getLLRobotRelativeRetroflectiveEstimate() {
+        return LLRobotRelativeRetroreflectiveEstimate;
+    }
+
+    private Optional<Translation2d> calculateLLRobotRelativeRetroreflectiveEstimate() {
+        if (!limelightHasTarget()) return Optional.empty();
+
+        double limelightTX = limelightTXReceiver.getDouble();
+        double limelightTY = limelightTYReceiver.getDouble();
+
+        double retroreflectiveHeight;
+        
+        if (limelightTY < 0) {
+            retroreflectiveHeight = VisionConstants.lowerRetroreflectiveHeight;
+        } else {
+            retroreflectiveHeight = VisionConstants.upperRetroreflectiveHeight;
+        }
+        
+
+        var distance = (retroreflectiveHeight - VisionConstants.limelightHeight)
+                / Math.tan(VisionConstants.limelightCameraToRobot.getRotation().getY() + Math.toRadians(limelightTY));
+        
+        Translation2d cameraToRetroreflective = new Translation2d(distance, Rotation2d.fromDegrees(-limelightTX).plus(robotPoseSupplier.get().getRotation()));
+
+        Translation2d cameraToRobot = new Translation2d(VisionConstants.limelightCameraToRobot.getX(),
+            VisionConstants.limelightCameraToRobot.getY());
+
+        Translation2d relativeTarget = cameraToRetroreflective.minus(cameraToRobot);
+
+        return Optional.of(relativeTarget);
+    }
 
     public boolean hasLLRetroreflectiveEstimate() {
         return LLRetroreflectiveEstimate.isPresent();
@@ -126,21 +167,7 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     private Optional<EstimatedRobotPose> calculateLLRetroreflectiveEstimate() {
-        // this probably doesnt work yet
         return Optional.empty();
-
-        // if (!limelightHasTarget()) return Optional.empty();
-
-        // var timestamp = Timer.getFPGATimestamp() - limelightLatencySubscriber.get() / 1000.0;
-
-        // var distance = (VisionConstants.retroreflectiveHeight - VisionConstants.limelightHeight)
-        //         / Math.tan(VisionConstants.limelightCameraToRobot.getRotation().getY() +
-        // limelightTYSubscriber.get());
-
-        // Pose3d poseEstimate = new Pose3d(new Pose2d(new Translation2d(distance, limelightTXSubscriber.get()),
-        // Rotation2d.fromDegrees(180)));
-
-        // return Optional.of(new EstimatedRobotPose(poseEstimate, timestamp));
     }
 
     public boolean hasLLApriltagEstimate() {

@@ -324,7 +324,8 @@ public final class Constants {
         public static final Transform3d photonRobotToCamera = photonCameraToRobot.inverse();
 
         public static final double limelightHeight = Units.inchesToMeters(10);
-        public static final double retroreflectiveHeight = Units.inchesToMeters(30);
+        public static final double upperRetroreflectiveHeight = Units.inchesToMeters(41.875 + 1);
+        public static final double lowerRetroreflectiveHeight = Units.inchesToMeters(22.125 + 1);
 
         public static final Transform3d limelightCameraToRobot = new Transform3d(
                 new Translation3d(Units.inchesToMeters(3), Units.inchesToMeters(6), Units.inchesToMeters(-4)),
