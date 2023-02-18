@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
@@ -41,10 +42,10 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
-
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class ArmSubsystem extends SubsystemBase {
     private Mechanism2d mechanism = new Mechanism2d(4, 4);
@@ -155,10 +156,6 @@ public class ArmSubsystem extends SubsystemBase {
         joint2Motor = new WPI_TalonFX(ArmConstants.boomMotorPort, GlobalConstants.CANIVORE_NAME);
         gripperMotor = new WPI_TalonSRX(ArmConstants.wristMotorPort); // wrist motor
 
-        // Add the motors to orchestra
-        // RobotContainer.orchestra.addInstrument(joint1Motor);
-        // RobotContainer.orchestra.addInstrument(joint2Motor);
-
         joint1Motor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
         joint2Motor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
         gripperMotor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
@@ -247,7 +244,7 @@ public class ArmSubsystem extends SubsystemBase {
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
         motor1Controller = new ProfiledPIDController(0.65, 0, 0.01, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(0.2, 0, 0.1, motor2Constraints);
+        motor2Controller = new ProfiledPIDController(0.2, 0, 0.05, motor2Constraints);
         gripperMotorController = new ProfiledPIDController(0.3, 0, 0, wristProfileConstraints);
 
         resetPIDControllers();
@@ -264,8 +261,9 @@ public class ArmSubsystem extends SubsystemBase {
         setState(armState);
 
         // Translation2d(X: -0.12, Y: 0.50)
-        System.out.println(forwardKinematics(arm1.getLength(), new Rotation2d(0.873), arm2.getLength(), new Rotation2d(-2.4),
-        gripper.getLength(), new Rotation2d()));
+        // System.out.println(forwardKinematics(arm1.getLength(), new Rotation2d(0.873), arm2.getLength(), new
+        // Rotation2d(-2.4),
+        // gripper.getLength(), new Rotation2d()));
     }
 
     public void resetPIDControllers() {
@@ -406,6 +404,9 @@ public class ArmSubsystem extends SubsystemBase {
         return putAngleInto180Scope(
                 ArmConstants.gripperEncoderMultiplier * gripperAbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI
                         + ArmConstants.gripperEncoderOffset);
+
+        // return new Rotation2d(ArmConstants.gripperEncoderMultiplier * gripperAbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI
+        // + ArmConstants.gripperEncoderOffset);
     }
 
     private Rotation2d getJoint1EncoderAngle() {
@@ -485,15 +486,10 @@ public class ArmSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        var startTimeMS = Timer.getFPGATimestamp() * 1000;
+
         // Update internal model with real motor values
         if (Robot.isReal()) {
-            Logger.log(
-                    "/ArmSubsystem/arm1IntegratedAngle",
-                    getJoint1IntegratedAngle().getRadians());
-            Logger.log(
-                    "/ArmSubsystem/arm2IntegratedAngle",
-                    getJoint2IntegratedAngle().getRadians());
-
             lastArm1Position = arm1Angle;
             lastArm2Position = arm2Angle;
             lastGripperPosition = gripperAngle;
@@ -502,19 +498,13 @@ public class ArmSubsystem extends SubsystemBase {
             arm2Angle = getJoint2EncoderAngle();
             gripperAngle = getGripperEncoderAngle();
 
-            Logger.log(
-                    "/ArmSubsystem/arm1IntegratedSpeed",
-                    Conversions.falconToRadPS(joint1Motor.getSelectedSensorVelocity(), ArmConstants.arm1GearRatio));
-            Logger.log(
-                    "/ArmSubsystem/arm2IntegratedSpeed",
-                    Conversions.falconToRadPS(joint2Motor.getSelectedSensorVelocity(), ArmConstants.arm1GearRatio));
+            arm1Speed = arm1Angle.minus(lastArm1Position).getRadians() / 0.02;
+            arm2Speed = arm2Angle.minus(lastArm2Position).getRadians() / 0.02;
 
-            // arm1Speed = arm1Angle.minus(lastArm1Position).getRadians() / 0.02;
-            // arm2Speed = arm2Angle.minus(lastArm2Position).getRadians() / 0.02;
-            arm1Speed = arm1SpeedFilter2.calculate(
-                    arm1SpeedFilter.calculate(arm1Angle.minus(lastArm1Position).getRadians() / 0.02));
-            arm2Speed = arm2SpeedFilter2.calculate(
-                    arm2SpeedFilter.calculate(arm2Angle.minus(lastArm2Position).getRadians() / 0.02));
+            // arm1Speed = arm1SpeedFilter2.calculate(
+            //         arm1SpeedFilter.calculate(arm1Angle.minus(lastArm1Position).getRadians() / 0.02));
+            // arm2Speed = arm2SpeedFilter2.calculate(
+            //         arm2SpeedFilter.calculate(arm2Angle.minus(lastArm2Position).getRadians() / 0.02));
             gripperSpeed = gripperAngle.minus(lastGripperPosition).getRadians() / 0.02;
         }
 
@@ -539,30 +529,42 @@ public class ArmSubsystem extends SubsystemBase {
 
         // Run the PIDF system unless we are in one of the "special" modes
         if (armState != ArmState.COAST && armState != ArmState.BRAKE && armState != ArmState.PASSTHROUGH) {
-            executePIDFeedforward();
+            if (armState == ArmState.AWAITING_DEPLOYMENT && isArmAtGoal()) {
+                // backwards is positive for mast and negative for boom
+                joint1Motor.set(0.05);
+                joint2Motor.set(-0.037);
+            } else {
+                executePIDFeedforward();
+            }
         }
 
         // We still have this for some reason
-        if (doCycleMode && cycleModeTimer.advanceIfElapsed(3)) {
-            setState(ArmState.values()[cycleModeIndex]);
-            cycleModeIndex++;
-            cycleModeIndex %= ArmState.values().length;
-        }
+        // if (doCycleMode && cycleModeTimer.advanceIfElapsed(3)) {
+        //     setState(ArmState.values()[cycleModeIndex]);
+        //     cycleModeIndex++;
+        //     cycleModeIndex %= ArmState.values().length;
+        // }
+
+
+        Logger.log("/ArmSubsystem/arm1Percent", joint1Motor.get());
+        Logger.log("/ArmSubsystem/arm2Percent", joint2Motor.get());
 
         Logger.log("/ArmSubsystem/arm1Angle", arm1Angle.getRadians());
         Logger.log("/ArmSubsystem/arm2Angle", arm2Angle.getRadians());
-        Logger.log("/ArmSubsystem/arm1Speed", arm1Speed);
-        Logger.log("/ArmSubsystem/arm2Speed", arm2Speed);
+        // Logger.log("/ArmSubsystem/arm1Speed", arm1Speed);
+        // Logger.log("/ArmSubsystem/arm2Speed", arm2Speed);
         Logger.log("/ArmSubsystem/gripperAngle", gripperAngle.getRadians());
-        Logger.log("/ArmSubsystem/gripperSpeed", gripperSpeed);
+        // Logger.log("/ArmSubsystem/gripperSpeed", gripperSpeed);
         Logger.log("/ArmSubsystem/arm1DesiredPosition", joint1DesiredMotorPosition);
         Logger.log("/ArmSubsystem/arm2DesiredPosition", joint2DesiredMotorPosition);
         Logger.log("/ArmSubsystem/gripperDesiredPosition", gripperDesiredMotorPosition);
-        Logger.log("/ArmSubsystem/arm1EncoderPosition", getJoint1EncoderAngle().getRadians());
-        Logger.log("/ArmSubsystem/arm2EncoderPosition", getJoint2EncoderAngle().getRadians());
-        Logger.log("/ArmSubsystem/isBraking", brakingActivated);
-        Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
+        // Logger.log("/ArmSubsystem/arm1EncoderPosition", getJoint1EncoderAngle().getRadians());
+        // Logger.log("/ArmSubsystem/arm2EncoderPosition", getJoint2EncoderAngle().getRadians());
+        // Logger.log("/ArmSubsystem/isBraking", brakingActivated);
+        // Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
         Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
+
+        Logger.log("/ArmSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
 
     private void executePIDFeedforward() {
@@ -621,12 +623,12 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/arm1Voltage", ffVoltages[0]);
         // Logger.log("/ArmSubsystem/arm2Voltage", ffVoltages[1]);
         // Logger.log("/ArmSubsystem/gripperVoltage", gripperVoltage);
-        Logger.log("/ArmSubsystem/arm1AngleSetpoint", motor1Controller.getSetpoint().position);
-        Logger.log("/ArmSubsystem/arm2AngleSetpoint", motor2Controller.getSetpoint().position);
-        Logger.log("/ArmSubsystem/gripperPositionSetpoint", gripperMotorController.getSetpoint().position);
-        Logger.log("/ArmSubsystem/arm1SpeedSetpoint", motor1Controller.getSetpoint().velocity);
-        Logger.log("/ArmSubsystem/arm2SpeedSetpoint", motor2Controller.getSetpoint().velocity);
-        Logger.log("/ArmSubsystem/gripperSpeedSetpoint", gripperMotorController.getSetpoint().velocity);
+        // Logger.log("/ArmSubsystem/arm1AngleSetpoint", motor1Controller.getSetpoint().position);
+        // Logger.log("/ArmSubsystem/arm2AngleSetpoint", motor2Controller.getSetpoint().position);
+        // Logger.log("/ArmSubsystem/gripperPositionSetpoint", gripperMotorController.getSetpoint().position);
+        // Logger.log("/ArmSubsystem/arm1SpeedSetpoint", motor1Controller.getSetpoint().velocity);
+        // Logger.log("/ArmSubsystem/arm2SpeedSetpoint", motor2Controller.getSetpoint().velocity);
+        // Logger.log("/ArmSubsystem/gripperSpeedSetpoint", gripperMotorController.getSetpoint().velocity);
     }
 
     @Override
@@ -731,6 +733,17 @@ public class ArmSubsystem extends SubsystemBase {
                 new Rotation3d(0, gripperAbsoluteRotation, 0));
     }
 
+    public Command armStateCommand(ArmState armState) {
+        return runOnce(() -> setState(armState)).andThen(Commands.waitUntil(this::isArmAtGoal));
+    }
+
+    public Command armSequence(ArmState... armStates) {
+        return Commands.sequence(Stream.of(armStates)
+                .map((state) -> armStateCommand(state))
+                .toList()
+                .toArray(new Command[armStates.length]));
+    }
+
     public ArmState getState() {
         return armState;
     }
@@ -795,17 +808,15 @@ public class ArmSubsystem extends SubsystemBase {
         // PICKUP(new Static(0.7, 0, Rotation2d.fromDegrees(-50))),
         PICKUP(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
-        AWAITING_DEPLOYMENT(new Static(0.4, 0.27, new Rotation2d())),
-        HYBRID_MANUAL(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
+        AWAITING_DEPLOYMENT(new Static(0.34, 0.27, new Rotation2d())),
+        // AWAITING_DEPLOYMENT(new Static(0.4, 0.12, Rotation2d.fromDegrees(-60))),
+        HYBRID_MANUAL(new Static(0.97, -0.04, Rotation2d.fromDegrees(-5))),
         // HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX + 0.5, 0.1, Rotation2d.fromDegrees(20))),
         // MID_MANUAL(Static.fromBumper(
         //         FieldConstants.midX,
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
         //         Rotation2d.fromDegrees(20))),
-        MID_MANUAL(Static.fromBumper(
-                FieldConstants.midX - 0.1,
-                FieldConstants.highConeZ,
-                Rotation2d.fromDegrees(30))),
+        MID_MANUAL(Static.fromBumper(FieldConstants.midX - 0.1, FieldConstants.highConeZ, Rotation2d.fromDegrees(30))),
         HIGH_MANUAL(Static.fromBumper(
                 FieldConstants.highX + 0.25,
                 FieldConstants.highConeZ + ArmConstants.placementHeightOffset + 0.3,

@@ -135,6 +135,11 @@ public class SwerveModule {
         driveMotor.set(ControlMode.PercentOutput, 1.1 * Constants.SwerveConstants.driveKS);
     }
 
+    public void disableMotors() {
+        driveMotor.stopMotor();
+        angleMotor.stopMotor();
+    }
+
     public void resetToAbsolute() {
         double absolutePosition = Conversions.degreesToFalcon(
                 getCanCoder().getDegrees() - angleOffset, Constants.SwerveConstants.angleGearRatio);

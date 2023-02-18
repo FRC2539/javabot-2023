@@ -2,6 +2,9 @@ package frc.robot;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import com.ctre.phoenix.music.Orchestra;
+
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -9,7 +12,6 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.lib.controller.Axis;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
 import frc.lib.logging.Logger;
@@ -17,14 +19,10 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AimAtPoseCommand;
-import frc.robot.commands.AssistedDriveToPositionCommand;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
-
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.music.Orchestra;
 
 public class RobotContainer {
     private final ThrustmasterJoystick leftDriveController =
@@ -36,9 +34,13 @@ public class RobotContainer {
 
     public static Orchestra orchestra = new Orchestra();
 
+    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(16);
+    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(16);
+
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
     private final GripperSubsystem gripperSubsystem = new GripperSubsystem();
+    private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
     // private final VisionSubsystem visionSubsystem =
     //         new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
     private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose);
@@ -52,16 +54,9 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-        leftDriveController.getXAxis().setScale(Constants.SwerveConstants.maxSpeed);
-        leftDriveController.getYAxis().setScale(Constants.SwerveConstants.maxSpeed);
-        rightDriveController.getXAxis().setScale(Constants.SwerveConstants.maxAngularVelocity * 0.75);
-        leftDriveController.getXAxis().setInverted(true);
-        leftDriveController.getYAxis().setInverted(true);
-        rightDriveController.getXAxis().setInverted(true);
-
         /* Set default commands */
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
-                getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
+                this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, true));
 
         /* Set non-button, multi-subsystem triggers */
 
@@ -71,23 +66,21 @@ public class RobotContainer {
                 .getLeftTopRight()
                 .onTrue(runOnce(() -> swerveDriveSubsystem.setPose(new Pose2d()), swerveDriveSubsystem));
         leftDriveController.getLeftTopMiddle().onTrue(runOnce(swerveDriveSubsystem::switchToBackupGyro));
-        leftDriveController
-                .getBottomThumb()
-                .whileTrue(swerveDriveSubsystem.preciseDriveCommand(
-                        getDriveForwardAxis(), getDriveStrafeAxis(), getDriveRotationAxis(), true));
         leftDriveController.nameLeftTopLeft("Reset Gyro Angle");
         leftDriveController.nameLeftTopRight("Reset Pose");
-        leftDriveController.nameBottomThumb("Precise Driving");
+        leftDriveController.nameLeftTopMiddle("Use NavX");
 
         leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
         rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
+        leftDriveController.nameTrigger("Open Gripper");
+        rightDriveController.nameTrigger("Eject From Gripper");
 
-        leftDriveController
-                .getRightTopRight()
-                .toggleOnTrue(armSubsystem.passthroughCommand(
-                        operatorController.getLeftXAxis(),
-                        operatorController.getLeftYAxis(),
-                        operatorController.getRightXAxis()));
+        // leftDriveController
+        //         .getRightTopRight()
+        //         .toggleOnTrue(armSubsystem.passthroughCommand(
+        //                 operatorController.getLeftXAxis(),
+        //                 operatorController.getLeftYAxis(),
+        //                 operatorController.getRightXAxis()));
 
         // Leveling
         leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommand());
@@ -101,17 +94,15 @@ public class RobotContainer {
         rightDriveController.nameRightBottomMiddle("Characterize Forwards");
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
 
-        rightDriveController.getRightTopLeft().whileTrue(startEnd(() -> {
-            armSubsystem.setBrake();
- 
-            ErrorCode error = orchestra.loadMusic("thunderstruck.chrp");
-
-            System.out.println(error.value);
-
-            orchestra.play();
-        }, () -> {
-            orchestra.stop();
-        }, swerveDriveSubsystem, armSubsystem));
+        rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.runIntakeCommand());
+        rightDriveController.getRightThumb().whileTrue(intakeSubsystem.reverseIntakeCommand());
+        rightDriveController.getBottomThumb().whileTrue(intakeSubsystem.shootCommand());
+        rightDriveController.nameLeftThumb("Run Intake");
+        rightDriveController.nameRightThumb("Reverse Intake");
+        rightDriveController.nameBottomThumb("Shoot");
+        
+        rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
+        rightDriveController.nameRightTopLeft("Symphony");
 
         Supplier<Pose2d> targetPoseSupplier = () -> {
             PlacementLocation targetLocation =
@@ -154,20 +145,31 @@ public class RobotContainer {
             return targetPose;
         };
 
-        rightDriveController
-                .getLeftThumb()
-                .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
-        rightDriveController
+        leftDriveController
                 .getRightThumb()
+                .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, targetPoseSupplier));
+        leftDriveController
+                .getLeftThumb()
                 .whileTrue(new AimAtPoseCommand(
-                        swerveDriveSubsystem, targetAimPoseSupplier, getDriveForwardAxis(), getDriveStrafeAxis()));
-        rightDriveController
+                        swerveDriveSubsystem,
+                        targetAimPoseSupplier,
+                        this::getDriveForwardAxis,
+                        this::getDriveStrafeAxis));                
+        // leftDriveController
+        //         .getBottomThumb()
+        //         .whileTrue(new AssistedDriveToPositionCommand(
+        //                 swerveDriveSubsystem, targetPoseSupplier, this::getDriveForwardAxis));
+        leftDriveController
                 .getBottomThumb()
-                .whileTrue(new AssistedDriveToPositionCommand(
-                        swerveDriveSubsystem, targetPoseSupplier, getDriveForwardAxis()));
-        rightDriveController.nameLeftThumb("Drive to Pose");
-        rightDriveController.nameRightThumb("Aim at Pose");
-        rightDriveController.nameBottomThumb("Assisted Drive");
+                .whileTrue(swerveDriveSubsystem.cardinalDriveCommand(
+                        this::getDriveForwardAxis,
+                        this::getDriveStrafeAxis,
+                        this::getCardinalXRotationAxis,
+                        this::getCardinalYRotationAxis));
+        leftDriveController.nameRightThumb("Drive to Pose");
+        leftDriveController.nameLeftThumb("Aim at Pose");
+        // leftDriveController.nameBottomThumb("Assisted Drive");
+        leftDriveController.nameBottomThumb("Cardinal Driving");
 
         /* Set operator controller bindings */
         operatorController.getA().onTrue(runOnce(armSubsystem::setHybrid, armSubsystem));
@@ -180,9 +182,12 @@ public class RobotContainer {
         operatorController.nameX("Protect Arm");
 
         operatorController.getBack().onTrue(runOnce(armSubsystem::setNetworkTablesMode, armSubsystem));
+        operatorController.nameBack("Arm Test Mode");
 
         // Manual arm controls, no sussy stuff here
-        operatorController.getDPadDown().onTrue(runOnce(armSubsystem::setHybridManual, armSubsystem));
+        operatorController
+                .getDPadDown()
+                .onTrue(armSubsystem.armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.HYBRID_MANUAL));
         operatorController.getDPadLeft().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
         operatorController.getDPadUp().onTrue(runOnce(armSubsystem::setHighManual, armSubsystem));
         operatorController.getDPadRight().onTrue(runOnce(armSubsystem::setMidManual, armSubsystem));
@@ -199,13 +204,9 @@ public class RobotContainer {
                 .getLeftTrigger()
                 .whileTrue(run(
                         () -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.purple), lightsSubsystem));
-
-        // operatorController.getRightTrigger().whileTrue(lightsSubsystem.indicateConeCommand());
-        // operatorController.getLeftTrigger().whileTrue(lightsSubsystem.indicateCubeCommand());
         operatorController.nameRightTrigger("Indicate Cone");
         operatorController.nameLeftTrigger("Indicate Cube");
 
-        // 20.5
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();
         operatorController.sendButtonNamesToNT();
@@ -215,16 +216,44 @@ public class RobotContainer {
         return autonomousManager.getAutonomousCommand();
     }
 
-    public Axis getDriveForwardAxis() {
-        return leftDriveController.getYAxis();
+    public double getDriveForwardAxis() {
+        return forwardRateLimiter.calculate(-square(deadband(leftDriveController.getYAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
     }
 
-    public Axis getDriveStrafeAxis() {
-        return leftDriveController.getXAxis();
+    public double getDriveStrafeAxis() {
+        return strafeRateLimiter.calculate(-square(deadband(leftDriveController.getXAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
     }
 
-    public Axis getDriveRotationAxis() {
-        return rightDriveController.getXAxis();
+    public double getDriveRotationAxis() {
+        return -square(deadband(rightDriveController.getXAxis().getRaw(), 0.05))
+                * Constants.SwerveConstants.maxAngularVelocity
+                * 0.75;
+    }
+
+    public double getCardinalXRotationAxis() {
+        var value = deadband(rightDriveController.getXAxis().getRaw(), 0.15);
+
+        if (value == 0.0) return 0.0;
+
+        return value > 0 ? 1 : -1;
+    }
+
+    public double getCardinalYRotationAxis() {
+        var value = deadband(rightDriveController.getYAxis().getRaw(), 0.15);
+
+        if (value == 0.0) return 0.0;
+
+        return value > 0 ? 1 : -1;
+    }
+
+    private static double deadband(double value, double tolerance) {
+        if (Math.abs(value) < tolerance) return 0.0;
+
+        return Math.copySign(value, (value - tolerance) / (1.0 - tolerance));
+    }
+
+    private static double square(double value) {
+        return Math.copySign(value * value, value);
     }
 
     public SwerveDriveSubsystem getSwerveDriveSubsystem() {
@@ -233,6 +262,14 @@ public class RobotContainer {
 
     public LightsSubsystem getLightsSubsystem() {
         return lightsSubsystem;
+    }
+
+    public GripperSubsystem getGripperSubsystem() {
+        return gripperSubsystem;
+    }
+
+    public IntakeSubsystem getIntakeSubsystem() {
+        return intakeSubsystem;
     }
 
     // public VisionSubsystem getVisionSubsystem() {

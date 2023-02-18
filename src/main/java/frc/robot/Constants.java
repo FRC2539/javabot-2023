@@ -208,6 +208,12 @@ public final class Constants {
 
     public static final class IntakeConstants {
         public static final int intakeMotor = 16;
+
+        public static final int positionForwardChannel = 3;
+        public static final int positionReverseChannel = 6;
+
+        public static final int shootingForwardChannel = 7;
+        public static final int shootingReverseChannel = 1;
     }
 
     public static final class ArmConstants {
@@ -249,7 +255,7 @@ public final class Constants {
         // Rotation relative to first arm
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-180);
 
-        public static final double angularTolerance = Math.toRadians(10);
+        public static final double angularTolerance = Math.toRadians(12);
 
         public static final int mastMotorPort = 8;
         public static final int boomMotorPort = 9;
@@ -305,8 +311,8 @@ public final class Constants {
         public static final double kv = 1.22;
         public static final double ka = 0;
 
-        public static final int FORWARD_CHANNEL = 4; // Tory made a mistake lol
-        public static final int REVERSE_CHANNEL = 5;
+        public static final int FORWARD_CHANNEL = 5; // Tory made a mistake lol
+        public static final int REVERSE_CHANNEL = 4;
 
         public static final int gripperMotor = 14;
     }
@@ -323,15 +329,15 @@ public final class Constants {
 
         public static final Transform3d photonRobotToCamera = photonCameraToRobot.inverse();
 
-        public static final double limelightHeight = Units.inchesToMeters(10);
+        // public static final double limelightHeight = Units.inchesToMeters(10);
         public static final double upperRetroreflectiveHeight = Units.inchesToMeters(41.875 + 1);
         public static final double lowerRetroreflectiveHeight = Units.inchesToMeters(22.125 + 1);
 
-        public static final Transform3d limelightCameraToRobot = new Transform3d(
-                new Translation3d(Units.inchesToMeters(3), Units.inchesToMeters(6), Units.inchesToMeters(-4)),
-                new Rotation3d(0, 0, 0));
+        public static final Transform3d limelightRobotToCamera = new Transform3d(
+                new Translation3d(Units.inchesToMeters(-6), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
+                new Rotation3d(0, Math.toRadians(10), 0));
 
-        public static final Transform3d limelightRobotToCamera = limelightCameraToRobot.inverse();
+        public static final Transform3d limelightCameraToRobot = limelightRobotToCamera.inverse();
     }
 
     public static final class SwerveConstants extends CompBotConstants {}

@@ -3,6 +3,7 @@ package frc.lib.logging;
 import edu.wpi.first.hal.HALUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -89,6 +90,10 @@ public class Logger {
 
     public static void log(String key, String[] value) {
         updatesMap.put(key, new LogValue(value));
+    }
+
+    public static void log(String key, Translation2d value) {
+        log(key, new double[] {value.getX(), value.getY()});
     }
 
     public static void log(String key, ChassisSpeeds value) {

@@ -212,9 +212,9 @@ public class LightsSubsystem extends SubsystemBase {
          * @return The dimmed color
          */
         public Color dim(double dimFactor) {
-            int newRed = (int)(MathUtils.ensureRange(red * dimFactor, 0, 200));
-            int newGreen = (int)(MathUtils.ensureRange(green * dimFactor, 0, 200));
-            int newBlue = (int)(MathUtils.ensureRange(blue * dimFactor, 0, 200));
+            int newRed = (int) (MathUtils.ensureRange(red * dimFactor, 0, 200));
+            int newGreen = (int) (MathUtils.ensureRange(green * dimFactor, 0, 200));
+            int newBlue = (int) (MathUtils.ensureRange(blue * dimFactor, 0, 200));
 
             return new Color(newRed, newGreen, newBlue);
         }

@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
+import frc.lib.vision.TimestampedPose;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
 import java.util.Optional;
@@ -25,21 +26,21 @@ public class VisionSubsystem extends SubsystemBase {
     private PhotonCamera camera = new PhotonCamera(VisionConstants.photonCameraName);
     private PhotonPoseEstimator photonPoseEstimator = new PhotonPoseEstimator(
             FieldConstants.APRIL_TAG_FIELD_LAYOUT,
-            PoseStrategy.AVERAGE_BEST_TARGETS,
+            PoseStrategy.MULTI_TAG_PNP,
             camera,
             VisionConstants.photonRobotToCamera);
 
     private LimelightMode limelightMode = LimelightMode.APRILTAG;
 
-    private LoggedReceiver limelightHasTargetReceiver = Logger.receive("/limelight/tv", 0);
-    private LoggedReceiver limelightTXReceiver = Logger.receive("/limelight/tx", 0);
-    private LoggedReceiver limelightTYReceiver = Logger.receive("/limelight/ty", 0);
+    private LoggedReceiver limelightHasTargetReceiver = Logger.receive("/limelight/tv", 0.0);
+    private LoggedReceiver limelightTXReceiver = Logger.receive("/limelight/tx", 0.0);
+    private LoggedReceiver limelightTYReceiver = Logger.receive("/limelight/ty", 0.0);
     private LoggedReceiver limelightApriltagIDReceiver = Logger.receive("/limelight/tid", -1);
-    private LoggedReceiver limelightLatencyReceiver = Logger.receive("/limelight/tl", 0);
+    private LoggedReceiver limelightLatencyReceiver = Logger.receive("/limelight/tl", 0.0);
     private LoggedReceiver botposeRedReceiver = Logger.receive("/limelight/botpose_wpired", new double[] {});
     private LoggedReceiver botposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
 
-    private Optional<EstimatedRobotPose> LLApriltagEstimate = Optional.empty();
+    private Optional<TimestampedPose> LLApriltagEstimate = Optional.empty();
     private Optional<EstimatedRobotPose> LLRetroreflectiveEstimate = Optional.empty();
     private Optional<EstimatedRobotPose> photonVisionEstimate = Optional.empty();
     private Optional<Translation2d> LLRobotRelativeRetroreflectiveEstimate = Optional.empty();
@@ -47,7 +48,7 @@ public class VisionSubsystem extends SubsystemBase {
     private BiConsumer<Pose2d, Double> addVisionMeasurement;
     private Supplier<Pose2d> robotPoseSupplier;
 
-    private static boolean visionDisabled = true;
+    private static boolean visionDisabled = false;
 
     public VisionSubsystem(BiConsumer<Pose2d, Double> addVisionMeasurement, Supplier<Pose2d> robotPoseSupplier) {
         this.addVisionMeasurement = addVisionMeasurement;
@@ -82,12 +83,17 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         LLRobotRelativeRetroreflectiveEstimate = calculateLLRobotRelativeRetroreflectiveEstimate();
+        if (LLRobotRelativeRetroreflectiveEstimate.isPresent()) {
+            Logger.log(
+                    "/VisionSubsystem/LLRobotRelativeRetroreflective",
+                    new Pose2d(LLRobotRelativeRetroreflectiveEstimate.get(), new Rotation2d()));
+        }
     }
 
     public void setLimelightMode(LimelightMode limelightMode) {
         this.limelightMode = limelightMode;
 
-        Logger.log("/limelight/pipeline", (double) limelightMode.pipelineNumber);
+        Logger.log("/limelight/pipeline", limelightMode.pipelineNumber);
     }
 
     public LimelightMode getLimelightMode() {
@@ -106,6 +112,10 @@ public class VisionSubsystem extends SubsystemBase {
         addVisionMeasurement.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
     }
 
+    private void addVisionPoseEstimate(TimestampedPose estimate) {
+        addVisionMeasurement.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+    }
+
     public boolean hasPhotonVisionEstimate() {
         return photonVisionEstimate.isPresent();
     }
@@ -121,7 +131,7 @@ public class VisionSubsystem extends SubsystemBase {
         photonPoseEstimator.setReferencePose(robotPoseSupplier.get());
         return photonPoseEstimator.update();
     }
-    
+
     public boolean hasLLRobotRelativeRetroflectiveEstimate() {
         return LLRobotRelativeRetroreflectiveEstimate.isPresent();
     }
@@ -131,27 +141,31 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     private Optional<Translation2d> calculateLLRobotRelativeRetroreflectiveEstimate() {
-        if (!limelightHasTarget()) return Optional.empty();
+        if (visionDisabled) return Optional.empty();
+
+        if (!limelightHasTarget() || limelightMode == LimelightMode.APRILTAG) return Optional.empty();
 
         double limelightTX = limelightTXReceiver.getDouble();
         double limelightTY = limelightTYReceiver.getDouble();
 
         double retroreflectiveHeight;
-        
+
         if (limelightTY < 0) {
             retroreflectiveHeight = VisionConstants.lowerRetroreflectiveHeight;
         } else {
             retroreflectiveHeight = VisionConstants.upperRetroreflectiveHeight;
         }
-        
 
-        var distance = (retroreflectiveHeight - VisionConstants.limelightHeight)
+        var distance = (retroreflectiveHeight - VisionConstants.limelightRobotToCamera.getZ())
                 / Math.tan(VisionConstants.limelightCameraToRobot.getRotation().getY() + Math.toRadians(limelightTY));
-        
-        Translation2d cameraToRetroreflective = new Translation2d(distance, Rotation2d.fromDegrees(-limelightTX).plus(robotPoseSupplier.get().getRotation()));
 
-        Translation2d cameraToRobot = new Translation2d(VisionConstants.limelightCameraToRobot.getX(),
-            VisionConstants.limelightCameraToRobot.getY());
+        Translation2d cameraToRetroreflective = new Translation2d(
+                distance,
+                Rotation2d.fromDegrees(-limelightTX)
+                        .plus(robotPoseSupplier.get().getRotation()));
+
+        Translation2d cameraToRobot = new Translation2d(
+                VisionConstants.limelightCameraToRobot.getX(), VisionConstants.limelightCameraToRobot.getY());
 
         Translation2d relativeTarget = cameraToRetroreflective.minus(cameraToRobot);
 
@@ -174,11 +188,11 @@ public class VisionSubsystem extends SubsystemBase {
         return LLApriltagEstimate.isPresent();
     }
 
-    public Optional<EstimatedRobotPose> getLLApriltagEstimate() {
+    public Optional<TimestampedPose> getLLApriltagEstimate() {
         return LLApriltagEstimate;
     }
 
-    private Optional<EstimatedRobotPose> calculateLLApriltagEstimate() {
+    private Optional<TimestampedPose> calculateLLApriltagEstimate() {
         if (visionDisabled || getLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
 
         // gets the botpose array from the limelight and a timestamp
@@ -198,7 +212,7 @@ public class VisionSubsystem extends SubsystemBase {
                                     Math.toRadians(botposeArray[4]),
                                     Math.toRadians(botposeArray[5])))
                     .transformBy(VisionConstants.limelightCameraToRobot);
-            return Optional.of(new EstimatedRobotPose(botPose, timestamp));
+            return Optional.of(new TimestampedPose(botPose, timestamp));
         } else {
             return Optional.empty();
         }
@@ -206,8 +220,8 @@ public class VisionSubsystem extends SubsystemBase {
 
     public enum LimelightMode {
         APRILTAG(0),
-        RETROREFLECTIVE(1),
-        CONE(2);
+        RETROREFLECTIVEMAIN(1),
+        RETROREFLECTIVESECOND(2);
 
         public int pipelineNumber;
 

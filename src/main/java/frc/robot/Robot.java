@@ -14,6 +14,7 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.GlobalConstants;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.LightsSubsystem.LEDSegment;
+import frc.robot.subsystems.VisionSubsystem.LimelightMode;
 
 public class Robot extends TimedRobot {
     public static CTREConfigs ctreConfigs = new CTREConfigs();
@@ -91,6 +92,13 @@ public class Robot extends TimedRobot {
 
     @Override
     public void disabledPeriodic() {
+        // Calibrate swerve encoders
+        // robotContainer.getSwerveDriveSubsystem().calibrateIntegratedEncoders();
+
+        // Set correct limelight mode (run while disabled for consistency)
+        // robotContainer.getVisionSubsystem().setLimelightMode(LimelightMode.APRILTAG);
+
+        // Update the autonomous command with driver station configuration
         robotContainer.autonomousManager.update();
 
         // Indicate if the battery is at voltage
@@ -118,7 +126,6 @@ public class Robot extends TimedRobot {
 
         // Passive Main LED Mode
         LEDSegment.MainStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
-        // LightsSubsystem.runDefaultMainStripAnimation();
     }
 
     @Override

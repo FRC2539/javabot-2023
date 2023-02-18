@@ -14,9 +14,10 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.lib.controller.Axis;
 import frc.lib.gyro.GenericGyro;
 import frc.lib.gyro.NavXGyro;
 import frc.lib.gyro.PigeonGyro;
@@ -27,12 +28,13 @@ import frc.lib.math.MathUtils;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
-import frc.robot.RobotContainer;
 import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.SwerveConstants;
+import frc.robot.RobotContainer;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
 import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 
@@ -65,9 +67,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         };
 
         // Reset each module using its absolute encoder to avoid having modules fail to align
-        for (SwerveModule module : modules) {
-            module.resetToAbsolute();
-        }
+        calibrateIntegratedEncoders();
 
         // Add all motors to orchestra lol
         for (SwerveModule module : modules) {
@@ -88,28 +88,74 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);
     }
 
-    public Command driveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
+    public Command driveCommand(
+            DoubleSupplier forward, DoubleSupplier strafe, DoubleSupplier rotation, boolean isFieldOriented) {
         return run(() -> {
-            setVelocity(new ChassisSpeeds(forward.get(true), strafe.get(true), rotation.get(true)), isFieldOriented);
+            setVelocity(
+                    new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotation.getAsDouble()),
+                    isFieldOriented);
         });
     }
 
-    public Command preciseDriveCommand(Axis forward, Axis strafe, Axis rotation, boolean isFieldOriented) {
+    public Command preciseDriveCommand(
+            DoubleSupplier forward, DoubleSupplier strafe, DoubleSupplier rotation, boolean isFieldOriented) {
         var speedMultiplier = SwerveConstants.preciseDrivingModeSpeedMultiplier;
 
         return run(() -> {
             setVelocity(
                     new ChassisSpeeds(
-                            speedMultiplier * forward.get(true),
-                            speedMultiplier * strafe.get(true),
-                            speedMultiplier * rotation.get(true)),
+                            speedMultiplier * forward.getAsDouble(),
+                            speedMultiplier * strafe.getAsDouble(),
+                            speedMultiplier * rotation.getAsDouble()),
                     isFieldOriented);
         });
     }
 
+    public Command cardinalDriveCommand(
+            DoubleSupplier forward, DoubleSupplier strafe, DoubleSupplier cardinalX, DoubleSupplier cardinalY) {
+        var omegaController = new ProfiledPIDController(5, 0, 0, new TrapezoidProfile.Constraints(8, 8));
+
+        omegaController.setTolerance(Units.degreesToRadians(3));
+        omegaController.enableContinuousInput(-Math.PI, Math.PI);
+
+        return run(() -> {
+            var cardinalXValue = cardinalX.getAsDouble();
+            var cardinalYValue = cardinalY.getAsDouble();
+
+            boolean isXPrimaryAxis = Math.abs(cardinalXValue) > Math.abs(cardinalYValue);
+
+            double rotationVelocity = 0;
+
+            if (Math.abs(cardinalXValue) > 0 && Math.abs(cardinalYValue) > 0) {
+                Rotation2d desiredAngle;
+
+                if (isXPrimaryAxis) desiredAngle = new Rotation2d(cardinalXValue, 0);
+                else desiredAngle = new Rotation2d(0, cardinalYValue);
+
+                rotationVelocity =
+                        omegaController.calculate(pose.getRotation().getRadians(), desiredAngle.getRadians());
+            }
+
+            setVelocity(new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationVelocity), true);
+        });
+    }
+
+    public Command orchestraCommand() {
+        return startEnd(
+                        () -> {
+                            RobotContainer.orchestra.loadMusic("thunderstruck.chrp");
+
+                            RobotContainer.orchestra.play();
+                        },
+                        () -> {
+                            RobotContainer.orchestra.stop();
+                        })
+                .withName("Orchestra");
+    }
+
     public Command levelChargeStationCommand() {
-        var constraints = new TrapezoidProfile.Constraints(0.5, 0.3);
-        var tiltController = new ProfiledPIDController(0.2, 0, 0, constraints);
+        var constraints = new TrapezoidProfile.Constraints(0.05, 0.1);
+        var tiltController = new ProfiledPIDController(0.25, 0, 0.01, constraints);
 
         // End with no pitch and stationary
         State goal = new State(0, 0);
@@ -119,6 +165,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
         return run(() -> {
                     double pitch = getTiltAmount();
+
+                    // TODO: stop when angle changes
 
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 
@@ -180,6 +228,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     public void switchToBackupGyro() {
         gyro = new NavXGyro();
+    }
+
+    public void calibrateIntegratedEncoders() {
+        // Reset each module using its absolute encoder
+        for (SwerveModule module : modules) {
+            module.resetToAbsolute();
+        }
     }
 
     public Pose2d getPose() {
@@ -343,30 +398,38 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        var startTimeMS = Timer.getFPGATimestamp() * 1000;
+
+        // Comment out to play music
         update();
 
         Logger.log("/SwerveDriveSubsystem/Pose", pose);
-        Logger.log("/SwerveDriveSubsystem/Velocity", velocity);
-        Logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);
+        // Logger.log("/SwerveDriveSubsystem/Velocity", velocity);
+        // Logger.log("/SwerveDriveSubsystem/Desired Velocity", (ChassisSpeeds) driveSignal);
 
         Logger.log("/SwerveDriveSubsystem/Velocity Magnitude", getVelocityMagnitude());
 
-        Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
-            modules[0].getPosition().angle.getDegrees(),
-            modules[1].getPosition().angle.getDegrees(),
-            modules[2].getPosition().angle.getDegrees(),
-            modules[3].getPosition().angle.getDegrees()
-        });
+        Logger.log("/SwerveDriveSubsystem/Pitch", getGyroRotation3d().getY());
+        Logger.log("/SwerveDriveSubsystem/Roll", getGyroRotation3d().getX());
 
-        Logger.log("/SwerveDriveSubsystem/CANCoder Angles", new double[] {
-            modules[0].getCanCoder().getDegrees(),
-            modules[1].getCanCoder().getDegrees(),
-            modules[2].getCanCoder().getDegrees(),
-            modules[3].getCanCoder().getDegrees()
-        });
+        // Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
+        //     modules[0].getPosition().angle.getDegrees(),
+        //     modules[1].getPosition().angle.getDegrees(),
+        //     modules[2].getPosition().angle.getDegrees(),
+        //     modules[3].getPosition().angle.getDegrees()
+        // });
+
+        // Logger.log("/SwerveDriveSubsystem/CANCoder Angles", new double[] {
+        //     modules[0].getCanCoder().getDegrees(),
+        //     modules[1].getCanCoder().getDegrees(),
+        //     modules[2].getCanCoder().getDegrees(),
+        //     modules[3].getCanCoder().getDegrees()
+        // });
 
         Logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
         Logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());
+
+        Logger.log("/SwerveDriveSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
 
     public SwerveModuleState[] getModuleStates() {
