@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -53,6 +54,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     boolean isCharacterizing = false;
 
     private LoggedReceiver isSecondOrder;
+
+    // PID controller used for auto-leveling
+    private PIDController tiltController = new PIDController(0.005, 0, 0.01);
 
     public SwerveDriveSubsystem() {
         if (SwerveConstants.hasPigeon)
@@ -181,6 +185,31 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                     else setVelocity(velocity, false);
                 })
                 .repeatedly();
+    }
+
+    public Command basicLevelChargeStationCommand() {
+        // Four degrees of tolerance
+        tiltController.setTolerance(4);
+
+        return run(() -> {
+                    double tilt = getTiltAmount();
+
+                    // TODO: stop when angle changes
+
+                    // Negative pitch -> drive forward, Positive pitch -> drive backward
+
+                    Translation2d direction = new Translation2d(
+                            getNormalVector3d().getX(), getNormalVector3d().getY());
+
+                    Translation2d finalDirection = direction.times(tiltController.calculate(tilt, 0));
+
+                    ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
+
+                    if (MathUtils.equalsWithinError(0, tilt, 10)) lock();
+                    else setVelocity(velocity, false);
+                })
+                .repeatedly()
+                .finallyDo((interrupted) -> tiltController.reset());
     }
 
     public Command characterizeCommand(boolean forwards, boolean isDriveMotors) {
@@ -343,7 +372,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
         velocity = Constants.SwerveConstants.swerveKinematics.toChassisSpeeds(moduleStates);
 
-        velocityEstimator.add(velocity);
+        // velocityEstimator.add(velocity);
 
         pose = swervePoseEstimator.update(getGyroRotation(), modulePositions);
     }
@@ -379,6 +408,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
             }
         } else {
             setModuleStates(moduleStates, isDriveSignalStopped(driveSignal) ? true : driveSignal.isOpenLoop());
+            // setModuleStates(moduleStates, driveSignal.isOpenLoop());
         }
     }
 
@@ -388,6 +418,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         for (SwerveModule module : modules) {
             module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop, isSecondOrder.getBoolean());
         }
+
+        Logger.log("/SwerveDriveSubsystem/Wheel Setpoint", desiredStates[0].speedMetersPerSecond);
     }
 
     private boolean isDriveSignalStopped(SwerveDriveSignal driveSignal) {
@@ -409,8 +441,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
         Logger.log("/SwerveDriveSubsystem/Velocity Magnitude", getVelocityMagnitude());
 
-        Logger.log("/SwerveDriveSubsystem/Pitch", getGyroRotation3d().getY());
-        Logger.log("/SwerveDriveSubsystem/Roll", getGyroRotation3d().getX());
+        Logger.log("/SwerveDriveSubsystem/Wheel Speed", modules[0].getState().speedMetersPerSecond);
+
+        // Logger.log("/SwerveDriveSubsystem/Pitch", getGyroRotation3d().getY());
+        // Logger.log("/SwerveDriveSubsystem/Roll", getGyroRotation3d().getX());
 
         // Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
         //     modules[0].getPosition().angle.getDegrees(),
@@ -427,7 +461,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         // });
 
         Logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
-        Logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());
+        // Logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());
 
         Logger.log("/SwerveDriveSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }

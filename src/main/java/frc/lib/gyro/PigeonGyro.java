@@ -24,7 +24,8 @@ public class PigeonGyro implements GenericGyro {
         // We add 2 degrees to the pitch because the Pigeon is offset by about -2 degrees pitchwise
         // return new Rotation3d(
         //         Units.degreesToRadians(pigeon.getRoll()), Units.degreesToRadians(pigeon.getPitch() + 2), 0);
-        return new Rotation3d(Units.degreesToRadians(pigeon.getRoll()), Units.degreesToRadians(pigeon.getPitch()) - 0.035, 0);
+        return new Rotation3d(
+                Units.degreesToRadians(pigeon.getRoll()), Units.degreesToRadians(pigeon.getPitch()) - 0.035, 0);
     }
 
     public Rotation3d getRotationRates3d() {

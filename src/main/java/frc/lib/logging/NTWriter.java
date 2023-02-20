@@ -23,7 +23,7 @@ public class NTWriter implements Writer {
                 GenericPublisher publisher = publishers.get(key);
                 if (publisher == null) {
                     publisher = nt.getTopic(key)
-                            .genericPublish(field.getValue().type.getNT4Type(), PubSubOption.sendAll(true));
+                            .genericPublish(field.getValue().type.getNT4Type(), PubSubOption.sendAll(false));
                     publishers.put(key, publisher);
                 }
 

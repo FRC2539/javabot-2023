@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
@@ -66,6 +67,10 @@ public class GripperSubsystem extends SubsystemBase {
 
     public Command dropFromGripperCommand() {
         return run(() -> setState(GripperState.DISABLED));
+    }
+
+    public Command gripperCommand() {
+        return Commands.either(ejectFromGripperCommand(), openGripperCommand(), this::hasGamePiece);
     }
 
     @Override

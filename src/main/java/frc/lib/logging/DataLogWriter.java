@@ -25,7 +25,7 @@ public class DataLogWriter implements Writer {
             int id = entryIDs.get(field.getKey());
 
             // Send updates to NetworkTables and DataLog
-            switch (field.getValue().type) {
+            switch (type) {
                 case Raw:
                     log.appendRaw(id, field.getValue().getRaw(), logTable.timestamp());
                     break;

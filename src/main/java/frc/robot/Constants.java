@@ -228,7 +228,7 @@ public final class Constants {
 
         // arm
         public static final double arm1Mass = Units.lbsToKilograms(11.47);
-        public static final double arm2Mass = Units.lbsToKilograms(8.16);
+        public static final double arm2Mass = Units.lbsToKilograms(8.16); // try adding gripper weight
 
         public static final double arm1MomentOfInertia = 2.3;
         public static final double arm2MomentOfInertia = 2.44;
@@ -237,9 +237,9 @@ public final class Constants {
         public static final double arm2GearRatio = 64 * 2;
 
         public static final double arm1MinimumAngle = Math.toRadians(36.36);
-        public static final double arm1MaximumAngle = Math.toRadians(103.35);
+        public static final double arm1MaximumAngle = Math.toRadians(90); // 103.35
 
-        public static final double arm2MinimumAngle = Math.toRadians(-180);
+        public static final double arm2MinimumAngle = Math.toRadians(-174); // -180
         public static final double arm2MaximumAngle = Math.toRadians(-56.24);
 
         public static final double stallTorque = 4.69;
@@ -329,13 +329,13 @@ public final class Constants {
 
         public static final Transform3d photonRobotToCamera = photonCameraToRobot.inverse();
 
-        // public static final double limelightHeight = Units.inchesToMeters(10);
         public static final double upperRetroreflectiveHeight = Units.inchesToMeters(41.875 + 1);
         public static final double lowerRetroreflectiveHeight = Units.inchesToMeters(22.125 + 1);
 
+        // Which works the best, 10, -10, or 80?
         public static final Transform3d limelightRobotToCamera = new Transform3d(
                 new Translation3d(Units.inchesToMeters(-6), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
-                new Rotation3d(0, Math.toRadians(10), 0));
+                new Rotation3d(0, Math.toRadians(15), 0)); // was 10 degrees
 
         public static final Transform3d limelightCameraToRobot = limelightRobotToCamera.inverse();
     }

@@ -4,6 +4,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -37,15 +38,18 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private Timer shootingDelayTimer = new Timer();
 
+    AnalogInput intakeSensor = new AnalogInput(2);
+
     public IntakeSubsystem() {
         intakeMotor.setNeutralMode(NeutralMode.Brake);
         intakeMotor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
         intakeMotor.enableVoltageCompensation(true);
         intakeMotor.setInverted(true);
 
-        SupplyCurrentLimitConfiguration supplyLimit = new SupplyCurrentLimitConfiguration(true, 3.6, .5, .25);
+        SupplyCurrentLimitConfiguration supplyLimit =
+                new SupplyCurrentLimitConfiguration(true, 3.6, 2, .25); // threshold current was 0.5
 
-        intakeMotor.configSupplyCurrentLimit(supplyLimit);
+        // intakeMotor.configSupplyCurrentLimit(supplyLimit);
 
         // run cylinder before wheels
 
@@ -56,6 +60,10 @@ public class IntakeSubsystem extends SubsystemBase {
         shootingDelayReceiver = Logger.tunable("/IntakeSubsystem/ShootingDelay", 0.0);
 
         setDefaultCommand(stopIntakeCommand());
+    }
+
+    private boolean hasGamePiece() {
+        return intakeSensor.getValue() < 50;
     }
 
     public Command runIntakeCommand() {
@@ -102,9 +110,16 @@ public class IntakeSubsystem extends SubsystemBase {
                 intakeMotor.stopMotor();
                 break;
             case INTAKE:
-                positionSolenoid.set(Value.kForward);
                 shootingSolenoid.set(Value.kReverse);
-                intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
+
+                if (hasGamePiece()) {
+                    intakeMotor.stopMotor();
+                    positionSolenoid.set(Value.kReverse);
+                } else {
+                    positionSolenoid.set(Value.kForward);
+                    intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
+                }
+
                 break;
             case REVERSE:
                 positionSolenoid.set(Value.kReverse);
@@ -114,14 +129,13 @@ public class IntakeSubsystem extends SubsystemBase {
             case SHOOT:
                 shootingDelayTimer.start();
 
-                if (shootingDelayTimer.hasElapsed(shootingDelayReceiver.getDouble())) {
-                    shootingSolenoid.set(Value.kForward);
-                }
-
                 // Shooting should be extended, and position should be retracted.
                 positionSolenoid.set(Value.kReverse);
-                intakeMotor.set(ControlMode.PercentOutput, shootingSpeedReceiver.getDouble());
+                shootingSolenoid.set(Value.kForward);
 
+                if (shootingDelayTimer.hasElapsed(shootingDelayReceiver.getDouble())) {
+                    intakeMotor.set(ControlMode.PercentOutput, shootingSpeedReceiver.getDouble());
+                }
                 break;
         }
 
