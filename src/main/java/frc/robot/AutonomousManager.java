@@ -48,7 +48,7 @@ public class AutonomousManager {
         eventMap.put(
                 "shouldClimb",
                 either(none(), run(swerveDriveSubsystem::stop, swerveDriveSubsystem), () -> shouldClimb.getBoolean()));
-        eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommand());
+        eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommandArlene());
         eventMap.put(
                 "placeHigh",
                 sequence(

@@ -4,6 +4,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -34,6 +35,7 @@ import frc.robot.Constants.SwerveConstants;
 import frc.robot.RobotContainer;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -57,6 +59,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     // PID controller used for auto-leveling
     private PIDController tiltController = new PIDController(0.005, 0, 0.01);
+
+    private double previousTilt = 0;
+    private double tiltRate = 0;
 
     public SwerveDriveSubsystem() {
         if (SwerveConstants.hasPigeon)
@@ -157,7 +162,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 .withName("Orchestra");
     }
 
-    public Command levelChargeStationCommand() {
+    public Command levelChargeStationCommandArlene() {
         var constraints = new TrapezoidProfile.Constraints(0.05, 0.1);
         var tiltController = new ProfiledPIDController(0.25, 0, 0.01, constraints);
 
@@ -168,7 +173,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         tiltController.setTolerance(4, 0.1);
 
         return run(() -> {
-                    double pitch = getTiltAmount();
+                    double pitch = getTiltAmountInDegrees();
 
                     // TODO: stop when angle changes
 
@@ -192,7 +197,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         tiltController.setTolerance(4);
 
         return run(() -> {
-                    double tilt = getTiltAmount();
+                    double tilt = getTiltAmountInDegrees();
 
                     // TODO: stop when angle changes
 
@@ -210,6 +215,48 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 })
                 .repeatedly()
                 .finallyDo((interrupted) -> tiltController.reset());
+    }
+
+    public Command levelChargeStationCommandBrooklyn() {
+        // 0.05 is the response time. this prevents the wheels from going all crazy
+        Debouncer isLevelEnough = new Debouncer(0.05, Debouncer.DebounceType.kBoth);
+
+        return run(() -> {
+            double tilt = getTiltAmount();
+
+            Translation2d finalDirection = new Translation2d(
+                            getNormalVector3d().getX(), getNormalVector3d().getY())
+                    .times(0.05); // 0.05 is the max speed
+
+            if (isLevelEnough.calculate(tilt < Math.toRadians(6))) {
+                lock();
+            } else {
+                setVelocity(new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0), false);
+            }
+        });
+    }
+
+    public Command levelChargeStationCommandCatherine() {
+        // 0.05 is the response time. this prevents the wheels from going all crazy
+        Debouncer isFastEnough = new Debouncer(0.05, Debouncer.DebounceType.kBoth);
+
+        BooleanSupplier whenToStop = () -> {
+            return isFastEnough.calculate(getTiltRate() < -15);
+        };
+
+        return runEnd(
+                        () -> {
+                            Translation2d finalDirection = new Translation2d(
+                                            getNormalVector3d().getX(),
+                                            getNormalVector3d().getY())
+                                    .times(0.05); // 0.05 is the max speed
+
+                            setVelocity(new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0), false);
+                        },
+                        () -> {
+                            lock();
+                        })
+                .until(whenToStop);
     }
 
     public Command characterizeCommand(boolean forwards, boolean isDriveMotors) {
@@ -322,8 +369,16 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     /**is in degrees*/
+    public double getTiltAmountInDegrees() {
+        return Math.toDegrees(getTiltAmount());
+    }
+
     public double getTiltAmount() {
-        return Math.toDegrees(Math.acos(getNormalVector3d().getZ()));
+        return Math.acos(getNormalVector3d().getZ());
+    }
+
+    public double getTiltRate() {
+        return tiltRate;
     }
 
     public Rotation2d getTiltDirection() {
@@ -431,6 +486,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         var startTimeMS = Timer.getFPGATimestamp() * 1000;
+
+        var tilt = getTiltAmount();
+        tiltRate = (tilt - previousTilt) / 0.02;
+        previousTilt = tilt;
 
         // Comment out to play music
         update();

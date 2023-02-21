@@ -18,6 +18,7 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AimAtPoseCommand;
+import frc.robot.commands.AssistedMLPickupCommand;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
@@ -84,7 +85,7 @@ public class RobotContainer {
         //                 operatorController.getRightXAxis()));
 
         // Leveling
-        leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.basicLevelChargeStationCommand());
+        leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandBrooklyn());
         leftDriveController.getLeftBottomMiddle().whileTrue(run(swerveDriveSubsystem::lock, swerveDriveSubsystem));
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
@@ -105,7 +106,12 @@ public class RobotContainer {
 
         rightDriveController
                 .getBottomThumb()
-                .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, visionSubsystem.getMLPoseSupplier())); // before running set the pipeline
+                .whileTrue(new AssistedMLPickupCommand(
+                        swerveDriveSubsystem,
+                        visionSubsystem,
+                        this::getDriveForwardAxis,
+                        this::getDriveStrafeAxis,
+                        this::getDriveRotationAxis)); // before running set the pipeline
         rightDriveController.nameBottomThumb("ML Pickup");
 
         rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
