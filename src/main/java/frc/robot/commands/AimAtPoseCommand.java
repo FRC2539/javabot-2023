@@ -62,7 +62,8 @@ public class AimAtPoseCommand extends CommandBase {
         var robotPose = swerveDriveSubsystem.getPose();
         var targetPose = targetPoseSupplier.get();
 
-        var targetAngle = targetPose.minus(robotPose).getTranslation().getAngle().rotateBy(Rotation2d.fromDegrees(180));
+        var targetAngle =
+                targetPose.minus(robotPose).getTranslation().getAngle().rotateBy(Rotation2d.fromDegrees(180));
 
         omegaController.setGoal(robotPose.getRotation().plus(targetAngle).getRadians());
 

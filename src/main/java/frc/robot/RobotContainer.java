@@ -22,7 +22,6 @@ import frc.robot.commands.AssistedMLPickupCommand;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
-import frc.robot.subsystems.VisionSubsystem.LimelightMode;
 import java.util.function.Supplier;
 
 public class RobotContainer {
@@ -35,8 +34,8 @@ public class RobotContainer {
 
     public static Orchestra orchestra = new Orchestra();
 
-    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(40, -16, 0);
-    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(40, -16, 0);
+    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(30, -16, 0);
+    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(30, -16, 0);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
@@ -44,7 +43,8 @@ public class RobotContainer {
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
     private final VisionSubsystem visionSubsystem =
             new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
-    private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose, swerveDriveSubsystem::getAcceleration);
+    private final ArmSubsystem armSubsystem =
+            new ArmSubsystem(swerveDriveSubsystem::getPose, swerveDriveSubsystem::getAcceleration);
 
     public AutonomousManager autonomousManager;
 
@@ -57,8 +57,8 @@ public class RobotContainer {
     private void configureBindings() {
         // Decrease the max drivetrain speed when the arm is extended
         swerveDriveSubsystem.setCustomMaxSpeedSupplier(() -> {
-            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 4.0;
-            else if (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT && !armSubsystem.isArmAtGoal()) return 4.0;
+            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 3.5;
+            else if (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT && !armSubsystem.isArmAtGoal()) return 3.5;
             else return Constants.SwerveConstants.maxSpeed;
         });
 
@@ -140,29 +140,30 @@ public class RobotContainer {
         leftDriveController.nameBottomThumb("Cardinal Driving"); // try doing this with the pov button
 
         /* Set operator controller bindings */
-        operatorController.getA().onTrue(runOnce(armSubsystem::setHybrid, armSubsystem));
         operatorController.getB().onTrue(runOnce(armSubsystem::setMid, armSubsystem));
         operatorController.getY().onTrue(runOnce(armSubsystem::setHigh, armSubsystem));
         operatorController.getX().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
-        operatorController.nameA("Place Hybrid");
         operatorController.nameB("Place Mid");
         operatorController.nameY("Place High");
         operatorController.nameX("Protect Arm");
 
-        operatorController.getBack().onTrue(runOnce(armSubsystem::setNetworkTablesMode, armSubsystem));
-        operatorController.nameBack("Arm Test Mode");
+        operatorController.getA().onTrue(armSubsystem.tippedPickupCommand());
+        operatorController.nameA("Tipped Pickup");
+
+        operatorController.getBack().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
+        operatorController.getStart().onTrue(runOnce(armSubsystem::setNetworkTablesMode, armSubsystem));
+        operatorController.nameBack("Backup Gripper");
+        operatorController.nameStart("Arm Test Mode");
 
         // Manual arm controls, no sussy stuff here
-        operatorController
-                .getDPadDown()
-                .onTrue(armSubsystem.armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.HYBRID_MANUAL));
+        operatorController.getDPadDown().onTrue(armSubsystem.pickupCommand());
         operatorController.getDPadLeft().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
-        operatorController.getDPadUp().onTrue(armSubsystem.armSequence(ArmState.HIGH_MANUAL_1, ArmState.HIGH_MANUAL));
+        operatorController.getDPadUp().onTrue(armSubsystem.highManualCommand());
         operatorController.getDPadRight().onTrue(runOnce(armSubsystem::setMidManual, armSubsystem));
-        operatorController.nameDPadDown("Hybrid Manual");
+        operatorController.nameDPadDown("Pickup");
         operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
-        operatorController.nameDPadRight("Pickup");
+        operatorController.nameDPadRight("Mid Manual");
 
         operatorController
                 .getRightTrigger()
@@ -294,9 +295,8 @@ public class RobotContainer {
                     break;
             }
 
-            var targetPose = targetPose3d
-                    .toPose2d()
-                    .plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(0))); 
+            var targetPose =
+                    targetPose3d.toPose2d().plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(0)));
 
             Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
             return targetPose;

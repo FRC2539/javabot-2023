@@ -119,7 +119,10 @@ public class VisionSubsystem extends SubsystemBase {
 
         this.limelightMode = limelightMode;
 
-        NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline").setNumber(limelightMode.pipelineNumber);
+        NetworkTableInstance.getDefault()
+                .getTable("limelight")
+                .getEntry("pipeline")
+                .setNumber(limelightMode.pipelineNumber);
     }
 
     public LimelightMode getLimelightMode() {
@@ -243,7 +246,7 @@ public class VisionSubsystem extends SubsystemBase {
 
         Translation2d relativeTarget = cameraToMLTarget.minus(cameraToRobot);
 
-        Pose2d fieldPose = new Pose2d(relativeTarget, new Rotation2d()).relativeTo(robotPose);
+        Pose2d fieldPose = new Pose2d(robotPose.getTranslation().minus(relativeTarget), new Rotation2d());
 
         return Optional.of(fieldPose);
     }
@@ -277,7 +280,7 @@ public class VisionSubsystem extends SubsystemBase {
                     .transformBy(VisionConstants.limelightCameraToRobot);
 
             double timestamp = Timer.getFPGATimestamp() - botposeArray[6] / 1000.0;
-            
+
             return Optional.of(new TimestampedPose(botPose, timestamp));
         } else {
             return Optional.empty();

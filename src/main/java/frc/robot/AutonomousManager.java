@@ -51,10 +51,9 @@ public class AutonomousManager {
         eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommandArlene());
         eventMap.put(
                 "placeHigh",
-                sequence(
-                        runOnce(armSubsystem::setHigh, armSubsystem),
-                        waitSeconds(2),
-                        runOnce(armSubsystem::setAwaitingPiece, armSubsystem)));
+                armSubsystem
+                        .highManualCommand()
+                        .andThen(container.getGripperSubsystem().ejectFromGripperCommand()));
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,

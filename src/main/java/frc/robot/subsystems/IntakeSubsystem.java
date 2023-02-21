@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -47,10 +48,9 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeMotor.enableVoltageCompensation(true);
         intakeMotor.setInverted(true);
 
-        // SupplyCurrentLimitConfiguration supplyLimit =
-        //         new SupplyCurrentLimitConfiguration(true, 3.6, 2, .25); // threshold current was 0.5
+        SupplyCurrentLimitConfiguration supplyLimit = new SupplyCurrentLimitConfiguration(true, 20, 30, 0.1);
 
-        // intakeMotor.configSupplyCurrentLimit(supplyLimit);
+        intakeMotor.configSupplyCurrentLimit(supplyLimit);
 
         intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.7);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);

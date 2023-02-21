@@ -262,6 +262,18 @@ public class ArmSubsystem extends SubsystemBase {
         // gripper.getLength(), new Rotation2d()));
     }
 
+    public Command highManualCommand() {
+        return armSequence(ArmState.HIGH_MANUAL_1, ArmState.HIGH_MANUAL);
+    }
+
+    public Command pickupCommand() {
+        return armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.HYBRID_MANUAL);
+    }
+
+    public Command tippedPickupCommand() {
+        return armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.TIPPED_CONE_MANUAL);
+    }
+
     public void resetPIDControllers() {
         motor1Controller.reset(arm1Angle.getRadians());
         motor2Controller.reset(arm2Angle.getRadians());
@@ -784,6 +796,12 @@ public class ArmSubsystem extends SubsystemBase {
         setState(ArmState.COAST);
     }
 
+    public void setTippedPickup() {
+        setState(ArmState.TIPPED_CONE_MANUAL);
+    }
+
+    // [0.800000,-0.070000,-80.000000]
+
     public enum ArmState {
         // PICKUP(new Static(0.7, 0, Rotation2d.fromDegrees(-50))),
         PICKUP(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
@@ -791,6 +809,7 @@ public class ArmSubsystem extends SubsystemBase {
         AWAITING_DEPLOYMENT(new Static(0.34, 0.27, new Rotation2d())),
         // AWAITING_DEPLOYMENT(new Static(0.4, 0.12, Rotation2d.fromDegrees(-60))),
         HYBRID_MANUAL(new Static(0.97, -0.04, Rotation2d.fromDegrees(-5))),
+        TIPPED_CONE_MANUAL(new Static(0.8, -0.07, Rotation2d.fromDegrees(-80))),
         // HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX + 0.5, 0.1, Rotation2d.fromDegrees(20))),
         // MID_MANUAL(Static.fromBumper(
         //         FieldConstants.midX,

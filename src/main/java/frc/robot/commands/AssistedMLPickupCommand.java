@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightMode;
-
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
@@ -28,7 +27,8 @@ public class AssistedMLPickupCommand extends CommandBase {
 
     private final DoubleSupplier forward;
     private final DoubleSupplier strafe;
-    @SuppressWarnings("Supposedly for consistency")
+
+    @SuppressWarnings("unused")
     private final DoubleSupplier rotate;
 
     private Optional<Pose2d> lastSeenCargoPose = Optional.empty();
