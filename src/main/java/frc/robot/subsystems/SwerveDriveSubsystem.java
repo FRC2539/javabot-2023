@@ -45,6 +45,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private Pose2d pose = new Pose2d();
     private final MovingAverageVelocity velocityEstimator = new MovingAverageVelocity(3);
     private ChassisSpeeds velocity = new ChassisSpeeds();
+    private ChassisSpeeds previousVelocity = new ChassisSpeeds();
     private SwerveDriveSignal driveSignal = new SwerveDriveSignal();
 
     private SwerveModule[] modules;
@@ -57,6 +58,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     // PID controller used for auto-leveling
     private PIDController tiltController = new PIDController(0.005, 0, 0.01);
+
+    private DoubleSupplier maxSpeedSupplier = () -> Constants.SwerveConstants.maxSpeed;
 
     public SwerveDriveSubsystem() {
         if (SwerveConstants.hasPigeon)
@@ -266,6 +269,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         }
     }
 
+    public void setCustomMaxSpeedSupplier(DoubleSupplier maxSpeedSupplier) {
+        this.maxSpeedSupplier = maxSpeedSupplier;
+    }
+
     public Pose2d getPose() {
         return pose;
     }
@@ -284,6 +291,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
      */
     public ChassisSpeeds getVelocity() {
         return velocity;
+    }
+
+    public ChassisSpeeds getAcceleration() {
+        return new ChassisSpeeds(
+                velocity.vxMetersPerSecond - previousVelocity.vxMetersPerSecond,
+                velocity.vyMetersPerSecond - previousVelocity.vyMetersPerSecond,
+                velocity.omegaRadiansPerSecond - previousVelocity.omegaRadiansPerSecond);
     }
 
     /**
@@ -370,6 +384,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         SwerveModuleState[] moduleStates = getModuleStates();
         SwerveModulePosition[] modulePositions = getModulePositions();
 
+        previousVelocity = velocity;
         velocity = Constants.SwerveConstants.swerveKinematics.toChassisSpeeds(moduleStates);
 
         // velocityEstimator.add(velocity);
@@ -413,7 +428,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     private void setModuleStates(SwerveModuleState[] desiredStates, boolean isOpenLoop) {
-        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.SwerveConstants.maxSpeed);
+        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, maxSpeedSupplier.getAsDouble());
 
         for (SwerveModule module : modules) {
             module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop, isSecondOrder.getBoolean());
@@ -451,13 +466,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         //     modules[1].getPosition().angle.getDegrees(),
         //     modules[2].getPosition().angle.getDegrees(),
         //     modules[3].getPosition().angle.getDegrees()
-        // });
-
-        // Logger.log("/SwerveDriveSubsystem/CANCoder Angles", new double[] {
-        //     modules[0].getCanCoder().getDegrees(),
-        //     modules[1].getCanCoder().getDegrees(),
-        //     modules[2].getCanCoder().getDegrees(),
-        //     modules[3].getCanCoder().getDegrees()
         // });
 
         Logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
