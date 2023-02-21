@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
@@ -103,27 +104,22 @@ public class ArmSubsystem extends SubsystemBase {
     private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(7, 5);
     private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(8, 8);
     private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(3, 3);
-    // private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(12, 6);
-    // private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(12, 6);
-    // private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(12,
-    // 6);
 
     private Translation2d endEffector = new Translation2d();
     private Rotation2d gripperEndAngle = new Rotation2d();
 
     private ArmState armState = ArmState.AWAITING_DEPLOYMENT;
-    private boolean doCycleMode = false;
-    private Timer cycleModeTimer = new Timer();
-    private int cycleModeIndex = 0;
 
     private TwoJointedFourBarArmFeedforward simFeedforward;
     private TwoJointedFourBarArmFeedforward feedforward;
     private ArmFeedforward gripperJointFeedforward;
 
     private Supplier<Pose2d> robotPoseSupplier;
+    private Supplier<ChassisSpeeds> robotAccelerationSupplier;
 
-    public ArmSubsystem(Supplier<Pose2d> robotPoseSupplier) {
+    public ArmSubsystem(Supplier<Pose2d> robotPoseSupplier, Supplier<ChassisSpeeds> robotAccelerationSupplier) {
         this.robotPoseSupplier = robotPoseSupplier;
+        this.robotAccelerationSupplier = robotAccelerationSupplier;
 
         arm1 = root.append(
                 new MechanismLigament2d("Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
@@ -257,8 +253,6 @@ public class ArmSubsystem extends SubsystemBase {
         motor1Controller.setTolerance(ArmConstants.angularTolerance);
         motor2Controller.setTolerance(ArmConstants.angularTolerance);
         gripperMotorController.setTolerance(ArmConstants.angularTolerance);
-
-        cycleModeTimer.start();
 
         setState(armState);
 
@@ -457,7 +451,7 @@ public class ArmSubsystem extends SubsystemBase {
                 Conversions.radiansToFalcon(-getJoint2EncoderAngle().getRadians(), ArmConstants.arm2GearRatio));
     }
 
-    private boolean isArmAtGoal() {
+    public boolean isArmAtGoal() {
         return MathUtils.equalsWithinError(
                         arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance)
                 && MathUtils.equalsWithinError(
@@ -535,17 +529,15 @@ public class ArmSubsystem extends SubsystemBase {
                 // direction
                 joint1Motor.set(0.05);
                 joint2Motor.set(-0.037);
+                // if (robotAccelerationSupplier.get().vxMetersPerSecond < -0.05) {
+                //     // These are experimentally discovered numbers (keep the arm in place)
+                //     joint1Motor.set(0.05);
+                //     joint2Motor.set(-0.037);
+                // }
             } else {
                 executePIDFeedforward();
             }
         }
-
-        // We still have this for some reason
-        // if (doCycleMode && cycleModeTimer.advanceIfElapsed(3)) {
-        //     setState(ArmState.values()[cycleModeIndex]);
-        //     cycleModeIndex++;
-        //     cycleModeIndex %= ArmState.values().length;
-        // }
 
         Logger.log("/ArmSubsystem/arm1Percent", joint1Motor.get());
         Logger.log("/ArmSubsystem/arm2Percent", joint2Motor.get());
@@ -594,20 +586,11 @@ public class ArmSubsystem extends SubsystemBase {
                 arm2Angle.getRadians(),
                 arm1DesiredSpeed,
                 arm2DesiredSpeed,
-                arm1DesiredSpeed - previousDesiredArm1Speed,
-                arm2DesiredSpeed - previousDesiredArm2Speed);
+                (arm1DesiredSpeed - previousDesiredArm1Speed),
+                (arm2DesiredSpeed - previousDesiredArm2Speed)); // get rid of 0.02 if it screws up
 
         previousDesiredArm1Speed = arm1DesiredSpeed;
         previousDesiredArm2Speed = arm2DesiredSpeed;
-
-        // Pretty darn close
-        // double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
-        //         arm1Angle.getRadians(),
-        //         arm2Angle.getRadians(),
-        //         0,
-        //         0,
-        //         0,
-        //         0);
 
         // Calculate the wrist motor voltages
         double gripperVoltage = gripperJointFeedforward.calculate(
@@ -616,14 +599,6 @@ public class ArmSubsystem extends SubsystemBase {
         joint1Motor.set(arm1VoltageCorrection + MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1));
         joint2Motor.set(arm2VoltageCorrection + MathUtils.ensureRange(ffVoltages[1] / 12, -1, 1));
         gripperMotor.set(wristVoltageCorrection + MathUtils.ensureRange(gripperVoltage / 12, -1, 1));
-
-        // joint1Motor.set(arm1VoltageCorrection);
-        // joint2Motor.set(arm2VoltageCorrection);
-        // gripperMotor.set(wristVoltageCorrection);
-
-        // joint1Motor.set(MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1));
-        // joint2Motor.set(MathUtils.ensureRange(ffVoltages[1] / 12, -1, 1));
-        // gripperMotor.set(MathUtils.ensureRange(gripperVoltage / 12, -1, 1));
 
         // Logger.log("/ArmSubsystem/arm1Voltage", ffVoltages[0]);
         // Logger.log("/ArmSubsystem/arm2Voltage", ffVoltages[1]);

@@ -45,7 +45,7 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(651.25);
         public static final double fieldWidth = Units.inchesToMeters(315.5);
 
-        public static final double robotLengthWithBumpers = Units.inchesToMeters(30 + 8);
+        public static final double robotLengthWithBumpers = Units.inchesToMeters(30 + 3.25 * 2);
 
         /* X Placement constants from 6328 */
         public static final double outerX = Units.inchesToMeters(54.25);
@@ -67,7 +67,7 @@ public final class Constants {
 
             public PlacementLocation(Pose2d poseAlignedWithEdge, double lengthOfRobotWithBumpers, boolean isCone) {
                 var transformHybridToRobot = new Transform2d(
-                        new Translation2d(lengthOfRobotWithBumpers / 2, 0), Rotation2d.fromDegrees(180));
+                        new Translation2d(lengthOfRobotWithBumpers / 2, 0), Rotation2d.fromDegrees(0));
                 robotPlacementPose = poseAlignedWithEdge.transformBy(transformHybridToRobot);
                 this.isCone = isCone;
             }
@@ -324,18 +324,18 @@ public final class Constants {
 
         // Includes 3d transform from camera(s) to robot origin
         public static final Transform3d photonCameraToRobot = new Transform3d(
-                new Translation3d(Units.inchesToMeters(10), Units.inchesToMeters(6 + 2), Units.inchesToMeters(-22)),
-                new Rotation3d(0, 0, Math.PI));
+                new Translation3d(Units.inchesToMeters(7.82), 0, Units.inchesToMeters(-31.2897)),
+                new Rotation3d(0, 0, 0));
 
         public static final Transform3d photonRobotToCamera = photonCameraToRobot.inverse();
 
         public static final double upperRetroreflectiveHeight = Units.inchesToMeters(41.875 + 1);
         public static final double lowerRetroreflectiveHeight = Units.inchesToMeters(22.125 + 1);
 
-        // Which works the best, 10, -10, or 80?
+        // Pretty sure 6 needs to negative
         public static final Transform3d limelightRobotToCamera = new Transform3d(
                 new Translation3d(Units.inchesToMeters(-6), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
-                new Rotation3d(0, Math.toRadians(15), 0)); // was 10 degrees
+                new Rotation3d(0, Math.toRadians(-15), Math.PI)); // 15 was 10 degrees
 
         public static final Transform3d limelightCameraToRobot = limelightRobotToCamera.inverse();
     }
@@ -354,8 +354,8 @@ public final class Constants {
         public static final double wheelCircumference = wheelDiameter * Math.PI;
 
         // robot size
-        public static final double widthWithBumpers = Units.inchesToMeters(30 + 3.5 * 2);
-        public static final double lengthWithBumpers = Units.inchesToMeters(30 + 3.5 * 2);
+        public static final double widthWithBumpers = Units.inchesToMeters(30 + 3.25 * 2);
+        public static final double lengthWithBumpers = Units.inchesToMeters(30 + 3.25 * 2);
 
         public static final double openLoopRamp = 0.0; // 0.25
         public static final double closedLoopRamp = 0.0;
@@ -483,8 +483,8 @@ public final class Constants {
         public static final boolean hasPigeon = true;
         public static final int PIGEON_PORT = 29;
 
-        public static final double lengthWithBumpers = Units.inchesToMeters(26 + 3.5 * 2);
-        public static final double widthWithBumpers = Units.inchesToMeters(26 + 3.5 * 2);
+        public static final double lengthWithBumpers = Units.inchesToMeters(26 + 3.25 * 2);
+        public static final double widthWithBumpers = Units.inchesToMeters(26 + 3.25 * 2);
 
         public static final double trackWidth = Units.inchesToMeters(19.5);
         public static final double wheelBase = Units.inchesToMeters(19.5);
@@ -582,12 +582,14 @@ public final class Constants {
         public static final boolean canCoderInvert = false;
 
         /* Module Specific Constants */
+        // Note, bevel gears should face left (relative to back-to-front)
+
         /* Front Left Module - Module 0 */
         public static final class Mod0 {
             public static final int driveMotorID = 0;
             public static final int angleMotorID = 4;
             public static final int canCoderID = 24;
-            public static final double angleOffset = 256.201; // -104.5898 + 360;
+            public static final double angleOffset = 256.553;
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);
@@ -598,7 +600,7 @@ public final class Constants {
             public static final int driveMotorID = 2;
             public static final int angleMotorID = 6;
             public static final int canCoderID = 26;
-            public static final double angleOffset = 92.636; // 91.582; // 348.135;
+            public static final double angleOffset = 91.143;
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);
@@ -609,7 +611,7 @@ public final class Constants {
             public static final int driveMotorID = 1;
             public static final int angleMotorID = 5;
             public static final int canCoderID = 25;
-            public static final double angleOffset = 39.111; // 37.617;
+            public static final double angleOffset = 38.760; 
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);
@@ -620,7 +622,7 @@ public final class Constants {
             public static final int driveMotorID = 3;
             public static final int angleMotorID = 7;
             public static final int canCoderID = 27;
-            public static final double angleOffset = 309.814; // -50.9766 + 360; // 94.043;
+            public static final double angleOffset = 310.342;
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);

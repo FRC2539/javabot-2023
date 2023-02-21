@@ -2,6 +2,7 @@ package frc.robot.commands;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
@@ -12,7 +13,7 @@ import java.util.function.Supplier;
 
 public class AimAtPoseCommand extends CommandBase {
     private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(8, 8);
-    private final ProfiledPIDController omegaController = new ProfiledPIDController(5, 0, 0, omegaConstraints);
+    private final ProfiledPIDController omegaController = new ProfiledPIDController(7, 0, 0, omegaConstraints);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem;
 
@@ -41,7 +42,7 @@ public class AimAtPoseCommand extends CommandBase {
         this.forwardAxis = forwardAxis;
         this.strafeAxis = strafeAxis;
 
-        omegaController.setTolerance(Units.degreesToRadians(3));
+        omegaController.setTolerance(Units.degreesToRadians(0.5));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         addRequirements(swerveDriveSubsystem);
@@ -61,7 +62,7 @@ public class AimAtPoseCommand extends CommandBase {
         var robotPose = swerveDriveSubsystem.getPose();
         var targetPose = targetPoseSupplier.get();
 
-        var targetAngle = targetPose.minus(robotPose).getTranslation().getAngle();
+        var targetAngle = targetPose.minus(robotPose).getTranslation().getAngle().rotateBy(Rotation2d.fromDegrees(180));
 
         omegaController.setGoal(robotPose.getRotation().plus(targetAngle).getRadians());
 

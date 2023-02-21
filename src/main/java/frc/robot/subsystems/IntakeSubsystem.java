@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -10,6 +9,7 @@ import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
@@ -38,7 +38,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     private Timer shootingDelayTimer = new Timer();
 
-    AnalogInput intakeSensor = new AnalogInput(2);
+    AnalogInput intakeSensor1 = new AnalogInput(2);
+    AnalogInput intakeSensor2 = new AnalogInput(3);
 
     public IntakeSubsystem() {
         intakeMotor.setNeutralMode(NeutralMode.Brake);
@@ -46,12 +47,10 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeMotor.enableVoltageCompensation(true);
         intakeMotor.setInverted(true);
 
-        SupplyCurrentLimitConfiguration supplyLimit =
-                new SupplyCurrentLimitConfiguration(true, 3.6, 2, .25); // threshold current was 0.5
+        // SupplyCurrentLimitConfiguration supplyLimit =
+        //         new SupplyCurrentLimitConfiguration(true, 3.6, 2, .25); // threshold current was 0.5
 
         // intakeMotor.configSupplyCurrentLimit(supplyLimit);
-
-        // run cylinder before wheels
 
         intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.7);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);
@@ -63,16 +62,20 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     private boolean hasGamePiece() {
-        return intakeSensor.getValue() < 50;
+        return intakeSensor1.getValue() < 50 || intakeSensor2.getValue() < 50;
     }
 
-    public Command runIntakeCommand() {
+    public Command intakeCommand() {
+        return Commands.either(reverseIntakeModeCommand(), intakeModeCommand(), this::hasGamePiece);
+    }
+
+    public Command intakeModeCommand() {
         return run(() -> {
             setIntakeMode(IntakeMode.INTAKE);
         });
     }
 
-    public Command reverseIntakeCommand() {
+    public Command reverseIntakeModeCommand() {
         return run(() -> {
             setIntakeMode(IntakeMode.REVERSE);
         });
@@ -113,8 +116,8 @@ public class IntakeSubsystem extends SubsystemBase {
                 shootingSolenoid.set(Value.kReverse);
 
                 if (hasGamePiece()) {
-                    intakeMotor.stopMotor();
                     positionSolenoid.set(Value.kReverse);
+                    intakeMotor.stopMotor();
                 } else {
                     positionSolenoid.set(Value.kForward);
                     intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
@@ -139,7 +142,7 @@ public class IntakeSubsystem extends SubsystemBase {
                 break;
         }
 
-        Logger.log("/IntakeSubsystem/IntakeMotorSupplyCurrent", intakeMotor.getSupplyCurrent());
+        // Logger.log("/IntakeSubsystem/IntakeMotorSupplyCurrent", intakeMotor.getSupplyCurrent());
     }
 
     public enum IntakeMode {

@@ -22,6 +22,7 @@ import frc.robot.commands.AssistedMLPickupCommand;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
+import frc.robot.subsystems.VisionSubsystem.LimelightMode;
 import java.util.function.Supplier;
 
 public class RobotContainer {
@@ -43,7 +44,7 @@ public class RobotContainer {
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
     private final VisionSubsystem visionSubsystem =
             new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
-    private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose);
+    private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem::getPose, swerveDriveSubsystem::getAcceleration);
 
     public AutonomousManager autonomousManager;
 
@@ -54,6 +55,13 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+        // Decrease the max drivetrain speed when the arm is extended
+        swerveDriveSubsystem.setCustomMaxSpeedSupplier(() -> {
+            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 1.0;
+            else if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT && !armSubsystem.isArmAtGoal()) return 1.0;
+            else return Constants.SwerveConstants.maxSpeed;
+        });
+
         /* Set default commands */
         swerveDriveSubsystem.setDefaultCommand(swerveDriveSubsystem.driveCommand(
                 this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, true));
@@ -70,19 +78,8 @@ public class RobotContainer {
         leftDriveController.nameLeftTopRight("Reset Pose");
         leftDriveController.nameLeftTopMiddle("Use NavX");
 
-        // leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
-        // rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
-        // leftDriveController.nameTrigger("Open Gripper");
-        // rightDriveController.nameTrigger("Eject From Gripper");
         leftDriveController.getTrigger().whileTrue(gripperSubsystem.gripperCommand());
         leftDriveController.nameTrigger("Run Gripper");
-
-        // leftDriveController
-        //         .getRightTopRight()
-        //         .toggleOnTrue(armSubsystem.passthroughCommand(
-        //                 operatorController.getLeftXAxis(),
-        //                 operatorController.getLeftYAxis(),
-        //                 operatorController.getRightXAxis()));
 
         // Leveling
         leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandBrooklyn());
@@ -97,12 +94,10 @@ public class RobotContainer {
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
 
         // Will only need two triggers for this once we have a sensor
-        rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.runIntakeCommand());
+        rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeCommand());
         rightDriveController.getRightThumb().whileTrue(intakeSubsystem.shootCommand());
-        // rightDriveController.getBottomThumb().whileTrue(intakeSubsystem.reverseIntakeCommand());
         rightDriveController.nameLeftThumb("Run Intake");
         rightDriveController.nameRightThumb("Shoot");
-        // rightDriveController.nameBottomThumb("Reverse Intake");
 
         rightDriveController
                 .getBottomThumb()
@@ -123,10 +118,11 @@ public class RobotContainer {
         leftDriveController
                 .getLeftThumb()
                 .whileTrue(new AimAtPoseCommand(
-                        swerveDriveSubsystem,
-                        getTargetAimPoseSupplier(),
-                        this::getDriveForwardAxis,
-                        this::getDriveStrafeAxis));
+                                swerveDriveSubsystem,
+                                getTargetAimPoseSupplier(),
+                                this::getDriveForwardAxis,
+                                this::getDriveStrafeAxis)
+                        .alongWith(visionSubsystem.customLimelightModeCommand()));
         // leftDriveController
         //         .getBottomThumb()
         //         .whileTrue(new AssistedDriveToPositionCommand(
@@ -188,51 +184,6 @@ public class RobotContainer {
         return autonomousManager.getAutonomousCommand();
     }
 
-    public Supplier<Pose2d> getTargetPoseSupplier() {
-        return () -> {
-            PlacementLocation targetLocation =
-                    FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
-
-            var targetPose = targetLocation.robotPlacementPose;
-
-            Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
-            return targetPose;
-        };
-    }
-
-    public Supplier<Pose2d> getTargetAimPoseSupplier() {
-        return () -> {
-            PlacementLocation targetLocation =
-                    FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
-
-            ArmState armState = armSubsystem.getState();
-            Pose3d targetPose3d;
-
-            switch (armState) {
-                case HYBRID:
-                    targetPose3d = targetLocation.getHybridPose();
-                    break;
-                case MID:
-                    targetPose3d = targetLocation.getMidPose();
-                    break;
-                case HIGH:
-                    targetPose3d = targetLocation.getHighPose();
-                    break;
-                default:
-                    targetPose3d = new Pose3d(targetLocation.robotPlacementPose.plus(
-                            new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180))));
-                    break;
-            }
-
-            var targetPose = targetPose3d
-                    .toPose2d()
-                    .plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(0))); // was 180
-
-            Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
-            return targetPose;
-        };
-    }
-
     public double getDriveForwardAxis() {
         return forwardRateLimiter.calculate(
                 -square(deadband(leftDriveController.getYAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
@@ -273,6 +224,83 @@ public class RobotContainer {
 
     private static double square(double value) {
         return Math.copySign(value * value, value);
+    }
+
+    public Supplier<Pose2d> getTargetPoseSupplier() {
+        return () -> {
+            PlacementLocation targetLocation =
+                    FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
+
+            var targetPose = targetLocation.robotPlacementPose;
+
+            Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
+            return targetPose;
+        };
+    }
+
+    public Supplier<Pose2d> getTargetAimPoseSupplier() {
+        return () -> {
+            PlacementLocation targetLocation =
+                    FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
+
+            ArmState armState = armSubsystem.getState();
+            Pose3d targetPose3d;
+
+            switch (armState) {
+                case HYBRID_MANUAL:
+                    targetPose3d = targetLocation.getHybridPose();
+                    break;
+                case MID_MANUAL:
+                    targetPose3d = targetLocation.getMidPose();
+
+                    // If cone, enable limelight cone mode 1
+                    if (targetLocation.isCone) {
+                        visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEMID);
+
+                        if (visionSubsystem.hasLLFieldRelativeRetroflectiveEstimate()) {
+                            var visionEstimate = visionSubsystem
+                                    .getValidLLRetroreflectiveEstimate()
+                                    .get();
+
+                            targetPose3d = new Pose3d(
+                                    visionEstimate.getX(),
+                                    visionEstimate.getY(),
+                                    targetPose3d.getZ(),
+                                    targetPose3d.getRotation());
+                        }
+                    } else visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
+
+                    break;
+                default: // HIGH or other
+                    targetPose3d = targetLocation.getHighPose();
+
+                    // If cone, enable limelight cone mode 2
+                    if (targetLocation.isCone) {
+                        visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
+
+                        if (visionSubsystem.hasLLFieldRelativeRetroflectiveEstimate()) {
+                            var visionEstimate = visionSubsystem
+                                    .getValidLLRetroreflectiveEstimate()
+                                    .get();
+
+                            targetPose3d = new Pose3d(
+                                    visionEstimate.getX(),
+                                    visionEstimate.getY(),
+                                    targetPose3d.getZ(),
+                                    targetPose3d.getRotation());
+                        }
+                    } else visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
+
+                    break;
+            }
+
+            var targetPose = targetPose3d
+                    .toPose2d()
+                    .plus(new Transform2d(new Translation2d(), Rotation2d.fromDegrees(0))); 
+
+            Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
+            return targetPose;
+        };
     }
 
     public SwerveDriveSubsystem getSwerveDriveSubsystem() {
