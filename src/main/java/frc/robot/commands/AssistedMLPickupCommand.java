@@ -11,6 +11,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
+import frc.robot.subsystems.VisionSubsystem.LimelightMode;
+
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
@@ -26,6 +28,7 @@ public class AssistedMLPickupCommand extends CommandBase {
 
     private final DoubleSupplier forward;
     private final DoubleSupplier strafe;
+    @SuppressWarnings("Supposedly for consistency")
     private final DoubleSupplier rotate;
 
     private Optional<Pose2d> lastSeenCargoPose = Optional.empty();
@@ -54,7 +57,7 @@ public class AssistedMLPickupCommand extends CommandBase {
         omegaController.setTolerance(Units.degreesToRadians(3));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
-        addRequirements(swerveDriveSubsystem);
+        addRequirements(swerveDriveSubsystem, visionSubsystem);
 
         this.forward = forward;
         this.strafe = strafe;
@@ -63,12 +66,16 @@ public class AssistedMLPickupCommand extends CommandBase {
 
     @Override
     public void initialize() {
+        lastSeenCargoPose = Optional.empty();
+
         var robotPose = swerveDriveSubsystem.getPose();
         var robotVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(
                 swerveDriveSubsystem.getDesiredVelocity(), swerveDriveSubsystem.getRotation());
 
         omegaController.reset(robotPose.getRotation().getRadians(), -robotVelocity.omegaRadiansPerSecond);
         distanceController.reset(robotPose.getX(), -robotVelocity.vxMetersPerSecond);
+
+        visionSubsystem.setLimelightMode(LimelightMode.ML);
     }
 
     @Override

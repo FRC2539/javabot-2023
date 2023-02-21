@@ -57,8 +57,8 @@ public class RobotContainer {
     private void configureBindings() {
         // Decrease the max drivetrain speed when the arm is extended
         swerveDriveSubsystem.setCustomMaxSpeedSupplier(() -> {
-            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 1.0;
-            else if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT && !armSubsystem.isArmAtGoal()) return 1.0;
+            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 4.0;
+            else if (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT && !armSubsystem.isArmAtGoal()) return 4.0;
             else return Constants.SwerveConstants.maxSpeed;
         });
 
@@ -254,42 +254,42 @@ public class RobotContainer {
                     targetPose3d = targetLocation.getMidPose();
 
                     // If cone, enable limelight cone mode 1
-                    if (targetLocation.isCone) {
-                        visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEMID);
+                    // if (targetLocation.isCone) {
+                    //     visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEMID);
 
-                        if (visionSubsystem.hasLLFieldRelativeRetroflectiveEstimate()) {
-                            var visionEstimate = visionSubsystem
-                                    .getValidLLRetroreflectiveEstimate()
-                                    .get();
+                    //     if (visionSubsystem.hasLLFieldRelativeRetroflectiveEstimate()) {
+                    //         var visionEstimate = visionSubsystem
+                    //                 .getValidLLRetroreflectiveEstimate()
+                    //                 .get();
 
-                            targetPose3d = new Pose3d(
-                                    visionEstimate.getX(),
-                                    visionEstimate.getY(),
-                                    targetPose3d.getZ(),
-                                    targetPose3d.getRotation());
-                        }
-                    } else visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
+                    //         targetPose3d = new Pose3d(
+                    //                 visionEstimate.getX(),
+                    //                 visionEstimate.getY(),
+                    //                 targetPose3d.getZ(),
+                    //                 targetPose3d.getRotation());
+                    //     }
+                    // } else visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
 
                     break;
                 default: // HIGH or other
                     targetPose3d = targetLocation.getHighPose();
 
                     // If cone, enable limelight cone mode 2
-                    if (targetLocation.isCone) {
-                        visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
+                    // if (targetLocation.isCone) {
+                    //     visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
 
-                        if (visionSubsystem.hasLLFieldRelativeRetroflectiveEstimate()) {
-                            var visionEstimate = visionSubsystem
-                                    .getValidLLRetroreflectiveEstimate()
-                                    .get();
+                    //     if (visionSubsystem.hasLLFieldRelativeRetroflectiveEstimate()) {
+                    //         var visionEstimate = visionSubsystem
+                    //                 .getValidLLRetroreflectiveEstimate()
+                    //                 .get();
 
-                            targetPose3d = new Pose3d(
-                                    visionEstimate.getX(),
-                                    visionEstimate.getY(),
-                                    targetPose3d.getZ(),
-                                    targetPose3d.getRotation());
-                        }
-                    } else visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
+                    //         targetPose3d = new Pose3d(
+                    //                 visionEstimate.getX(),
+                    //                 visionEstimate.getY(),
+                    //                 targetPose3d.getZ(),
+                    //                 targetPose3d.getRotation());
+                    //     }
+                    // } else visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
 
                     break;
             }

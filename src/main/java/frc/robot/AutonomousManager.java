@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class AutonomousManager {
-    private static final AutonomousOption defaultAuto = AutonomousOption.PLACE1ANDCLIMB;
+    private static final AutonomousOption defaultAuto = AutonomousOption.OPEN_PLACE1ANDCLIMB;
 
     // Add tunables for all autonomous configuration options
     LoggedReceiver waitDuration;
@@ -129,10 +129,12 @@ public class AutonomousManager {
     }
 
     private enum AutonomousOption {
-        PLACE1ANDCLIMB(StartingLocation.OPEN, 1, "place1andclimb", new PathConstraints(5, 4)),
-        PLACE2ANDCLIMB(StartingLocation.OPEN, 2, "place2andclimb", new PathConstraints(5, 4)),
-        PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "place3andclimb", new PathConstraints(6, 5)),
-        FIVEPIECE(StartingLocation.OPEN, 5, "fivepiece", new PathConstraints(5, 6));
+        OPEN_PLACE1ANDCLIMB(StartingLocation.OPEN, 1, "open_place1andclimb", new PathConstraints(5, 4)),
+        OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, "open_place2andclimb", new PathConstraints(5, 4)),
+        OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
+        OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
+        STATION_PLACE1ANDCLIMB(StartingLocation.STATION, 1, "station_place1andclimb", new PathConstraints(5, 4)),
+        CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, "cable_place1andclimb", new PathConstraints(5, 4));
 
         private List<PathPlannerTrajectory> path;
         private String pathName;
