@@ -44,7 +44,7 @@ public class RobotContainer {
     private final VisionSubsystem visionSubsystem =
             new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
     private final ArmSubsystem armSubsystem =
-            new ArmSubsystem(swerveDriveSubsystem::getPose, swerveDriveSubsystem::getAcceleration);
+            new ArmSubsystem(swerveDriveSubsystem::getPose, swerveDriveSubsystem::getAcceleration, swerveDriveSubsystem);
 
     public AutonomousManager autonomousManager;
 
@@ -82,7 +82,7 @@ public class RobotContainer {
         leftDriveController.nameTrigger("Run Gripper");
 
         // Leveling
-        leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandBrooklyn());
+        leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandArlene());
         leftDriveController.getLeftBottomMiddle().whileTrue(run(swerveDriveSubsystem::lock, swerveDriveSubsystem));
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
@@ -150,8 +150,8 @@ public class RobotContainer {
         operatorController.getA().onTrue(armSubsystem.tippedPickupCommand());
         operatorController.nameA("Tipped Pickup");
 
-        operatorController.getBack().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
-        operatorController.getStart().onTrue(runOnce(armSubsystem::setNetworkTablesMode, armSubsystem));
+        operatorController.getBack().whileTrue(gripperSubsystem.ejectFromGripperCommand());
+        // operatorController.getStart().onTrue(runOnce(armSubsystem::setNetworkTablesMode, armSubsystem));
         operatorController.nameBack("Backup Gripper");
         operatorController.nameStart("Arm Test Mode");
 

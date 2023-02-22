@@ -72,8 +72,8 @@ public class AssistedMLPickupCommand extends CommandBase {
         var robotVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(
                 swerveDriveSubsystem.getDesiredVelocity(), swerveDriveSubsystem.getRotation());
 
-        omegaController.reset(robotPose.getRotation().getRadians(), -robotVelocity.omegaRadiansPerSecond);
-        distanceController.reset(robotPose.getX(), -robotVelocity.vxMetersPerSecond);
+        omegaController.reset(robotPose.getRotation().getRadians(), 0);
+        distanceController.reset(robotPose.getX(), 0);
 
         visionSubsystem.setLimelightMode(LimelightMode.ML);
     }
@@ -103,7 +103,7 @@ public class AssistedMLPickupCommand extends CommandBase {
 
         double towardsValue = getDriverValueTowardsBall();
 
-        Translation2d finalMotion = new Translation2d(distanceSpeed * towardsValue, getAngleToDesiredPose());
+        Translation2d finalMotion = new Translation2d(/*distanceSpeed * towardsValue*/ 1, targetPose.getRotation().unaryMinus());
 
         swerveDriveSubsystem.setVelocity(
                 new ChassisSpeeds(finalMotion.getX(), finalMotion.getY(), omegaSpeed), true, true);
@@ -131,7 +131,7 @@ public class AssistedMLPickupCommand extends CommandBase {
     }
 
     private Rotation2d getAngleToDesiredPose() {
-        return getDesiredPosition().minus(swerveDriveSubsystem.getPose()).getRotation();
+        return getDesiredPosition().getRotation().unaryMinus();
     }
 
     private double getDriverValueTowardsBall() {

@@ -165,7 +165,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     public Command levelChargeStationCommandArlene() {
-        var constraints = new TrapezoidProfile.Constraints(0.05, 0.1);
+        var constraints = new TrapezoidProfile.Constraints(0.5, 0.1);
         var tiltController = new ProfiledPIDController(0.25, 0, 0.01, constraints);
 
         // End with no pitch and stationary
@@ -228,7 +228,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
             Translation2d finalDirection = new Translation2d(
                             getNormalVector3d().getX(), getNormalVector3d().getY())
-                    .times(0.05); // 0.05 is the max speed
+                    .times(0.5); // 0.05 is the max speed
 
             if (isLevelEnough.calculate(tilt < Math.toRadians(6))) {
                 lock();
@@ -251,7 +251,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                             Translation2d finalDirection = new Translation2d(
                                             getNormalVector3d().getX(),
                                             getNormalVector3d().getY())
-                                    .times(0.05); // 0.05 is the max speed
+                                    .times(0.5); // 0.05 is the max speed
 
                             setVelocity(new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0), false);
                         },

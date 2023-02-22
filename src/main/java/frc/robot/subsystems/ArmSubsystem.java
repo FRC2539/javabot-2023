@@ -101,8 +101,8 @@ public class ArmSubsystem extends SubsystemBase {
     private ProfiledPIDController motor2Controller;
     private ProfiledPIDController gripperMotorController;
 
-    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(7, 5);
-    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(8, 8);
+    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(9, 5);
+    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(11, 8);
     private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(3, 3);
 
     private Translation2d endEffector = new Translation2d();
@@ -116,10 +116,12 @@ public class ArmSubsystem extends SubsystemBase {
 
     private Supplier<Pose2d> robotPoseSupplier;
     private Supplier<ChassisSpeeds> robotAccelerationSupplier;
+    private SwerveDriveSubsystem swerveDriveSubsystem;
 
-    public ArmSubsystem(Supplier<Pose2d> robotPoseSupplier, Supplier<ChassisSpeeds> robotAccelerationSupplier) {
+    public ArmSubsystem(Supplier<Pose2d> robotPoseSupplier, Supplier<ChassisSpeeds> robotAccelerationSupplier, SwerveDriveSubsystem swerveDriveSubsystem) {
         this.robotPoseSupplier = robotPoseSupplier;
         this.robotAccelerationSupplier = robotAccelerationSupplier;
+        this.swerveDriveSubsystem = swerveDriveSubsystem;
 
         arm1 = root.append(
                 new MechanismLigament2d("Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
@@ -242,7 +244,7 @@ public class ArmSubsystem extends SubsystemBase {
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
         motor1Controller = new ProfiledPIDController(0.75, 0, 0.01, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(0.25, 0, 0.05, motor2Constraints);
+        motor2Controller = new ProfiledPIDController(0.35, 0, 0.05, motor2Constraints);
         gripperMotorController = new ProfiledPIDController(0.3, 0, 0, wristProfileConstraints);
 
         resetPIDControllers();
@@ -263,7 +265,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Command highManualCommand() {
-        return armSequence(ArmState.HIGH_MANUAL_1, ArmState.HIGH_MANUAL);
+        return Commands.sequence( armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL));
     }
 
     public Command pickupCommand() {
@@ -472,6 +474,13 @@ public class ArmSubsystem extends SubsystemBase {
                         gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.angularTolerance);
     }
 
+    public boolean isArmApproximatelyAtGoal() {
+        return MathUtils.equalsWithinError(
+            arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 1.5)
+    && MathUtils.equalsWithinError(
+            arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 2);
+    }
+
     private void passthroughMotorSpeeds(double shoulderPercent, double elbowPercent, double wristPercent) {
         joint1Motor.set(shoulderPercent);
         joint2Motor.set(elbowPercent);
@@ -539,8 +548,11 @@ public class ArmSubsystem extends SubsystemBase {
                 // backwards is positive for mast and negative for boom
                 // run this only when we are decelerating in the direction of the arm or accelerating in the opposite
                 // direction
-                joint1Motor.set(0.05);
-                joint2Motor.set(-0.037);
+                if (Math.abs(swerveDriveSubsystem.getVelocityMagnitude()) > 0.1) {
+                    joint1Motor.set(0.05);
+                    joint2Motor.set(-0.037);
+                }
+                
                 // if (robotAccelerationSupplier.get().vxMetersPerSecond < -0.05) {
                 //     // These are experimentally discovered numbers (keep the arm in place)
                 //     joint1Motor.set(0.05);
@@ -729,6 +741,10 @@ public class ArmSubsystem extends SubsystemBase {
         return runOnce(() -> setState(armState)).andThen(Commands.waitUntil(this::isArmAtGoal));
     }
 
+    public Command armStateApproximateCommand(ArmState armState) {
+        return runOnce(() -> setState(armState)).andThen(Commands.waitUntil(this::isArmApproximatelyAtGoal));
+    }
+
     public Command armSequence(ArmState... armStates) {
         return Commands.sequence(Stream.of(armStates)
                 .map((state) -> armStateCommand(state))
@@ -806,16 +822,16 @@ public class ArmSubsystem extends SubsystemBase {
         // PICKUP(new Static(0.7, 0, Rotation2d.fromDegrees(-50))),
         PICKUP(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
-        AWAITING_DEPLOYMENT(new Static(0.34, 0.27, new Rotation2d())),
-        // AWAITING_DEPLOYMENT(new Static(0.4, 0.12, Rotation2d.fromDegrees(-60))),
+        //AWAITING_DEPLOYMENT(new Static(0.34, 0.27, new Rotation2d())),
+        AWAITING_DEPLOYMENT(new Static(0.34 - .254 + .254 * .707, 0.27 + .254 * .707, Rotation2d.fromDegrees(45))),
         HYBRID_MANUAL(new Static(0.97, -0.04, Rotation2d.fromDegrees(-5))),
-        TIPPED_CONE_MANUAL(new Static(0.8, -0.07, Rotation2d.fromDegrees(-80))),
+        TIPPED_CONE_MANUAL(new Static(0.8, -0.2, Rotation2d.fromDegrees(-100))),
         // HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX + 0.5, 0.1, Rotation2d.fromDegrees(20))),
         // MID_MANUAL(Static.fromBumper(
         //         FieldConstants.midX,
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
         //         Rotation2d.fromDegrees(20))),
-        MID_MANUAL(Static.fromBumper(FieldConstants.midX - 0.1, FieldConstants.highConeZ, Rotation2d.fromDegrees(30))),
+        MID_MANUAL(Static.fromBumper(FieldConstants.midX - 0.1, FieldConstants.highConeZ - 0.05, Rotation2d.fromDegrees(5))),
         HIGH_MANUAL_1(new Static(1.0, 1.0, Rotation2d.fromDegrees(30))),
         HIGH_MANUAL(Static.fromBumper(
                 FieldConstants.highX + 0.14, // 0.25
