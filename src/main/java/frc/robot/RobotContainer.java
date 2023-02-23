@@ -34,8 +34,8 @@ public class RobotContainer {
 
     public static Orchestra orchestra = new Orchestra();
 
-    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(30, -16, 0);
-    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(30, -16, 0);
+    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(35, -16, 0);
+    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(35, -16, 0);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
@@ -43,8 +43,7 @@ public class RobotContainer {
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
     private final VisionSubsystem visionSubsystem =
             new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
-    private final ArmSubsystem armSubsystem =
-            new ArmSubsystem(swerveDriveSubsystem::getPose, swerveDriveSubsystem::getAcceleration, swerveDriveSubsystem);
+    private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem);
 
     public AutonomousManager autonomousManager;
 
@@ -57,8 +56,8 @@ public class RobotContainer {
     private void configureBindings() {
         // Decrease the max drivetrain speed when the arm is extended
         swerveDriveSubsystem.setCustomMaxSpeedSupplier(() -> {
-            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 3.5;
-            else if (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT && !armSubsystem.isArmAtGoal()) return 3.5;
+            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 4;
+            else if (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT && !armSubsystem.isArmApproximatelyAtGoal()) return 4;
             else return Constants.SwerveConstants.maxSpeed;
         });
 

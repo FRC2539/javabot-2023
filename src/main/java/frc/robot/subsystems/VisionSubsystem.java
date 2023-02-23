@@ -65,6 +65,8 @@ public class VisionSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        var startTimeMS = Timer.getFPGATimestamp() * 1000;
+
         /* Use limelight apriltag estimate to update robot pose estimator */
         LLApriltagEstimate = calculateLLApriltagEstimate();
 
@@ -111,6 +113,8 @@ public class VisionSubsystem extends SubsystemBase {
 
         // Send the time since the last apriltag update to the dashboard
         Logger.log("/VisionSubsystem/Last Update", Timer.getFPGATimestamp() - lastApriltagUpdateTimestamp);
+
+        Logger.log("/VisionSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
 
     public void setLimelightMode(LimelightMode limelightMode) {
@@ -156,8 +160,6 @@ public class VisionSubsystem extends SubsystemBase {
     private Optional<EstimatedRobotPose> calculatePhotonVisionEstimate() {
         if (visionDisabled) return Optional.empty();
 
-        // Set the reference pose to the current estimated pose from the swerve drive subsystem
-        photonPoseEstimator.setReferencePose(robotPoseSupplier.get());
         return photonPoseEstimator.update();
     }
 

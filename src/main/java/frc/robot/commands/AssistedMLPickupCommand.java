@@ -103,7 +103,8 @@ public class AssistedMLPickupCommand extends CommandBase {
 
         double towardsValue = getDriverValueTowardsBall();
 
-        Translation2d finalMotion = new Translation2d(/*distanceSpeed * towardsValue*/ 1, targetPose.getRotation().unaryMinus());
+        Translation2d finalMotion = new Translation2d(
+                /*distanceSpeed * towardsValue*/ 1, targetPose.getRotation().unaryMinus());
 
         swerveDriveSubsystem.setVelocity(
                 new ChassisSpeeds(finalMotion.getX(), finalMotion.getY(), omegaSpeed), true, true);

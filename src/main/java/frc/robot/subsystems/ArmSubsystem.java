@@ -8,14 +8,12 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.LinearFilter;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
@@ -45,7 +43,6 @@ import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class ArmSubsystem extends SubsystemBase {
@@ -101,9 +98,9 @@ public class ArmSubsystem extends SubsystemBase {
     private ProfiledPIDController motor2Controller;
     private ProfiledPIDController gripperMotorController;
 
-    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(9, 5);
-    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(11, 8);
-    private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(3, 3);
+    private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(13, 8);
+    private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(9, 5);
+    private static final TrapezoidProfile.Constraints wristProfileConstraints = new TrapezoidProfile.Constraints(7, 7);
 
     private Translation2d endEffector = new Translation2d();
     private Rotation2d gripperEndAngle = new Rotation2d();
@@ -114,13 +111,9 @@ public class ArmSubsystem extends SubsystemBase {
     private TwoJointedFourBarArmFeedforward feedforward;
     private ArmFeedforward gripperJointFeedforward;
 
-    private Supplier<Pose2d> robotPoseSupplier;
-    private Supplier<ChassisSpeeds> robotAccelerationSupplier;
     private SwerveDriveSubsystem swerveDriveSubsystem;
 
-    public ArmSubsystem(Supplier<Pose2d> robotPoseSupplier, Supplier<ChassisSpeeds> robotAccelerationSupplier, SwerveDriveSubsystem swerveDriveSubsystem) {
-        this.robotPoseSupplier = robotPoseSupplier;
-        this.robotAccelerationSupplier = robotAccelerationSupplier;
+    public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
 
         arm1 = root.append(
@@ -244,7 +237,9 @@ public class ArmSubsystem extends SubsystemBase {
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
         motor1Controller = new ProfiledPIDController(0.75, 0, 0.01, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(0.35, 0, 0.05, motor2Constraints);
+        motor2Controller = new ProfiledPIDController(0.45, 0, 0.05, motor2Constraints);
+        // motor1Controller = new ProfiledPIDController(25, 0, 0.1, motor1Constraints);
+        // motor2Controller = new ProfiledPIDController(25, 0, 0.1, motor2Constraints);
         gripperMotorController = new ProfiledPIDController(0.3, 0, 0, wristProfileConstraints);
 
         resetPIDControllers();
@@ -265,15 +260,20 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Command highManualCommand() {
-        return Commands.sequence( armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL));
+        return Commands.sequence(
+                armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL));
     }
 
     public Command pickupCommand() {
-        return armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.HYBRID_MANUAL);
+        return Commands.sequence(
+                armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT), armStateCommand(ArmState.HYBRID_MANUAL));
+        // return armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.HYBRID_MANUAL);
     }
 
     public Command tippedPickupCommand() {
-        return armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.TIPPED_CONE_MANUAL);
+        return Commands.sequence(
+                armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT), armStateCommand(ArmState.TIPPED_CONE_MANUAL));
+        // return armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.TIPPED_CONE_MANUAL);
     }
 
     public void resetPIDControllers() {
@@ -476,9 +476,9 @@ public class ArmSubsystem extends SubsystemBase {
 
     public boolean isArmApproximatelyAtGoal() {
         return MathUtils.equalsWithinError(
-            arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 1.5)
-    && MathUtils.equalsWithinError(
-            arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 2);
+                        arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 1.5)
+                && MathUtils.equalsWithinError(
+                        arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 2);
     }
 
     private void passthroughMotorSpeeds(double shoulderPercent, double elbowPercent, double wristPercent) {
@@ -548,15 +548,19 @@ public class ArmSubsystem extends SubsystemBase {
                 // backwards is positive for mast and negative for boom
                 // run this only when we are decelerating in the direction of the arm or accelerating in the opposite
                 // direction
-                if (Math.abs(swerveDriveSubsystem.getVelocityMagnitude()) > 0.1) {
-                    joint1Motor.set(0.05);
-                    joint2Motor.set(-0.037);
+                if (Math.abs(swerveDriveSubsystem.getVelocityMagnitude()) > 0.05) {
+                    joint1Motor.set(0.07);
+                    joint2Motor.set(-0.07);
+                } else {
+                    stopMotors();
                 }
-                
-                // if (robotAccelerationSupplier.get().vxMetersPerSecond < -0.05) {
+
+                // if (swerveDriveSubsystem.getAcceleration().vxMetersPerSecond < -0.05) {
                 //     // These are experimentally discovered numbers (keep the arm in place)
                 //     joint1Motor.set(0.05);
                 //     joint2Motor.set(-0.037);
+                // } else {
+                //     stopMotors();
                 // }
             } else {
                 executePIDFeedforward();
@@ -605,28 +609,52 @@ public class ArmSubsystem extends SubsystemBase {
         //         (arm2DesiredSpeed - arm2Speed) / 0.02);
 
         // Which works best? position, velocity, or acc
+        // double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
+        //         arm1Angle.getRadians(),
+        //         arm2Angle.getRadians(),
+        //         arm1DesiredSpeed + arm1VoltageCorrection,
+        //         arm2DesiredSpeed + arm2VoltageCorrection,
+        //         0,
+        //         0);
+
         double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
                 arm1Angle.getRadians(),
                 arm2Angle.getRadians(),
                 arm1DesiredSpeed,
                 arm2DesiredSpeed,
                 (arm1DesiredSpeed - previousDesiredArm1Speed),
-                (arm2DesiredSpeed - previousDesiredArm2Speed)); // get rid of 0.02 if it screws up
+                (arm2DesiredSpeed - previousDesiredArm2Speed));
 
         previousDesiredArm1Speed = arm1DesiredSpeed;
         previousDesiredArm2Speed = arm2DesiredSpeed;
 
         // Calculate the wrist motor voltages
         double gripperVoltage = gripperJointFeedforward.calculate(
-                gripperAngle.plus(arm1Angle).plus(arm2Angle).getRadians(), gripperDesiredSpeed, 0);
+                gripperAngle.plus(arm1Angle).plus(arm2Angle).getRadians(),
+                gripperDesiredSpeed,
+                0);
 
-        joint1Motor.set(arm1VoltageCorrection + MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1));
-        joint2Motor.set(arm2VoltageCorrection + MathUtils.ensureRange(ffVoltages[1] / 12, -1, 1));
-        gripperMotor.set(wristVoltageCorrection + MathUtils.ensureRange(gripperVoltage / 12, -1, 1));
+        // double gripperVoltage = gripperJointFeedforward.calculate(
+        //         gripperAngle.plus(arm1Angle).plus(arm2Angle).getRadians(),
+        //         gripperDesiredSpeed + wristVoltageCorrection,
+        //         (gripperDesiredSpeed - gripperSpeed) / 0.02);
 
-        // Logger.log("/ArmSubsystem/arm1Voltage", ffVoltages[0]);
-        // Logger.log("/ArmSubsystem/arm2Voltage", ffVoltages[1]);
-        // Logger.log("/ArmSubsystem/gripperVoltage", gripperVoltage);
+        double arm1Output = arm1VoltageCorrection + MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1);
+        double arm2Output = arm2VoltageCorrection + MathUtils.ensureRange(ffVoltages[1] / 12, -1, 1);
+        double gripperOutput = wristVoltageCorrection + MathUtils.ensureRange(gripperVoltage / 12, -1, 1);
+
+        joint1Motor.set(arm1Output + Math.copySign(0, arm1Output));
+        joint2Motor.set(arm2Output + Math.copySign(0, arm2Output));
+        gripperMotor.set(gripperOutput);
+        // joint1Motor.set(arm1VoltageCorrection + MathUtils.ensureRange(ffVoltages[0] / 12, -1, 1));
+        // joint2Motor.set(arm2VoltageCorrection + MathUtils.ensureRange(ffVoltages[1] / 12, -1, 1));
+        // gripperMotor.set(wristVoltageCorrection + MathUtils.ensureRange(gripperVoltage / 12, -1, 1));
+
+        // Logger.log("/ArmSubsystem/arm1FF", ffVoltages[0] / 12);
+        // Logger.log("/ArmSubsystem/arm2FF", ffVoltages[1] / 12);
+        // Logger.log("/ArmSubsystem/arm1Correction", arm1VoltageCorrection);
+        // Logger.log("/ArmSubsystem/arm2Correction", arm2VoltageCorrection);
+
         Logger.log("/ArmSubsystem/arm1AngleSetpoint", motor1Controller.getSetpoint().position);
         Logger.log("/ArmSubsystem/arm2AngleSetpoint", motor2Controller.getSetpoint().position);
         Logger.log("/ArmSubsystem/gripperPositionSetpoint", gripperMotorController.getSetpoint().position);
@@ -678,7 +706,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Translation2d getDynamicArmPosition() {
-        PlacementLocation targetLocation = FieldConstants.getNearestPlacementLocation(robotPoseSupplier.get());
+        PlacementLocation targetLocation = FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
 
         ArmState armState = getState();
         Pose3d targetPose3d;
@@ -699,7 +727,7 @@ public class ArmSubsystem extends SubsystemBase {
         }
 
         Translation3d robotToGoalTranslation =
-                targetPose3d.minus(new Pose3d(robotPoseSupplier.get())).getTranslation();
+                targetPose3d.minus(new Pose3d(swerveDriveSubsystem.getPose())).getTranslation();
 
         Translation2d targetEndEffector = new Translation2d(
                 Math.hypot(robotToGoalTranslation.getX(), robotToGoalTranslation.getY())
@@ -816,16 +844,14 @@ public class ArmSubsystem extends SubsystemBase {
         setState(ArmState.TIPPED_CONE_MANUAL);
     }
 
-    // [0.800000,-0.070000,-80.000000]
-
     public enum ArmState {
         // PICKUP(new Static(0.7, 0, Rotation2d.fromDegrees(-50))),
         PICKUP(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
-        //AWAITING_DEPLOYMENT(new Static(0.34, 0.27, new Rotation2d())),
+        // AWAITING_DEPLOYMENT(new Static(0.34, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT(new Static(0.34 - .254 + .254 * .707, 0.27 + .254 * .707, Rotation2d.fromDegrees(45))),
-        HYBRID_MANUAL(new Static(0.97, -0.04, Rotation2d.fromDegrees(-5))),
-        TIPPED_CONE_MANUAL(new Static(0.8, -0.2, Rotation2d.fromDegrees(-100))),
+        HYBRID_MANUAL(new Static(0.97, -0.06, Rotation2d.fromDegrees(-8))),
+        TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
         // HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX + 0.5, 0.1, Rotation2d.fromDegrees(20))),
         // MID_MANUAL(Static.fromBumper(
         //         FieldConstants.midX,

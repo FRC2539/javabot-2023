@@ -246,6 +246,10 @@ public final class Constants {
         public static final double stallCurrent = 257;
         public static final double freeSpeed = 6380;
 
+        // Adjust these to offset for gas shocks
+        public static final double arm1kS = 0.05;
+        public static final double arm2kS = 0.05;
+
         public static final Transform3d robotToArm =
                 new Transform3d(new Translation3d(0, 0, Units.inchesToMeters(8)), new Rotation3d());
 
@@ -255,7 +259,8 @@ public final class Constants {
         // Rotation relative to first arm
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-180);
 
-        public static final double angularTolerance = Math.toRadians(12);
+        public static final double angularTolerance = Math.toRadians(4);
+        // public static final double angularTolerance = Math.toRadians(5);
 
         public static final int mastMotorPort = 8;
         public static final int boomMotorPort = 9;
