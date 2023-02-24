@@ -126,6 +126,7 @@ public class LightsSubsystem extends SubsystemBase {
         MastEncoderIndicator(4, 1, -1),
         BoomEncoderIndicator(5, 1, -1),
         WristEncoderIndicator(6, 1, -1),
+        DriverStationIndicator(7, 1, -1),
         // BackRightStrip(8, 54, 2), // Looking from back to front (arm faces back)
         // BackTopStrip(62, 33, 3),
         // BackLeftStrip(95, 54, 4),

@@ -126,6 +126,10 @@ public class Robot extends TimedRobot {
             LEDSegment.WristEncoderIndicator.setColor(LightsSubsystem.white.dim(0.25));
         else LEDSegment.WristEncoderIndicator.fullClear();
 
+        // Indicate once the driver station is connected
+        if (DriverStation.isDSAttached()) LEDSegment.DriverStationIndicator.setColor(LightsSubsystem.orange.dim(0.25));
+        else LEDSegment.DriverStationIndicator.fullClear();
+
         // Passive Main LED Mode
         LEDSegment.MainStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
     }

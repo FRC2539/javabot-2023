@@ -240,9 +240,7 @@ public class ArmSubsystem extends SubsystemBase {
         gripperJointFeedforward =
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
-        // motor1Controller = new ProfiledPIDController(0.75, 0, 0.01, motor1Constraints);
-        // motor2Controller = new ProfiledPIDController(0.45, 0, 0.05, motor2Constraints);
-        motor1Controller = new ProfiledPIDController(6.2, 0, 0.15, motor1Constraints); // could be 9
+        motor1Controller = new ProfiledPIDController(6.4, 0, 0.15, motor1Constraints);
         motor2Controller = new ProfiledPIDController(5.2, 0, 0.15, motor2Constraints);
         gripperMotorController = new ProfiledPIDController(4, 0, 0.1, wristProfileConstraints);
 
@@ -256,11 +254,6 @@ public class ArmSubsystem extends SubsystemBase {
         gripperMotorController.setTolerance(ArmConstants.angularTolerance);
 
         setState(armState);
-
-        // Translation2d(X: -0.12, Y: 0.50)
-        // System.out.println(forwardKinematics(arm1.getLength(), new Rotation2d(0.873), arm2.getLength(), new
-        // Rotation2d(-2.4),
-        // gripper.getLength(), new Rotation2d()));
     }
 
     public Command highManualCommand() {
@@ -271,14 +264,12 @@ public class ArmSubsystem extends SubsystemBase {
     public Command pickupCommand() {
         return Commands.sequence(
                 armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1), armStateCommand(ArmState.HYBRID_MANUAL));
-        // return armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.HYBRID_MANUAL);
     }
 
     public Command tippedPickupCommand() {
         return Commands.sequence(
                 armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
                 armStateCommand(ArmState.TIPPED_CONE_MANUAL));
-        // return armSequence(ArmState.AWAITING_DEPLOYMENT, ArmState.TIPPED_CONE_MANUAL);
     }
 
     public Command awaitingDeploymentCommand() {
@@ -565,27 +556,27 @@ public class ArmSubsystem extends SubsystemBase {
         if (armState != ArmState.COAST && armState != ArmState.BRAKE && armState != ArmState.PASSTHROUGH) {
             executePIDFeedforward();
 
-            // if (armState == ArmState.AWAITING_DEPLOYMENT && isArmAtGoal()) {
-            //     // backwards is positive for mast and negative for boom
-            //     // run this only when we are decelerating in the direction of the arm or accelerating in the opposite
-            //     // direction
-            //     if (Math.abs(swerveDriveSubsystem.getVelocityMagnitude()) > 0.05) {
-            //         joint1Motor.set(0.07);
-            //         joint2Motor.set(-0.07);
-            //     } else {
-            //         stopMotors();
-            //     }
+            if (armState == ArmState.AWAITING_DEPLOYMENT && isArmAtGoal()) {
+                // backwards is positive for mast and negative for boom
+                // run this only when we are decelerating in the direction of the arm or accelerating in the opposite
+                // direction
+                if (Math.abs(swerveDriveSubsystem.getVelocityMagnitude()) > 0.05) {
+                    joint1Motor.set(0.09);
+                    joint2Motor.set(-0.06);
+                } else {
+                    stopMotors();
+                }
 
-            //     // if (swerveDriveSubsystem.getAcceleration().vxMetersPerSecond < -0.05) {
-            //     //     // These are experimentally discovered numbers (keep the arm in place)
-            //     //     joint1Motor.set(0.05);
-            //     //     joint2Motor.set(-0.037);
-            //     // } else {
-            //     //     stopMotors();
-            //     // }
-            // } else {
-            //     executePIDFeedforward();
-            // }
+                // if (swerveDriveSubsystem.getAcceleration().vxMetersPerSecond < -0.05) {
+                //     // These are experimentally discovered numbers (keep the arm in place)
+                //     joint1Motor.set(0.05);
+                //     joint2Motor.set(-0.037);
+                // } else {
+                //     stopMotors();
+                // }
+            } else {
+                executePIDFeedforward();
+            }
         }
 
         Logger.log("/ArmSubsystem/arm1Percent", joint1Motor.get());
@@ -639,12 +630,7 @@ public class ArmSubsystem extends SubsystemBase {
         //         0);
 
         double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
-                arm1Angle.getRadians(),
-                arm2Angle.getRadians(),
-                arm1DesiredSpeed,
-                arm2DesiredSpeed,
-                0,
-                0);
+                arm1Angle.getRadians(), arm2Angle.getRadians(), arm1DesiredSpeed, arm2DesiredSpeed, 0, 0);
 
         previousDesiredArm1Speed = arm1DesiredSpeed;
         previousDesiredArm2Speed = arm2DesiredSpeed;
@@ -881,7 +867,7 @@ public class ArmSubsystem extends SubsystemBase {
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(45))),
         // AWAITING_DEPLOYMENT(new Static(0.34 - .254 + .254 * .707, 0.27 + .254 * .707, Rotation2d.fromDegrees(45))),
-        HYBRID_MANUAL(new Static(0.97, -0.06, Rotation2d.fromDegrees(-8))),
+        HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
         // HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX + 0.5, 0.1, Rotation2d.fromDegrees(20))),
         // MID_MANUAL(Static.fromBumper(
@@ -889,9 +875,9 @@ public class ArmSubsystem extends SubsystemBase {
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
         //         Rotation2d.fromDegrees(20))),
         MID_MANUAL_CONE(
-                Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.05, Rotation2d.fromDegrees(10))),
+                Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.08, Rotation2d.fromDegrees(13))),
         MID_MANUAL_CUBE(
-                Static.fromBumper(FieldConstants.midX, FieldConstants.midCubeZ + 0.15, Rotation2d.fromDegrees(-10))),
+                Static.fromBumper(FieldConstants.midX, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-16))),
         HIGH_MANUAL_1(new Static(1.0, 1.0, Rotation2d.fromDegrees(30))),
         HIGH_MANUAL(Static.fromBumper(
                 FieldConstants.highX + 0.14, // gripper offset

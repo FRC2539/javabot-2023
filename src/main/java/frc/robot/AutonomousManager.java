@@ -53,6 +53,7 @@ public class AutonomousManager {
                 "placeHigh",
                 armSubsystem
                         .highManualCommand()
+                        .andThen(waitSeconds(1.5))
                         .andThen(container.getGripperSubsystem().ejectFromGripperCommand()));
 
         autoBuilder = new SwerveAutoBuilder(

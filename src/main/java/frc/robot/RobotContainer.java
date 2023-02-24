@@ -18,7 +18,6 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AimAtPoseCommand;
-import frc.robot.commands.AssistedMLPickupCommand;
 import frc.robot.commands.DriveToPositionCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
@@ -98,18 +97,19 @@ public class RobotContainer {
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeCommand());
         rightDriveController.getRightThumb().whileTrue(intakeSubsystem.shootCommand());
+        rightDriveController.getBottomThumb().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
         rightDriveController.nameLeftThumb("Run Intake");
         rightDriveController.nameRightThumb("Shoot");
 
-        rightDriveController
-                .getBottomThumb()
-                .whileTrue(new AssistedMLPickupCommand(
-                        swerveDriveSubsystem,
-                        visionSubsystem,
-                        this::getDriveForwardAxis,
-                        this::getDriveStrafeAxis,
-                        this::getDriveRotationAxis)); // before running set the pipeline
-        rightDriveController.nameBottomThumb("ML Pickup");
+        // rightDriveController
+        //         .getBottomThumb()
+        //         .whileTrue(new AssistedMLPickupCommand(
+        //                 swerveDriveSubsystem,
+        //                 visionSubsystem,
+        //                 this::getDriveForwardAxis,
+        //                 this::getDriveStrafeAxis,
+        //                 this::getDriveRotationAxis)); // before running set the pipeline
+        // rightDriveController.nameBottomThumb("ML Pickup");
 
         rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
         rightDriveController.nameRightTopLeft("Symphony");
