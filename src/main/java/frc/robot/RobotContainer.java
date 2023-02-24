@@ -57,7 +57,8 @@ public class RobotContainer {
         // Decrease the max drivetrain speed when the arm is extended
         swerveDriveSubsystem.setCustomMaxSpeedSupplier(() -> {
             if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 4;
-            else if (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT && !armSubsystem.isArmApproximatelyAtGoal()) return 4;
+            else if (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT
+                    && !armSubsystem.isArmApproximatelyAtGoal()) return 4;
             else return Constants.SwerveConstants.maxSpeed;
         });
 
@@ -78,7 +79,9 @@ public class RobotContainer {
         leftDriveController.nameLeftTopMiddle("Use NavX");
 
         leftDriveController.getTrigger().whileTrue(gripperSubsystem.gripperCommand());
+        rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
         leftDriveController.nameTrigger("Run Gripper");
+        leftDriveController.nameTrigger("Eject Gripper");
 
         // Leveling
         leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandArlene());
@@ -139,12 +142,12 @@ public class RobotContainer {
         leftDriveController.nameBottomThumb("Cardinal Driving"); // try doing this with the pov button
 
         /* Set operator controller bindings */
-        operatorController.getB().onTrue(runOnce(armSubsystem::setMid, armSubsystem));
-        operatorController.getY().onTrue(runOnce(armSubsystem::setHigh, armSubsystem));
-        operatorController.getX().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
-        operatorController.nameB("Place Mid");
-        operatorController.nameY("Place High");
-        operatorController.nameX("Protect Arm");
+        // operatorController.getB().onTrue(runOnce(armSubsystem::setMid, armSubsystem));
+        // operatorController.getY().onTrue(runOnce(armSubsystem::setHigh, armSubsystem));
+        // operatorController.getX().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
+        // operatorController.nameB("Place Mid");
+        // operatorController.nameY("Place High");
+        // operatorController.nameX("Protect Arm");
 
         operatorController.getA().onTrue(armSubsystem.tippedPickupCommand());
         operatorController.nameA("Tipped Pickup");
@@ -156,9 +159,9 @@ public class RobotContainer {
 
         // Manual arm controls, no sussy stuff here
         operatorController.getDPadDown().onTrue(armSubsystem.pickupCommand());
-        operatorController.getDPadLeft().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
+        operatorController.getDPadLeft().onTrue(armSubsystem.awaitingDeploymentCommand());
         operatorController.getDPadUp().onTrue(armSubsystem.highManualCommand());
-        operatorController.getDPadRight().onTrue(runOnce(armSubsystem::setMidManual, armSubsystem));
+        operatorController.getDPadRight().onTrue(armSubsystem.midManualCommand());
         operatorController.nameDPadDown("Pickup");
         operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
@@ -250,7 +253,7 @@ public class RobotContainer {
                 case HYBRID_MANUAL:
                     targetPose3d = targetLocation.getHybridPose();
                     break;
-                case MID_MANUAL:
+                case MID_MANUAL_CONE:
                     targetPose3d = targetLocation.getMidPose();
 
                     // If cone, enable limelight cone mode 1

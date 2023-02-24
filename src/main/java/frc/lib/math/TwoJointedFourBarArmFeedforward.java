@@ -86,7 +86,8 @@ public class TwoJointedFourBarArmFeedforward {
             double stallTorque,
             double stallCurrent,
             double freeSpeed,
-            double gravity) {
+            double gravity,
+            double maxVoltage) {
         l1 = length1;
         l2 = length2;
         r1 = com1;
@@ -100,8 +101,8 @@ public class TwoJointedFourBarArmFeedforward {
         N1 = nMotors1;
         N2 = nMotors2;
         Kt = stallTorque / stallCurrent;
-        Kv = freeSpeed / 12;
-        R = 12 / stallCurrent;
+        Kv = freeSpeed / maxVoltage;
+        R = maxVoltage / stallCurrent;
         g = gravity;
 
         motorTorqueInvMatrix = calculateMotorTorqueMatrix().inv();

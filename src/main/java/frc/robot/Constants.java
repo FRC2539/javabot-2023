@@ -217,6 +217,8 @@ public final class Constants {
     }
 
     public static final class ArmConstants {
+        public static final double maxVoltage = 8;
+
         // Length of the first arm segment
         public static final double arm1Length = Units.inchesToMeters(40.5);
         // Length of the second arm segment
@@ -226,7 +228,6 @@ public final class Constants {
         public static final double arm1CenterOfMass = Units.inchesToMeters(20.06);
         public static final double arm2CenterOfMass = Units.inchesToMeters(20.5);
 
-        // arm
         public static final double arm1Mass = Units.lbsToKilograms(11.47);
         public static final double arm2Mass = Units.lbsToKilograms(8.16); // try adding gripper weight
 
@@ -247,8 +248,11 @@ public final class Constants {
         public static final double freeSpeed = 6380;
 
         // Adjust these to offset for gas shocks
-        public static final double arm1kS = 0.05;
-        public static final double arm2kS = 0.05;
+        public static final double arm1kS = 0.1;
+        public static final double arm2kS = 0.1;
+
+        public static final double arm1kSDeadband = 0.05;
+        public static final double arm2kSDeadband = 0.05;
 
         public static final Transform3d robotToArm =
                 new Transform3d(new Translation3d(0, 0, Units.inchesToMeters(8)), new Rotation3d());
@@ -281,7 +285,7 @@ public final class Constants {
         // When measuring values, replace the 0 in the offset with the value measured
         public static final double mastEncoderOffset = -2.108 + Math.PI / 2;
         public static final double boomEncoderOffset = -(-1.865) + -Math.PI;
-        public static final double gripperEncoderOffset = -(-0.665) + Math.PI;
+        public static final double gripperEncoderOffset = -(0.907) + Math.PI;
 
         // Set these to -1 to invert the encoder measurements (find offsets again)
         public static final int mastEncoderMultiplier = 1;
@@ -320,6 +324,8 @@ public final class Constants {
         public static final int REVERSE_CHANNEL = 4;
 
         public static final int gripperMotor = 14;
+
+        public static final double placementOffset = length / 2;
     }
 
     public static final class VisionConstants {
