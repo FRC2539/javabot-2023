@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -26,6 +27,8 @@ public class GripperSubsystem extends SubsystemBase {
 
     private AnalogInput gamePieceSensor1 = new AnalogInput(0);
     private AnalogInput gamePieceSensor2 = new AnalogInput(1);
+
+    private Timer holdTimer = new Timer();
 
     public GripperSubsystem() {
         gripperSolenoid = new DoubleSolenoid(
@@ -58,7 +61,12 @@ public class GripperSubsystem extends SubsystemBase {
     }
 
     public Command closeGripperCommand() {
-        return runOnce(() -> setState(GripperState.CLOSED));
+        return runOnce(() -> {
+            holdTimer.reset();
+            holdTimer.start();
+
+            setState(GripperState.CLOSED);
+        });
     }
 
     public Command ejectFromGripperCommand() {
@@ -86,7 +94,10 @@ public class GripperSubsystem extends SubsystemBase {
                 break;
             case CLOSED:
                 gripperSolenoid.set(Value.kForward);
-                gripperMotor.stopMotor();
+
+                if (holdTimer.hasElapsed(0.4)) gripperMotor.stopMotor();
+                else gripperMotor.set(0.3);
+
                 break;
             case EJECT:
                 gripperSolenoid.set(Value.kReverse);

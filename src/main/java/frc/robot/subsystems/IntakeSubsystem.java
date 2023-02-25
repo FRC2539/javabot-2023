@@ -114,12 +114,11 @@ public class IntakeSubsystem extends SubsystemBase {
                 break;
             case INTAKE:
                 shootingSolenoid.set(Value.kReverse);
+                positionSolenoid.set(Value.kForward);
 
                 if (hasGamePiece()) {
-                    positionSolenoid.set(Value.kReverse);
                     intakeMotor.stopMotor();
                 } else {
-                    positionSolenoid.set(Value.kForward);
                     intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
                 }
 

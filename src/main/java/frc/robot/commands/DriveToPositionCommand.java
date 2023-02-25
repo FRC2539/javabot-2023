@@ -35,9 +35,9 @@ public class DriveToPositionCommand extends CommandBase {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.targetPoseSupplier = targetPoseSupplier;
 
-        xController.setTolerance(0.1);
-        yController.setTolerance(0.1);
-        omegaController.setTolerance(Units.degreesToRadians(3));
+        xController.setTolerance(0.05);
+        yController.setTolerance(0.05);
+        omegaController.setTolerance(Units.degreesToRadians(2));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         addRequirements(swerveDriveSubsystem);

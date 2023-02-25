@@ -9,6 +9,7 @@ import edu.wpi.first.networktables.*;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.lib.logging.LogValue.LoggableType;
 import frc.lib.logging.LoggingThread.Writer;
+import frc.robot.Constants;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -20,12 +21,14 @@ public class Logger {
     private static int queueCapacity = 50 * 4; // ~ 4 seconds
 
     private static Map<String, LogValue> updatesMap = new HashMap<>();
-
     private static BlockingQueue<LogTable> updatesQueue = new ArrayBlockingQueue<>(queueCapacity);
 
     private static final List<Writer> writers = Arrays.asList(new DataLogWriter(), new NTWriter());
 
     private static LoggingThread loggingThread = new LoggingThread(updatesQueue, writers);
+
+    // In competition mode, only log necessary fields to reduce bandwidth usage
+    private static boolean ntDebuggingEnabled = !Constants.competitionMode;
 
     private static StringPublisher messagesPublisher = NetworkTableInstance.getDefault()
             .getTable("Messages")
@@ -53,62 +56,78 @@ public class Logger {
         }
     }
 
-    /* Log only methods - Log without sending to NetworkTables */
+    /* Logger Methods - Log to DataLog and NetworkTables, no getting */
+
+    @FunctionalInterface
+    public interface AlwaysNT {
+        void alwaysNT();
+    }
+
+    private static AlwaysNT writeUpdate(String key, LogValue value) {
+        updatesMap.put(key, ntDebuggingEnabled ? value : value.withoutNT());
+
+        return () -> writeUpdateAlways(key, value);
+    }
+
+    private static void writeUpdateAlways(String key, LogValue value) {
+        updatesMap.put(key, value.withNT());
+    }
+
     public static void logOnly(String key, LogValue value) {
         updatesMap.put(key, value.withoutNT());
     }
 
-    /* Logger Methods - Log to DataLog and NetworkTables, no getting */
-
-    public static void log(String key, boolean value) {
-        updatesMap.put(key, new LogValue(value));
+    public static AlwaysNT log(String key, boolean value) {
+        return writeUpdate(key, new LogValue(value));
     }
 
-    public static void log(String key, boolean[] value) {
-        updatesMap.put(key, new LogValue(value));
+    public static AlwaysNT log(String key, boolean[] value) {
+        return writeUpdate(key, new LogValue(value));
     }
 
-    public static void log(String key, double value) {
-        updatesMap.put(key, new LogValue(value));
+    public static AlwaysNT log(String key, double value) {
+        return writeUpdate(key, new LogValue(value));
     }
 
-    public static void log(String key, double[] value) {
-        updatesMap.put(key, new LogValue(value));
+    public static AlwaysNT log(String key, double[] value) {
+        return writeUpdate(key, new LogValue(value));
     }
 
-    public static void log(String key, long value) {
-        updatesMap.put(key, new LogValue(value));
+    public static AlwaysNT log(String key, long value) {
+        return writeUpdate(key, new LogValue(value));
     }
 
-    public static void log(String key, long[] value) {
-        updatesMap.put(key, new LogValue(value));
+    public static AlwaysNT log(String key, long[] value) {
+        return writeUpdate(key, new LogValue(value));
     }
 
-    public static void log(String key, String value) {
-        updatesMap.put(key, new LogValue(value));
+    public static AlwaysNT log(String key, String value) {
+        return writeUpdate(key, new LogValue(value));
     }
 
-    public static void log(String key, String[] value) {
-        updatesMap.put(key, new LogValue(value));
+    public static AlwaysNT log(String key, String[] value) {
+        return writeUpdate(key, new LogValue(value));
     }
 
-    public static void log(String key, Translation2d value) {
-        log(key, new double[] {value.getX(), value.getY()});
+    public static AlwaysNT log(String key, Translation2d value) {
+        return log(key, new double[] {value.getX(), value.getY()});
     }
 
-    public static void log(String key, ChassisSpeeds value) {
-        log(key, new double[] {value.vxMetersPerSecond, value.vyMetersPerSecond, value.omegaRadiansPerSecond});
+    public static AlwaysNT log(String key, ChassisSpeeds value) {
+        return log(key, new double[] {value.vxMetersPerSecond, value.vyMetersPerSecond, value.omegaRadiansPerSecond});
     }
 
-    public static void log(String key, Pose2d value) {
-        log(key, new double[] {value.getX(), value.getY(), value.getRotation().getRadians()});
+    public static AlwaysNT log(String key, Pose2d value) {
+        return log(
+                key,
+                new double[] {value.getX(), value.getY(), value.getRotation().getRadians()});
     }
 
-    public static void log(String key, Pose3d value, boolean logQuaternion) {
+    public static AlwaysNT log(String key, Pose3d value, boolean logQuaternion) {
         if (logQuaternion) {
             var rotation = value.getRotation().getQuaternion();
 
-            log(key, new double[] {
+            return log(key, new double[] {
                 value.getX(),
                 value.getY(),
                 value.getZ(),
@@ -120,7 +139,7 @@ public class Logger {
         } else {
             var rotation = value.getRotation();
 
-            log(key, new double[] {
+            return log(key, new double[] {
                 value.getX(), value.getY(), value.getZ(), rotation.getX(), rotation.getY(), rotation.getZ()
             });
         }
@@ -129,49 +148,49 @@ public class Logger {
     /* Tunables - Log the value once and returns an subscriber */
 
     public static LoggedReceiver tunable(String key, boolean value) {
-        log(key, value);
+        writeUpdateAlways(key, new LogValue(value));
 
         return receive(key, value);
     }
 
     public static LoggedReceiver tunable(String key, boolean[] value) {
-        log(key, value);
+        writeUpdateAlways(key, new LogValue(value));
 
         return receive(key, value);
     }
 
     public static LoggedReceiver tunable(String key, double value) {
-        log(key, value);
+        writeUpdateAlways(key, new LogValue(value));
 
         return receive(key, value);
     }
 
     public static LoggedReceiver tunable(String key, double[] value) {
-        log(key, value);
+        writeUpdateAlways(key, new LogValue(value));
 
         return receive(key, value);
     }
 
     public static LoggedReceiver tunable(String key, long value) {
-        log(key, value);
+        writeUpdateAlways(key, new LogValue(value));
 
         return receive(key, value);
     }
 
     public static LoggedReceiver tunable(String key, long[] value) {
-        log(key, value);
+        writeUpdateAlways(key, new LogValue(value));
 
         return receive(key, value);
     }
 
     public static LoggedReceiver tunable(String key, String value) {
-        log(key, value);
+        writeUpdateAlways(key, new LogValue(value));
 
         return receive(key, value);
     }
 
     public static LoggedReceiver tunable(String key, String[] value) {
-        log(key, value);
+        writeUpdateAlways(key, new LogValue(value));
 
         return receive(key, value);
     }

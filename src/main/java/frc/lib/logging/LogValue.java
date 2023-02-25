@@ -164,6 +164,11 @@ public class LogValue {
         return this;
     }
 
+    public LogValue withNT() {
+        sendToNT = true;
+        return this;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other instanceof LogValue) {

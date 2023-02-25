@@ -194,7 +194,7 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         var distance = (retroreflectiveHeight - VisionConstants.limelightRobotToCamera.getZ())
-                / Math.tan(VisionConstants.limelightCameraToRobot.getRotation().getY() + Math.toRadians(limelightTY));
+                / Math.tan(VisionConstants.limelightRobotToCamera.getRotation().getY() + Math.toRadians(limelightTY));
 
         var robotPose = robotPoseSupplier.get();
 
@@ -236,7 +236,7 @@ public class VisionSubsystem extends SubsystemBase {
         double targetHeight = 0;
 
         var distance = (targetHeight - VisionConstants.limelightRobotToCamera.getZ())
-                / Math.tan(VisionConstants.limelightCameraToRobot.getRotation().getY() + Math.toRadians(limelightTY));
+                / Math.tan(VisionConstants.limelightRobotToCamera.getRotation().getY() + Math.toRadians(limelightTY));
 
         var robotPose = robotPoseSupplier.get();
 

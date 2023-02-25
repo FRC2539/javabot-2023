@@ -165,7 +165,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     public Command levelChargeStationCommandArlene() {
-        var constraints = new TrapezoidProfile.Constraints(0.5, 0.1);
+        var constraints = new TrapezoidProfile.Constraints(0.35, 0.8);
         var tiltController = new ProfiledPIDController(0.25, 0, 0.01, constraints);
 
         // End with no pitch and stationary
@@ -176,6 +176,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
         return run(() -> {
                     double pitch = getTiltAmountInDegrees();
+
+                    Logger.log("/SwerveDriveSubsystem/Tilt Rate", getTiltRate());
 
                     // TODO: stop when angle changes
 
@@ -188,7 +190,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
                     ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
 
-                    if (MathUtils.equalsWithinError(pitch, 0, 3)) lock();
+                    if (MathUtils.equalsWithinError(pitch, 0, 8) || getTiltAmount() < -0.2) lock();
                     else setVelocity(velocity, false);
                 })
                 .repeatedly();

@@ -7,7 +7,6 @@ import com.pathplanner.lib.PathPlanner;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.auto.PIDConstants;
 import com.pathplanner.lib.auto.SwerveAutoBuilder;
-import com.pathplanner.lib.server.PathPlannerServer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.logging.LoggedReceiver;
@@ -49,27 +48,40 @@ public class AutonomousManager {
                 "shouldClimb",
                 either(none(), run(swerveDriveSubsystem::stop, swerveDriveSubsystem), () -> shouldClimb.getBoolean()));
         eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommandArlene());
+        // eventMap.put(
+        //         "placeHigh",
+        //         armSubsystem
+        //                 .highManualCommand()
+        //                 .andThen(waitSeconds(1.5))
+        //                 .andThen(container
+        //                         .getGripperSubsystem()
+        //                         .ejectFromGripperCommand()
+        //                         .withTimeout(0.5))
+        //                 .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.4)));
         eventMap.put(
                 "placeHigh",
                 armSubsystem
-                        .highManualCommand()
-                        .andThen(waitSeconds(1.5))
-                        .andThen(container.getGripperSubsystem().ejectFromGripperCommand()));
+                        .highAutoCommand()
+                        .andThen(container
+                                .getGripperSubsystem()
+                                .ejectFromGripperCommand()
+                                .withTimeout(0.5))
+                        .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.2)));
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
                 new PIDConstants(3.0, 0.0, 0.0),
-                new PIDConstants(1.0, 0.0, 0.001),
+                new PIDConstants(1.2, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
                 true,
                 swerveDriveSubsystem);
 
         // Prevent the server from running at competitions
-        if (!Constants.competitionMode) {
-            PathPlannerServer.startServer(5811);
-        }
+        // if (!Constants.competitionMode) {
+        //     PathPlannerServer.startServer(5811);
+        // }
     }
 
     public void update() {
@@ -81,7 +93,7 @@ public class AutonomousManager {
             // Match the auto based on the dashboard configuration
             List<AutonomousOption> options = Stream.of(AutonomousOption.values())
                     .filter(option ->
-                            option.startPosition.name() == newStartPosition && option.gamePieces == newGamePieces)
+                            option.startPosition.name().equals(newStartPosition) && option.gamePieces == newGamePieces)
                     .toList();
 
             if (options.size() == 1) chosenAuto = options.get(0).getPath();
@@ -93,7 +105,7 @@ public class AutonomousManager {
                     .mapToLong(option -> option.gamePieces)
                     .toArray();
 
-            Logger.log("/Autonomous/Game Piece Options", gamePieceOptions);
+            Logger.log("/Autonomous/Game Piece Options", gamePieceOptions).alwaysNT();
 
             previousStartPosition = newStartPosition;
             previousGamePieces = (int) newGamePieces;
@@ -117,7 +129,7 @@ public class AutonomousManager {
         gamePieces = Logger.tunable("/Autonomous/Game Pieces", defaultAuto.gamePieces);
         shouldClimb = Logger.tunable("/Autonomous/Should Climb", true);
 
-        Logger.log("/Autonomous/Start Position Options", getStartingLocations());
+        Logger.log("/Autonomous/Start Position Options", getStartingLocations()).alwaysNT();
 
         // Determine all of the game piece options for this starting position
         long[] gamePieceOptions = Stream.of(AutonomousOption.values())
@@ -125,16 +137,16 @@ public class AutonomousManager {
                 .mapToLong(option -> option.gamePieces)
                 .toArray();
 
-        Logger.log("/Autonomous/Game Piece Options", gamePieceOptions);
+        Logger.log("/Autonomous/Game Piece Options", gamePieceOptions).alwaysNT();
     }
 
     private enum AutonomousOption {
-        OPEN_PLACE1ANDCLIMB(StartingLocation.OPEN, 1, "open_place1andclimb", new PathConstraints(5, 4)),
+        OPEN_PLACE1ANDCLIMB(StartingLocation.OPEN, 1, "open_place1andclimb", new PathConstraints(5, 5)),
         OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, "open_place2andclimb", new PathConstraints(5, 4)),
         OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
         OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
         STATION_PLACE1ANDCLIMB(StartingLocation.STATION, 1, "station_place1andclimb", new PathConstraints(5, 4)),
-        CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, "cable_place1andclimb", new PathConstraints(5, 4));
+        CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, "cable_place1andclimb", new PathConstraints(5, 5));
 
         private List<PathPlannerTrajectory> path;
         private String pathName;

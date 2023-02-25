@@ -55,9 +55,9 @@ public class RobotContainer {
     private void configureBindings() {
         // Decrease the max drivetrain speed when the arm is extended
         swerveDriveSubsystem.setCustomMaxSpeedSupplier(() -> {
-            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 4;
+            if (armSubsystem.getState() != ArmState.AWAITING_DEPLOYMENT) return 5;
             else if (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT
-                    && !armSubsystem.isArmApproximatelyAtGoal()) return 4;
+                    && !armSubsystem.isArmApproximatelyAtGoal()) return 5;
             else return Constants.SwerveConstants.maxSpeed;
         });
 
@@ -77,7 +77,7 @@ public class RobotContainer {
         leftDriveController.nameLeftTopRight("Reset Pose");
         leftDriveController.nameLeftTopMiddle("Use NavX");
 
-        leftDriveController.getTrigger().whileTrue(gripperSubsystem.gripperCommand());
+        leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
         rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
         leftDriveController.nameTrigger("Run Gripper");
         leftDriveController.nameTrigger("Eject Gripper");
@@ -95,7 +95,7 @@ public class RobotContainer {
         rightDriveController.nameRightBottomMiddle("Characterize Backwards");
 
         // Will only need two triggers for this once we have a sensor
-        rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeCommand());
+        rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
         rightDriveController.getRightThumb().whileTrue(intakeSubsystem.shootCommand());
         rightDriveController.getBottomThumb().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
         rightDriveController.nameLeftThumb("Run Intake");

@@ -45,8 +45,6 @@ public final class Constants {
         public static final double fieldLength = Units.inchesToMeters(651.25);
         public static final double fieldWidth = Units.inchesToMeters(315.5);
 
-        public static final double robotLengthWithBumpers = Units.inchesToMeters(30 + 3.25 * 2);
-
         /* X Placement constants from 6328 */
         public static final double outerX = Units.inchesToMeters(54.25);
         public static final double lowX =
@@ -101,7 +99,7 @@ public final class Constants {
                                 firstPlacingPose.getX(),
                                 firstPlacingPose.getY() + i * separationBetweenNodeRows,
                                 new Rotation2d()),
-                        robotLengthWithBumpers,
+                        SwerveConstants.lengthWithBumpers,
                         isCone[i]);
             }
         }
@@ -229,7 +227,7 @@ public final class Constants {
         public static final double arm2CenterOfMass = Units.inchesToMeters(20.5);
 
         public static final double arm1Mass = Units.lbsToKilograms(11.47);
-        public static final double arm2Mass = Units.lbsToKilograms(8.16); // try adding gripper weight
+        public static final double arm2Mass = Units.lbsToKilograms(8.16);
 
         public static final double arm1MomentOfInertia = 2.3;
         public static final double arm2MomentOfInertia = 2.44;
@@ -238,9 +236,9 @@ public final class Constants {
         public static final double arm2GearRatio = 64 * 2;
 
         public static final double arm1MinimumAngle = Math.toRadians(36.36);
-        public static final double arm1MaximumAngle = Math.toRadians(90); // 103.35
+        public static final double arm1MaximumAngle = Math.toRadians(90);
 
-        public static final double arm2MinimumAngle = Math.toRadians(-174); // -180
+        public static final double arm2MinimumAngle = Math.toRadians(-174);
         public static final double arm2MaximumAngle = Math.toRadians(-56.24);
 
         public static final double stallTorque = 4.69;
@@ -264,7 +262,6 @@ public final class Constants {
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-180);
 
         public static final double angularTolerance = Math.toRadians(4);
-        // public static final double angularTolerance = Math.toRadians(5);
 
         public static final int mastMotorPort = 8;
         public static final int boomMotorPort = 9;
@@ -345,8 +342,8 @@ public final class Constants {
 
         // Pretty sure 6 needs to negative
         public static final Transform3d limelightRobotToCamera = new Transform3d(
-                new Translation3d(Units.inchesToMeters(-6), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
-                new Rotation3d(0, Math.toRadians(-15), Math.PI)); // 15 was 10 degrees
+                new Translation3d(Units.inchesToMeters(6), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
+                new Rotation3d(0, Math.toRadians(15), Math.PI));
 
         public static final Transform3d limelightCameraToRobot = limelightRobotToCamera.inverse();
     }
