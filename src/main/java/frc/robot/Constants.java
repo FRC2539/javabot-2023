@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.lib.logging.Logger;
 import frc.lib.swerve.SecondOrderSwerveKinematics;
 import frc.lib.swerve.SwerveModuleConstants;
 import java.util.Arrays;
@@ -118,17 +119,37 @@ public final class Constants {
          * @return The nearest placement location
          */
         public static PlacementLocation getNearestPlacementLocation(Pose2d robotPose) {
-            double target = robotPose.getY();
+            double target =
+                    DriverStation.getAlliance() == Alliance.Red ? fieldWidth - robotPose.getY() : robotPose.getY();
             Double lowerYValue = locationMap.floorKey(target);
             Double upperYValue = locationMap.ceilingKey(target);
 
             // Account for the pose being below or above the range
-            if (lowerYValue == null) return locationMap.get(upperYValue);
-            else if (upperYValue == null) return locationMap.get(lowerYValue);
+            if (lowerYValue == null) return flipPlacementLocation(locationMap.get(upperYValue));
+            else if (upperYValue == null) return flipPlacementLocation(locationMap.get(lowerYValue));
 
             boolean isLowerCloser = Math.abs(target - lowerYValue) < Math.abs(target - upperYValue);
 
-            return isLowerCloser ? locationMap.get(lowerYValue) : locationMap.get(upperYValue);
+            var finalPlacementLocation = isLowerCloser ? locationMap.get(lowerYValue) : locationMap.get(upperYValue);
+
+            return flipPlacementLocation(finalPlacementLocation);
+        }
+
+        public static PlacementLocation flipPlacementLocation(PlacementLocation placementLocation) {
+            PlacementLocation resultPlacementLocation = placementLocation;
+
+            if (DriverStation.getAlliance() == Alliance.Red) {
+                var pose = placementLocation.robotPlacementPose;
+                resultPlacementLocation = new PlacementLocation(
+                        new Pose2d(firstPlacingPose.getX(), fieldWidth - pose.getY(), pose.getRotation()),
+                        SwerveConstants.lengthWithBumpers,
+                        placementLocation.isCone);
+            }
+
+            Logger.log("/SwerveDriveSubsystem/PlacementPose", resultPlacementLocation.robotPlacementPose);
+            Logger.log("/SwerveDriveSubsystem/isCone", resultPlacementLocation.isCone);
+
+            return resultPlacementLocation;
         }
 
         public static final List<AprilTag> aprilTags = List.of(
@@ -499,6 +520,8 @@ public final class Constants {
         public static final double wheelDiameter = Units.inchesToMeters(4.0);
         public static final double wheelCircumference = wheelDiameter * Math.PI;
 
+        public static final double robotMass = Units.lbsToKilograms(115);
+
         public static final double openLoopRamp = 0.0; // 0.25
         public static final double closedLoopRamp = 0.0;
 
@@ -541,6 +564,7 @@ public final class Constants {
         /* Motor Information */
         public static final double driveMotorFreeSpeed = 6380; // RPM of Falcon 500
         public static final double angleMotorFreeSpeed = 6380; // RPM of Falcon 500
+        public static final double stallTorque = 4.69;
 
         /* Drive Motor Characterization Values */
         public static final double driveKS =
@@ -556,7 +580,8 @@ public final class Constants {
 
         /* Swerve Profiling Values */
         public static final double maxSpeed = 6.52; // meters per second
-        public static final double maxAcceleration = 16.52; // meters per second^2
+        public static final double maxAcceleration =
+                (stallTorque * driveGearRatio * 4) / (wheelDiameter * robotMass); // 16.52; // meters per second^2
         public static final double maxAngularVelocity = maxSpeed // rad/s
                 / Arrays.stream(moduleTranslations)
                         .map(translation -> translation.getNorm())

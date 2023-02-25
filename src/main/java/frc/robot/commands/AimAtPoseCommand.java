@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 public class AimAtPoseCommand extends CommandBase {
     private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(8, 8);
-    private final ProfiledPIDController omegaController = new ProfiledPIDController(7, 0, 0, omegaConstraints);
+    private final ProfiledPIDController omegaController = new ProfiledPIDController(8, 0, 0, omegaConstraints);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem;
 

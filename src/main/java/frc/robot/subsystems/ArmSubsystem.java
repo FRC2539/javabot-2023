@@ -252,14 +252,24 @@ public class ArmSubsystem extends SubsystemBase {
         setState(armState);
     }
 
-    public Command highManualCommand() {
+    public Command highManualConeCommand() {
         return Commands.sequence(
-                armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL));
+                armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL_CONE));
     }
 
-    public Command highAutoCommand() {
+    public Command highManualCubeCommand() {
         return Commands.sequence(
-                armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateApproximateCommand(ArmState.HIGH_MANUAL));
+                armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL_CUBE));
+    }
+
+    // public Command highAutoCommand() {
+    //     return Commands.sequence(
+    //             armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
+    //             armStateApproximateCommand(ArmState.HIGH_MANUAL_CONE));
+    // }
+
+    public Command substationPickupCommand() {
+        return armStateCommand(ArmState.SUBSTATION_PICKUP);
     }
 
     public Command pickupCommand() {
@@ -280,11 +290,6 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Command midManualCommand() {
-        // return Commands.either(
-        //         armStateCommand(ArmState.MID_MANUAL_CONE),
-        //         armStateCommand(ArmState.MID_MANUAL_CUBE),
-        //         this::isCurrentLocationCone);
-
         return run(() -> {
             if (isCurrentLocationCone()) setState(ArmState.MID_MANUAL_CONE);
             else setState(ArmState.MID_MANUAL_CUBE);
@@ -491,11 +496,11 @@ public class ArmSubsystem extends SubsystemBase {
 
     public boolean isArmApproximatelyAtGoal() {
         return MathUtils.equalsWithinError(
-            arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance)
+                        arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 2.5)
                 && MathUtils.equalsWithinError(
-                        arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 1.5)
-                && MathUtils.equalsWithinError(
-                        arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 1.5);
+                        arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
+                // && MathUtils.equalsWithinError(
+                //         gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
     }
 
     private void passthroughMotorSpeeds(double shoulderPercent, double elbowPercent, double wristPercent) {
@@ -812,7 +817,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public void setHighManual() {
-        setState(ArmState.HIGH_MANUAL);
+        setState(ArmState.HIGH_MANUAL_CONE);
     }
 
     public void setNetworkTablesMode() {
@@ -841,7 +846,7 @@ public class ArmSubsystem extends SubsystemBase {
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
         // AWAITING_DEPLOYMENT(new Static(0.34, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
-        AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(45))),
+        AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
         // AWAITING_DEPLOYMENT(new Static(0.34 - .254 + .254 * .707, 0.27 + .254 * .707, Rotation2d.fromDegrees(45))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
@@ -850,15 +855,24 @@ public class ArmSubsystem extends SubsystemBase {
         //         FieldConstants.midX,
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
         //         Rotation2d.fromDegrees(20))),
+        SUBSTATION_PICKUP(
+                Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.07, Rotation2d.fromDegrees(-10))),
         MID_MANUAL_CONE(
-                Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.09, Rotation2d.fromDegrees(16))),
+                Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.09, Rotation2d.fromDegrees(20))),
         MID_MANUAL_CUBE(
-                Static.fromBumper(FieldConstants.midX, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-16))),
+                Static.fromBumper(FieldConstants.midX, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
         HIGH_MANUAL_1(new Static(1.0, 1.0, Rotation2d.fromDegrees(30))),
-        HIGH_MANUAL(Static.fromBumper(
+        HIGH_MANUAL_CONE(Static.fromBumper(
                 FieldConstants.highX + 0.14, // gripper offset
-                FieldConstants.highConeZ + ArmConstants.placementHeightOffset + 0.3 - 0.03, // because of poor pid behavior
-                Rotation2d.fromDegrees(55))),
+                FieldConstants.highConeZ
+                        + ArmConstants.placementHeightOffset
+                        + 0.3
+                        - 0.18, // because of poor pid behavior
+                Rotation2d.fromDegrees(45))),
+        HIGH_MANUAL_CUBE(Static.fromBumper(
+                FieldConstants.highX + 0.14, // gripper offset
+                FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior
+                Rotation2d.fromDegrees(-25))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
         HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())), // name my variables

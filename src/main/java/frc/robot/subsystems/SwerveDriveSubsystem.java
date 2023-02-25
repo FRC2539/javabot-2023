@@ -165,8 +165,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     public Command levelChargeStationCommandArlene() {
-        var constraints = new TrapezoidProfile.Constraints(0.35, 0.8);
-        var tiltController = new ProfiledPIDController(0.25, 0, 0.01, constraints);
+        var constraints = new TrapezoidProfile.Constraints(0.4, 0.8);
+        var tiltController = new ProfiledPIDController(0.28, 0, 0.01, constraints);
 
         // End with no pitch and stationary
         State goal = new State(0, 0);
@@ -184,7 +184,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 
                     Translation2d direction = new Translation2d(
-                            getNormalVector3d().getX(), getNormalVector3d().getY());
+                                    getNormalVector3d().getX(),
+                                    getNormalVector3d().getY());
 
                     Translation2d finalDirection = direction.times(tiltController.calculate(pitch, goal));
 

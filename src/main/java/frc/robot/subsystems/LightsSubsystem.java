@@ -25,7 +25,7 @@ public class LightsSubsystem extends SubsystemBase {
     public static final Color black = new Color(0, 0, 0);
 
     // Game piece colors
-    public static final Color yellow = new Color(242, 222, 0);
+    public static final Color yellow = new Color(242, 60, 0);
     public static final Color purple = new Color(184, 0, 185);
 
     // Indicator colors
@@ -190,7 +190,7 @@ public class LightsSubsystem extends SubsystemBase {
         }
 
         public void setRainbowAnimation(double speed) {
-            setAnimation(new RainbowAnimation(1, 0.5, segmentSize, false, startIndex));
+            setAnimation(new RainbowAnimation(1, speed, segmentSize, false, startIndex));
         }
     }
 

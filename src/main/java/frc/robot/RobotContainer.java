@@ -96,10 +96,10 @@ public class RobotContainer {
 
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
-        rightDriveController.getRightThumb().whileTrue(intakeSubsystem.shootCommand());
-        rightDriveController.getBottomThumb().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
-        rightDriveController.nameLeftThumb("Run Intake");
-        rightDriveController.nameRightThumb("Shoot");
+        rightDriveController.getBottomThumb().whileTrue(intakeSubsystem.shootCommand());
+        rightDriveController.getRightThumb().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
+        // rightDriveController.nameLeftThumb("Run Intake");
+        // rightDriveController.nameRightThumb("Shoot");
 
         // rightDriveController
         //         .getBottomThumb()
@@ -129,13 +129,14 @@ public class RobotContainer {
         //         .getBottomThumb()
         //         .whileTrue(new AssistedDriveToPositionCommand(
         //                 swerveDriveSubsystem, targetPoseSupplier, this::getDriveForwardAxis));
-        leftDriveController
-                .getBottomThumb()
-                .whileTrue(swerveDriveSubsystem.cardinalDriveCommand(
-                        this::getDriveForwardAxis,
-                        this::getDriveStrafeAxis,
-                        this::getCardinalXRotationAxis,
-                        this::getCardinalYRotationAxis));
+        // leftDriveController
+        //         .getBottomThumb()
+        //         .whileTrue(swerveDriveSubsystem.cardinalDriveCommand(
+        //                 this::getDriveForwardAxis,
+        //                 this::getDriveStrafeAxis,
+        //                 this::getCardinalXRotationAxis,
+        //                 this::getCardinalYRotationAxis));
+        leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
         leftDriveController.nameRightThumb("Drive to Pose");
         leftDriveController.nameLeftThumb("Aim at Pose");
         // leftDriveController.nameBottomThumb("Assisted Drive");
@@ -148,19 +149,24 @@ public class RobotContainer {
         // operatorController.nameB("Place Mid");
         // operatorController.nameY("Place High");
         // operatorController.nameX("Protect Arm");
-
+        operatorController.getY().onTrue(armSubsystem.highManualCubeCommand());
         operatorController.getA().onTrue(armSubsystem.tippedPickupCommand());
+        operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
+        operatorController.nameY("High Manual for Cube");
         operatorController.nameA("Tipped Pickup");
 
         operatorController.getBack().whileTrue(gripperSubsystem.ejectFromGripperCommand());
-        // operatorController.getStart().onTrue(runOnce(armSubsystem::setNetworkTablesMode, armSubsystem));
         operatorController.nameBack("Backup Gripper");
-        operatorController.nameStart("Arm Test Mode");
+
+        operatorController.getStart().toggleOnTrue(run(
+            () -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem
+        ));
+        operatorController.nameStart("Rainbow Mode");
 
         // Manual arm controls, no sussy stuff here
         operatorController.getDPadDown().onTrue(armSubsystem.pickupCommand());
         operatorController.getDPadLeft().onTrue(armSubsystem.awaitingDeploymentCommand());
-        operatorController.getDPadUp().onTrue(armSubsystem.highManualCommand());
+        operatorController.getDPadUp().onTrue(armSubsystem.highManualConeCommand());
         operatorController.getDPadRight().onTrue(armSubsystem.midManualCommand());
         operatorController.nameDPadDown("Pickup");
         operatorController.nameDPadLeft("Awaiting Deployment");
@@ -170,11 +176,11 @@ public class RobotContainer {
         operatorController
                 .getRightTrigger()
                 .whileTrue(run(
-                        () -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.yellow), lightsSubsystem));
+                        () -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.yellow, .3), lightsSubsystem));
         operatorController
                 .getLeftTrigger()
                 .whileTrue(run(
-                        () -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.purple), lightsSubsystem));
+                        () -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.purple, .3), lightsSubsystem));
         operatorController.nameRightTrigger("Indicate Cone");
         operatorController.nameLeftTrigger("Indicate Cube");
 

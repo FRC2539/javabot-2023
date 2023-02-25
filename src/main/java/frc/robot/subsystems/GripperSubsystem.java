@@ -50,6 +50,9 @@ public class GripperSubsystem extends SubsystemBase {
 
         gripperIntakeSpeed = Logger.tunable("/Gripper/Intake Speed", 1.0);
         gripperEjectSpeed = Logger.tunable("/Gripper/Eject Speed", -0.3);
+
+        holdTimer.reset();
+        holdTimer.start();
     }
 
     private boolean hasGamePiece() {
@@ -62,9 +65,6 @@ public class GripperSubsystem extends SubsystemBase {
 
     public Command closeGripperCommand() {
         return runOnce(() -> {
-            holdTimer.reset();
-            holdTimer.start();
-
             setState(GripperState.CLOSED);
         });
     }
@@ -107,7 +107,12 @@ public class GripperSubsystem extends SubsystemBase {
     }
 
     private void setState(GripperState gripperState) {
+        if (this.gripperState == gripperState) return;
+
         this.gripperState = gripperState;
+
+        holdTimer.reset();
+        holdTimer.start();
     }
 
     private enum GripperState {

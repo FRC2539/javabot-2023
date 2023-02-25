@@ -33,11 +33,13 @@ public class IntakeSubsystem extends SubsystemBase {
     private IntakeMode intakeMode = IntakeMode.DISABLED;
 
     private LoggedReceiver intakeSpeedReceiver;
+    private LoggedReceiver stoppedSpeedReciever;
     private LoggedReceiver reverseSpeedReceiver;
     private LoggedReceiver shootingSpeedReceiver;
     private LoggedReceiver shootingDelayReceiver;
 
     private Timer shootingDelayTimer = new Timer();
+    private Timer holdDelayTimer = new Timer();
 
     AnalogInput intakeSensor1 = new AnalogInput(2);
     AnalogInput intakeSensor2 = new AnalogInput(3);
@@ -55,10 +57,18 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.7);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
+        stoppedSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", -0.1);
+
 
         shootingDelayReceiver = Logger.tunable("/IntakeSubsystem/ShootingDelay", 0.0);
 
         setDefaultCommand(stopIntakeCommand());
+
+        holdDelayTimer.reset();
+        holdDelayTimer.start();
+
+        shootingDelayTimer.reset();
+        shootingDelayTimer.start();
     }
 
     private boolean hasGamePiece() {
@@ -94,7 +104,17 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public void setIntakeMode(IntakeMode intakeMode) {
+        if (this.intakeMode == intakeMode) return;
+        
         this.intakeMode = intakeMode;
+
+        holdDelayTimer.reset();
+        holdDelayTimer.start();
+
+        shootingDelayTimer.reset();
+        shootingDelayTimer.start();
+
+
     }
 
     public IntakeMode getIntakeMode() {
@@ -105,12 +125,14 @@ public class IntakeSubsystem extends SubsystemBase {
     public void periodic() {
         switch (intakeMode) {
             case DISABLED:
-                shootingDelayTimer.stop();
-                shootingDelayTimer.reset();
-
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);
-                intakeMotor.stopMotor();
+                //intakeMotor.stopMotor();
+                if (holdDelayTimer.hasElapsed(1)) {
+                    intakeMotor.stopMotor();
+                } else {
+                    intakeMotor.set(ControlMode.PercentOutput, stoppedSpeedReciever.getDouble());
+                }
                 break;
             case INTAKE:
                 shootingSolenoid.set(Value.kReverse);
@@ -129,8 +151,6 @@ public class IntakeSubsystem extends SubsystemBase {
                 intakeMotor.set(ControlMode.PercentOutput, reverseSpeedReceiver.getDouble());
                 break;
             case SHOOT:
-                shootingDelayTimer.start();
-
                 // Shooting should be extended, and position should be retracted.
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kForward);

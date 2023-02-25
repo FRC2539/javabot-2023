@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
+import frc.lib.math.MathUtils;
 import frc.lib.vision.TimestampedPose;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
@@ -81,17 +82,17 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         /* Use photonvision apriltag estimate to update robot pose estimator */
-        photonVisionEstimate = calculatePhotonVisionEstimate();
+        // photonVisionEstimate = calculatePhotonVisionEstimate();
 
-        if (photonVisionEstimate.isPresent()) {
-            addVisionPoseEstimate(photonVisionEstimate.get());
+        // if (photonVisionEstimate.isPresent()) {
+        //     // addVisionPoseEstimate(photonVisionEstimate.get());
 
-            Logger.log(
-                    "/VisionSubsystem/photonVisionPose",
-                    photonVisionEstimate.get().estimatedPose.toPose2d());
+        //     Logger.log(
+        //             "/VisionSubsystem/photonVisionPose",
+        //             photonVisionEstimate.get().estimatedPose.toPose2d());
 
-            lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
-        }
+        //     lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
+        // }
 
         /* Estimate the location of the retroreflective target */
         LLFieldRelativeRetroreflectiveEstimate = calculateLLFieldRelativeRetroreflectiveEstimate();
@@ -160,7 +161,11 @@ public class VisionSubsystem extends SubsystemBase {
     private Optional<EstimatedRobotPose> calculatePhotonVisionEstimate() {
         if (visionDisabled) return Optional.empty();
 
-        return photonPoseEstimator.update();
+        var botpose = photonPoseEstimator.update();
+
+        if (botpose.isEmpty() || !isValidPose(botpose.get().estimatedPose)) return Optional.empty();
+
+        return botpose;
     }
 
     public boolean hasLLFieldRelativeRetroflectiveEstimate() {
@@ -283,10 +288,18 @@ public class VisionSubsystem extends SubsystemBase {
 
             double timestamp = Timer.getFPGATimestamp() - botposeArray[6] / 1000.0;
 
+            if (!isValidPose(botPose)) return Optional.empty();
+
             return Optional.of(new TimestampedPose(botPose, timestamp));
         } else {
             return Optional.empty();
         }
+    }
+
+    private boolean isValidPose(Pose3d pose) {
+        return MathUtils.isInRange(pose.getY(), -5, FieldConstants.fieldWidth + 5)
+                && MathUtils.isInRange(pose.getX(), -5, FieldConstants.fieldLength + 5)
+                && MathUtils.isInRange(pose.getZ(), 0, 5);
     }
 
     public Command defaultLimelightCommand() {

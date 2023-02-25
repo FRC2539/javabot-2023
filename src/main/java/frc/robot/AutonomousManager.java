@@ -48,25 +48,25 @@ public class AutonomousManager {
                 "shouldClimb",
                 either(none(), run(swerveDriveSubsystem::stop, swerveDriveSubsystem), () -> shouldClimb.getBoolean()));
         eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommandArlene());
-        // eventMap.put(
-        //         "placeHigh",
-        //         armSubsystem
-        //                 .highManualCommand()
-        //                 .andThen(waitSeconds(1.5))
-        //                 .andThen(container
-        //                         .getGripperSubsystem()
-        //                         .ejectFromGripperCommand()
-        //                         .withTimeout(0.5))
-        //                 .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.4)));
         eventMap.put(
                 "placeHigh",
                 armSubsystem
-                        .highAutoCommand()
+                        .highManualConeCommand()
+                        .andThen(waitSeconds(1.5))
                         .andThen(container
                                 .getGripperSubsystem()
                                 .ejectFromGripperCommand()
                                 .withTimeout(0.5))
-                        .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.2)));
+                        .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.4)));
+        // eventMap.put(
+        //         "placeHigh",
+        //         armSubsystem
+        //                 .highAutoCommand()
+        //                 .andThen(container
+        //                         .getGripperSubsystem()
+        //                         .ejectFromGripperCommand()
+        //                         .withTimeout(0.5))
+        //                 .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.2)));
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
