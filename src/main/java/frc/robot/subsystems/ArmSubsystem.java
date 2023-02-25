@@ -499,8 +499,8 @@ public class ArmSubsystem extends SubsystemBase {
                         arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 2.5)
                 && MathUtils.equalsWithinError(
                         arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
-                // && MathUtils.equalsWithinError(
-                //         gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
+        // && MathUtils.equalsWithinError(
+        //         gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
     }
 
     private void passthroughMotorSpeeds(double shoulderPercent, double elbowPercent, double wristPercent) {

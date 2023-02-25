@@ -158,9 +158,9 @@ public class RobotContainer {
         operatorController.getBack().whileTrue(gripperSubsystem.ejectFromGripperCommand());
         operatorController.nameBack("Backup Gripper");
 
-        operatorController.getStart().toggleOnTrue(run(
-            () -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem
-        ));
+        operatorController
+                .getStart()
+                .toggleOnTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem));
         operatorController.nameStart("Rainbow Mode");
 
         // Manual arm controls, no sussy stuff here
@@ -176,11 +176,13 @@ public class RobotContainer {
         operatorController
                 .getRightTrigger()
                 .whileTrue(run(
-                        () -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.yellow, .3), lightsSubsystem));
+                        () -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.yellow, .3),
+                        lightsSubsystem));
         operatorController
                 .getLeftTrigger()
                 .whileTrue(run(
-                        () -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.purple, .3), lightsSubsystem));
+                        () -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.purple, .3),
+                        lightsSubsystem));
         operatorController.nameRightTrigger("Indicate Cone");
         operatorController.nameLeftTrigger("Indicate Cube");
 

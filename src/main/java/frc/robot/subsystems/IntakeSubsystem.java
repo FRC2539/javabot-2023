@@ -59,7 +59,6 @@ public class IntakeSubsystem extends SubsystemBase {
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
         stoppedSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", -0.1);
 
-
         shootingDelayReceiver = Logger.tunable("/IntakeSubsystem/ShootingDelay", 0.0);
 
         setDefaultCommand(stopIntakeCommand());
@@ -105,7 +104,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public void setIntakeMode(IntakeMode intakeMode) {
         if (this.intakeMode == intakeMode) return;
-        
+
         this.intakeMode = intakeMode;
 
         holdDelayTimer.reset();
@@ -113,8 +112,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
         shootingDelayTimer.reset();
         shootingDelayTimer.start();
-
-
     }
 
     public IntakeMode getIntakeMode() {
@@ -127,7 +124,7 @@ public class IntakeSubsystem extends SubsystemBase {
             case DISABLED:
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);
-                //intakeMotor.stopMotor();
+                // intakeMotor.stopMotor();
                 if (holdDelayTimer.hasElapsed(1)) {
                     intakeMotor.stopMotor();
                 } else {

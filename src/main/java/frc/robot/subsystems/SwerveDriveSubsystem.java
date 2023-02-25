@@ -184,8 +184,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 
                     Translation2d direction = new Translation2d(
-                                    getNormalVector3d().getX(),
-                                    getNormalVector3d().getY());
+                            getNormalVector3d().getX(), getNormalVector3d().getY());
 
                     Translation2d finalDirection = direction.times(tiltController.calculate(pitch, goal));
 
