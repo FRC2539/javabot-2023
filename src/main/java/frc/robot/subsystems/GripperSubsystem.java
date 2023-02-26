@@ -51,11 +51,10 @@ public class GripperSubsystem extends SubsystemBase {
         gripperIntakeSpeed = Logger.tunable("/Gripper/Intake Speed", 1.0);
         gripperEjectSpeed = Logger.tunable("/Gripper/Eject Speed", -0.3);
 
-        holdTimer.reset();
-        holdTimer.start();
+        holdTimer.restart();
     }
 
-    private boolean hasGamePiece() {
+    public boolean hasGamePiece() {
         return gamePieceSensor1.getValue() < 50 || gamePieceSensor2.getValue() < 50;
     }
 
@@ -95,8 +94,8 @@ public class GripperSubsystem extends SubsystemBase {
             case CLOSED:
                 gripperSolenoid.set(Value.kForward);
 
-                if (holdTimer.hasElapsed(0.4)) gripperMotor.stopMotor();
-                else gripperMotor.set(0.3);
+                if (holdTimer.hasElapsed(0.5)) gripperMotor.stopMotor();
+                else gripperMotor.set(0.35);
 
                 break;
             case EJECT:
@@ -111,8 +110,7 @@ public class GripperSubsystem extends SubsystemBase {
 
         this.gripperState = gripperState;
 
-        holdTimer.reset();
-        holdTimer.start();
+        holdTimer.restart();
     }
 
     private enum GripperState {

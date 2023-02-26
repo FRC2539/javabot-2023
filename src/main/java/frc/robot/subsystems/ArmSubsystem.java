@@ -512,7 +512,7 @@ public class ArmSubsystem extends SubsystemBase {
     public Command passthroughCommand(
             DoubleSupplier shoulderPercent, DoubleSupplier elbowPercent, DoubleSupplier wristSupplier) {
         return run(() -> {
-            setPassthrough();
+            setState(ArmState.PASSTHROUGH);
             passthroughMotorSpeeds(
                     shoulderPercent.getAsDouble() * 0.1,
                     elbowPercent.getAsDouble() * -0.1,
@@ -784,73 +784,13 @@ public class ArmSubsystem extends SubsystemBase {
         return armState;
     }
 
-    public void setPickup() {
-        setState(ArmState.PICKUP);
-    }
-
-    public void setAwaitingPiece() {
-        setState(ArmState.AWAITING_PIECE);
-    }
-
-    public void setAwaitingDeployment() {
-        setState(ArmState.AWAITING_DEPLOYMENT);
-    }
-
-    public void setHybrid() {
-        setState(ArmState.HYBRID);
-    }
-
-    public void setMid() {
-        setState(ArmState.MID);
-    }
-
-    public void setHigh() {
-        setState(ArmState.HIGH);
-    }
-
-    public void setHybridManual() {
-        setState(ArmState.HYBRID_MANUAL);
-    }
-
-    public void setMidManual() {
-        setState(ArmState.MID_MANUAL_CONE);
-    }
-
-    public void setHighManual() {
-        setState(ArmState.HIGH_MANUAL_CONE);
-    }
-
-    public void setNetworkTablesMode() {
-        setState(ArmState.NETWORK_TABLES_AIM);
-    }
-
-    public void setPassthrough() {
-        setState(ArmState.PASSTHROUGH);
-    }
-
-    public void setBrake() {
-        setState(ArmState.BRAKE);
-    }
-
-    public void setCoast() {
-        setState(ArmState.COAST);
-    }
-
-    public void setTippedPickup() {
-        setState(ArmState.TIPPED_CONE_MANUAL);
-    }
-
     public enum ArmState {
-        // PICKUP(new Static(0.7, 0, Rotation2d.fromDegrees(-50))),
         PICKUP(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
-        // AWAITING_DEPLOYMENT(new Static(0.34, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
-        // AWAITING_DEPLOYMENT(new Static(0.34 - .254 + .254 * .707, 0.27 + .254 * .707, Rotation2d.fromDegrees(45))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
-        // HYBRID_MANUAL(Static.fromBumper(FieldConstants.lowX + 0.5, 0.1, Rotation2d.fromDegrees(20))),
         // MID_MANUAL(Static.fromBumper(
         //         FieldConstants.midX,
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,

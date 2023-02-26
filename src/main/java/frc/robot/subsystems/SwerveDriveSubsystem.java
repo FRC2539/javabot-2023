@@ -59,7 +59,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private LoggedReceiver isSecondOrder;
 
     // PID controller used for auto-leveling
-    private PIDController tiltController = new PIDController(0.005, 0, 0.01);
+    private PIDController tiltController = new PIDController(0.75/15, 0, 0.02);
+
+    // PID controller used for cardinal command
+    private ProfiledPIDController omegaController =
+            new ProfiledPIDController(5, 0, 0, new TrapezoidProfile.Constraints(8, 8));
 
     private double previousTilt = 0;
     private double tiltRate = 0;
@@ -93,7 +97,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 getModulePositions(),
                 new Pose2d(),
                 VecBuilder.fill(0.01, 0.01, 0.01),
-                VecBuilder.fill(0.8, 0.8, 0.8));
+                VecBuilder.fill(0.5, 0.5, 0.5)); // might need to bring these back up
 
         // Allow us to toggle on second order kinematics
         isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);
@@ -122,30 +126,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         });
     }
 
-    public Command cardinalDriveCommand(
-            DoubleSupplier forward, DoubleSupplier strafe, DoubleSupplier cardinalX, DoubleSupplier cardinalY) {
-        var omegaController = new ProfiledPIDController(5, 0, 0, new TrapezoidProfile.Constraints(8, 8));
-
-        omegaController.setTolerance(Units.degreesToRadians(3));
+    public Command cardinalCommand(Rotation2d targetAngle, DoubleSupplier forward, DoubleSupplier strafe) {
+        omegaController.setTolerance(Units.degreesToRadians(1));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         return run(() -> {
-            var cardinalXValue = cardinalX.getAsDouble();
-            var cardinalYValue = cardinalY.getAsDouble();
-
-            boolean isXPrimaryAxis = Math.abs(cardinalXValue) > Math.abs(cardinalYValue);
-
-            double rotationVelocity = 0;
-
-            if (Math.abs(cardinalXValue) > 0 && Math.abs(cardinalYValue) > 0) {
-                Rotation2d desiredAngle;
-
-                if (isXPrimaryAxis) desiredAngle = new Rotation2d(cardinalXValue, 0);
-                else desiredAngle = new Rotation2d(0, cardinalYValue);
-
-                rotationVelocity =
-                        omegaController.calculate(pose.getRotation().getRadians(), desiredAngle.getRadians());
-            }
+            var rotationVelocity =
+                    omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
 
             setVelocity(new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationVelocity), true);
         });
@@ -166,7 +153,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     public Command levelChargeStationCommandArlene() {
         var constraints = new TrapezoidProfile.Constraints(0.4, 0.8);
-        var tiltController = new ProfiledPIDController(0.28, 0, 0.01, constraints);
+        var tiltController = new ProfiledPIDController(0.27, 0, 0.01, constraints);
 
         // End with no pitch and stationary
         State goal = new State(0, 0);
@@ -175,28 +162,26 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         tiltController.setTolerance(4, 0.1);
 
         return run(() -> {
-                    double pitch = getTiltAmountInDegrees();
+                    double tilt = getTiltAmountInDegrees();
 
                     Logger.log("/SwerveDriveSubsystem/Tilt Rate", getTiltRate());
-
-                    // TODO: stop when angle changes
 
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 
                     Translation2d direction = new Translation2d(
                             getNormalVector3d().getX(), getNormalVector3d().getY());
 
-                    Translation2d finalDirection = direction.times(tiltController.calculate(pitch, goal));
+                    Translation2d finalDirection = direction.times(tiltController.calculate(tilt, goal));
 
                     ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
 
-                    if (MathUtils.equalsWithinError(pitch, 0, 8) || getTiltAmount() < -0.2) lock();
+                    if (MathUtils.equalsWithinError(0, tilt, 8) || getTiltAmount() < -0.2) lock();
                     else setVelocity(velocity, false);
                 })
                 .repeatedly();
     }
 
-    public Command basicLevelChargeStationCommand() {
+    public Command levelChargeStationCommandDestiny() {
         // Four degrees of tolerance
         tiltController.setTolerance(4);
 
@@ -207,17 +192,19 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 
-                    Translation2d direction = new Translation2d(
-                            getNormalVector3d().getX(), getNormalVector3d().getY());
+                    Translation2d direction = new Translation2d(1, new Rotation2d(
+                            getNormalVector3d().getX(), getNormalVector3d().getY()));
+
+                    double speed = tiltController.calculate(tilt, 0);
+                    if (speed >= .75) speed = .75;
 
                     Translation2d finalDirection = direction.times(tiltController.calculate(tilt, 0));
 
                     ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
 
-                    if (MathUtils.equalsWithinError(0, tilt, 10)) lock();
+                    if (tilt <= 6) lock();
                     else setVelocity(velocity, false);
                 })
-                .repeatedly()
                 .finallyDo((interrupted) -> tiltController.reset());
     }
 
@@ -518,8 +505,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
         Logger.log("/SwerveDriveSubsystem/Wheel Speed", modules[0].getState().speedMetersPerSecond);
 
-        // Logger.log("/SwerveDriveSubsystem/Pitch", getGyroRotation3d().getY());
-        // Logger.log("/SwerveDriveSubsystem/Roll", getGyroRotation3d().getX());
+        Logger.log("/SwerveDriveSubsystem/Pitch", getGyroRotation3d().getY());
+        Logger.log("/SwerveDriveSubsystem/Roll", getGyroRotation3d().getX());
+        Logger.log("/SwerveDriveSubsystem/Tilt", getTiltAmountInDegrees());
 
         // Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
         //     modules[0].getPosition().angle.getDegrees(),

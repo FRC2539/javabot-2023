@@ -3,6 +3,7 @@ package frc.lib.controller;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.POVButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,11 @@ public class ThrustmasterJoystick {
     private final Axis yAxis;
     private final Axis zAxis;
     private final Axis sliderAxis;
+
+    private final Trigger povUp;
+    private final Trigger povRight;
+    private final Trigger povDown;
+    private final Trigger povLeft;
 
     private HashMap<String, String> buttonPurposeHashMap = new HashMap<String, String>();
 
@@ -67,6 +73,11 @@ public class ThrustmasterJoystick {
         zAxis = new JoystickAxis(joystick, 2);
         sliderAxis = new JoystickAxis(joystick, 3);
         sliderAxis.setInverted(true);
+
+        povUp = new POVButton(joystick, 0);
+        povRight = new POVButton(joystick, 90);
+        povDown = new POVButton(joystick, 180);
+        povLeft = new POVButton(joystick, 270);
 
         buttonPurposeHashMap.put("type", "ThrustmasterJoystick");
     }
@@ -149,6 +160,22 @@ public class ThrustmasterJoystick {
 
     public Axis getSliderAxis() {
         return sliderAxis;
+    }
+
+    public Trigger getPOVUp() {
+        return povUp;
+    }
+
+    public Trigger getPOVRight() {
+        return povRight;
+    }
+
+    public Trigger getPOVDown() {
+        return povDown;
+    }
+
+    public Trigger getPOVLeft() {
+        return povLeft;
     }
 
     public void nameTrigger(String purpose) {

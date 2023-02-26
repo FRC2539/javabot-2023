@@ -11,6 +11,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
 import frc.lib.logging.Logger;
@@ -18,9 +19,11 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AimAtPoseCommand;
-import frc.robot.commands.DriveToPositionCommand;
+import frc.robot.commands.AssistToPositionCommand;
+import frc.robot.commands.MusicRevealCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
+
 import java.util.function.Supplier;
 
 public class RobotContainer {
@@ -66,6 +69,11 @@ public class RobotContainer {
                 this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, true));
 
         /* Set non-button, multi-subsystem triggers */
+        var hasGamePieceTrigger = new Trigger(() -> gripperSubsystem.hasGamePiece() || intakeSubsystem.hasGamePiece());
+        hasGamePieceTrigger.onTrue(runOnce(() -> Logger.log("/Robot/Has Game Piece", true)));
+        hasGamePieceTrigger.onFalse(runOnce(() -> Logger.log("/Robot/Has Game Piece", false)));
+
+        hasGamePieceTrigger.debounce(0.1).onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem).withTimeout(1.5));
 
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
@@ -77,16 +85,34 @@ public class RobotContainer {
         leftDriveController.nameLeftTopRight("Reset Pose");
         leftDriveController.nameLeftTopMiddle("Use NavX");
 
+        leftDriveController.getLeftBottomRight().whileTrue(new MusicRevealCommand(null, lightsSubsystem));
+
         leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
         rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
         leftDriveController.nameTrigger("Run Gripper");
         leftDriveController.nameTrigger("Eject Gripper");
 
         // Leveling
-        leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandArlene());
+        leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandDestiny());
         leftDriveController.getLeftBottomMiddle().whileTrue(run(swerveDriveSubsystem::lock, swerveDriveSubsystem));
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
+
+        // Auto Aim Behaviors
+        leftDriveController
+                .getRightThumb()
+                .whileTrue(new AssistToPositionCommand(swerveDriveSubsystem, getTargetPoseSupplier(), this::getDriveForwardAxis));
+        leftDriveController
+                .getLeftThumb()
+                .whileTrue(new AimAtPoseCommand(
+                                swerveDriveSubsystem,
+                                getTargetAimPoseSupplier(),
+                                this::getDriveForwardAxis,
+                                this::getDriveStrafeAxis)
+                        .alongWith(visionSubsystem.customLimelightModeCommand()));
+        leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
+        leftDriveController.nameRightThumb("Assist to Pose");
+        leftDriveController.nameLeftThumb("Aim at Pose");
 
         /* Set right joystick bindings */
         rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
@@ -98,8 +124,9 @@ public class RobotContainer {
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
         rightDriveController.getBottomThumb().whileTrue(intakeSubsystem.shootCommand());
         rightDriveController.getRightThumb().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
-        // rightDriveController.nameLeftThumb("Run Intake");
-        // rightDriveController.nameRightThumb("Shoot");
+        rightDriveController.nameLeftThumb("Run Intake");
+        rightDriveController.nameRightThumb("Reverse Intake");
+        rightDriveController.nameBottomThumb("Shoot");
 
         // rightDriveController
         //         .getBottomThumb()
@@ -114,41 +141,13 @@ public class RobotContainer {
         rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
         rightDriveController.nameRightTopLeft("Symphony");
 
-        leftDriveController
-                .getRightThumb()
-                .whileTrue(new DriveToPositionCommand(swerveDriveSubsystem, getTargetPoseSupplier()));
-        leftDriveController
-                .getLeftThumb()
-                .whileTrue(new AimAtPoseCommand(
-                                swerveDriveSubsystem,
-                                getTargetAimPoseSupplier(),
-                                this::getDriveForwardAxis,
-                                this::getDriveStrafeAxis)
-                        .alongWith(visionSubsystem.customLimelightModeCommand()));
-        // leftDriveController
-        //         .getBottomThumb()
-        //         .whileTrue(new AssistedDriveToPositionCommand(
-        //                 swerveDriveSubsystem, targetPoseSupplier, this::getDriveForwardAxis));
-        // leftDriveController
-        //         .getBottomThumb()
-        //         .whileTrue(swerveDriveSubsystem.cardinalDriveCommand(
-        //                 this::getDriveForwardAxis,
-        //                 this::getDriveStrafeAxis,
-        //                 this::getCardinalXRotationAxis,
-        //                 this::getCardinalYRotationAxis));
-        leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
-        leftDriveController.nameRightThumb("Drive to Pose");
-        leftDriveController.nameLeftThumb("Aim at Pose");
-        // leftDriveController.nameBottomThumb("Assisted Drive");
-        leftDriveController.nameBottomThumb("Cardinal Driving"); // try doing this with the pov button
+        // Cardinal drive commands (inverted since arm is back of robot)
+        rightDriveController.getPOVUp().whileTrue(swerveDriveSubsystem.cardinalCommand(Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController.getPOVRight().whileTrue(swerveDriveSubsystem.cardinalCommand(Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController.getPOVDown().whileTrue(swerveDriveSubsystem.cardinalCommand(Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController.getPOVLeft().whileTrue(swerveDriveSubsystem.cardinalCommand(Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
 
         /* Set operator controller bindings */
-        // operatorController.getB().onTrue(runOnce(armSubsystem::setMid, armSubsystem));
-        // operatorController.getY().onTrue(runOnce(armSubsystem::setHigh, armSubsystem));
-        // operatorController.getX().onTrue(runOnce(armSubsystem::setAwaitingDeployment, armSubsystem));
-        // operatorController.nameB("Place Mid");
-        // operatorController.nameY("Place High");
-        // operatorController.nameX("Protect Arm");
         operatorController.getY().onTrue(armSubsystem.highManualCubeCommand());
         operatorController.getA().onTrue(armSubsystem.tippedPickupCommand());
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
@@ -209,22 +208,6 @@ public class RobotContainer {
         return -square(deadband(rightDriveController.getXAxis().getRaw(), 0.05))
                 * Constants.SwerveConstants.maxAngularVelocity
                 * 0.75;
-    }
-
-    public double getCardinalXRotationAxis() {
-        var value = deadband(rightDriveController.getXAxis().getRaw(), 0.15);
-
-        if (value == 0.0) return 0.0;
-
-        return value > 0 ? 1 : -1;
-    }
-
-    public double getCardinalYRotationAxis() {
-        var value = deadband(rightDriveController.getYAxis().getRaw(), 0.15);
-
-        if (value == 0.0) return 0.0;
-
-        return value > 0 ? 1 : -1;
     }
 
     private static double deadband(double value, double tolerance) {

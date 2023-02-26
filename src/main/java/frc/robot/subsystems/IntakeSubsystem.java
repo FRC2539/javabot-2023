@@ -33,7 +33,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private IntakeMode intakeMode = IntakeMode.DISABLED;
 
     private LoggedReceiver intakeSpeedReceiver;
-    private LoggedReceiver stoppedSpeedReciever;
+    private LoggedReceiver holdingSpeedReciever;
     private LoggedReceiver reverseSpeedReceiver;
     private LoggedReceiver shootingSpeedReceiver;
     private LoggedReceiver shootingDelayReceiver;
@@ -57,20 +57,18 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.7);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
-        stoppedSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", -0.1);
+        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.3);
 
         shootingDelayReceiver = Logger.tunable("/IntakeSubsystem/ShootingDelay", 0.0);
 
         setDefaultCommand(stopIntakeCommand());
 
-        holdDelayTimer.reset();
-        holdDelayTimer.start();
+        holdDelayTimer.restart();
 
-        shootingDelayTimer.reset();
-        shootingDelayTimer.start();
+        shootingDelayTimer.restart();
     }
 
-    private boolean hasGamePiece() {
+    public boolean hasGamePiece() {
         return intakeSensor1.getValue() < 50 || intakeSensor2.getValue() < 50;
     }
 
@@ -107,11 +105,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
         this.intakeMode = intakeMode;
 
-        holdDelayTimer.reset();
-        holdDelayTimer.start();
-
-        shootingDelayTimer.reset();
-        shootingDelayTimer.start();
+        holdDelayTimer.restart();
+        shootingDelayTimer.restart();
     }
 
     public IntakeMode getIntakeMode() {
@@ -124,22 +119,17 @@ public class IntakeSubsystem extends SubsystemBase {
             case DISABLED:
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);
-                // intakeMotor.stopMotor();
-                if (holdDelayTimer.hasElapsed(1)) {
-                    intakeMotor.stopMotor();
-                } else {
-                    intakeMotor.set(ControlMode.PercentOutput, stoppedSpeedReciever.getDouble());
-                }
+
+                if (holdDelayTimer.hasElapsed(0.5)) intakeMotor.stopMotor();
+                else intakeMotor.set(ControlMode.PercentOutput, holdingSpeedReciever.getDouble());
+
                 break;
             case INTAKE:
                 shootingSolenoid.set(Value.kReverse);
                 positionSolenoid.set(Value.kForward);
 
-                if (hasGamePiece()) {
-                    intakeMotor.stopMotor();
-                } else {
-                    intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
-                }
+                if (hasGamePiece()) intakeMotor.set(ControlMode.PercentOutput, holdingSpeedReciever.getDouble());
+                else intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
 
                 break;
             case REVERSE:

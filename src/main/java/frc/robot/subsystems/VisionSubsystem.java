@@ -82,17 +82,17 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         /* Use photonvision apriltag estimate to update robot pose estimator */
-        // photonVisionEstimate = calculatePhotonVisionEstimate();
+        photonVisionEstimate = calculatePhotonVisionEstimate();
 
-        // if (photonVisionEstimate.isPresent()) {
-        //     // addVisionPoseEstimate(photonVisionEstimate.get());
+        if (photonVisionEstimate.isPresent()) {
+            addVisionPoseEstimate(photonVisionEstimate.get());
 
-        //     Logger.log(
-        //             "/VisionSubsystem/photonVisionPose",
-        //             photonVisionEstimate.get().estimatedPose.toPose2d());
+            Logger.log(
+                    "/VisionSubsystem/photonVisionPose",
+                    photonVisionEstimate.get().estimatedPose.toPose2d());
 
-        //     lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
-        // }
+            lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
+        }
 
         /* Estimate the location of the retroreflective target */
         LLFieldRelativeRetroreflectiveEstimate = calculateLLFieldRelativeRetroreflectiveEstimate();
