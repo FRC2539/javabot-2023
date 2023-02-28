@@ -44,7 +44,7 @@
       "isStopPoint": true,
       "stopEvent": {
         "names": [
-          "pickup"
+          "intakePickup"
         ],
         "executionBehavior": "parallel",
         "waitBehavior": "none",
@@ -71,7 +71,7 @@
       "isStopPoint": true,
       "stopEvent": {
         "names": [
-          "intakePlaceHybrid"
+          "reverseIntake"
         ],
         "executionBehavior": "sequential",
         "waitBehavior": "none",
