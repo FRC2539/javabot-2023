@@ -347,8 +347,6 @@ public final class Constants {
     }
 
     public static final class VisionConstants {
-        public static final double tapeWidth = Units.inchesToMeters(2.0);
-
         public static final String photonCameraName = "Global_Shutter_Camera";
 
         // Includes 3d transform from camera(s) to robot origin
@@ -358,8 +356,12 @@ public final class Constants {
 
         public static final Transform3d photonRobotToCamera = photonCameraToRobot.inverse();
 
+        public static final double tapeWidth = Units.inchesToMeters(2.0);
+
         public static final double upperRetroreflectiveHeight = Units.inchesToMeters(41.875 + 1);
         public static final double lowerRetroreflectiveHeight = Units.inchesToMeters(22.125 + 1);
+
+        public static final double retroreflectiveAngleThreshold = 10;
 
         // Pretty sure 6 needs to negative
         public static final Transform3d limelightRobotToCamera = new Transform3d(

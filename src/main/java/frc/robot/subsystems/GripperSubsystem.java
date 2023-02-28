@@ -54,6 +54,10 @@ public class GripperSubsystem extends SubsystemBase {
         holdTimer.restart();
     }
 
+    public boolean isOpen() {
+        return gripperState == GripperState.OPEN;
+    }
+
     public boolean hasGamePiece() {
         return gamePieceSensor1.getValue() < 50 || gamePieceSensor2.getValue() < 50;
     }

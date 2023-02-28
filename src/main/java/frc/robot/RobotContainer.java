@@ -19,11 +19,10 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AimAtPoseCommand;
-import frc.robot.commands.AssistToPositionCommand;
+import frc.robot.commands.AssistToGridCommand;
 import frc.robot.commands.MusicRevealCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
-
 import java.util.function.Supplier;
 
 public class RobotContainer {
@@ -73,7 +72,9 @@ public class RobotContainer {
         hasGamePieceTrigger.onTrue(runOnce(() -> Logger.log("/Robot/Has Game Piece", true)));
         hasGamePieceTrigger.onFalse(runOnce(() -> Logger.log("/Robot/Has Game Piece", false)));
 
-        hasGamePieceTrigger.debounce(0.1).onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem).withTimeout(1.5));
+        new Trigger(() -> gripperSubsystem.hasGamePiece() && gripperSubsystem.isOpen())
+                .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
+                        .withTimeout(1.5));
 
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
@@ -101,7 +102,12 @@ public class RobotContainer {
         // Auto Aim Behaviors
         leftDriveController
                 .getRightThumb()
-                .whileTrue(new AssistToPositionCommand(swerveDriveSubsystem, getTargetPoseSupplier(), this::getDriveForwardAxis));
+                .whileTrue(new AssistToGridCommand(
+                        swerveDriveSubsystem,
+                        visionSubsystem,
+                        lightsSubsystem,
+                        getTargetPoseSupplier(),
+                        this::getDriveForwardAxis));
         leftDriveController
                 .getLeftThumb()
                 .whileTrue(new AimAtPoseCommand(
@@ -142,10 +148,22 @@ public class RobotContainer {
         rightDriveController.nameRightTopLeft("Symphony");
 
         // Cardinal drive commands (inverted since arm is back of robot)
-        rightDriveController.getPOVUp().whileTrue(swerveDriveSubsystem.cardinalCommand(Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        rightDriveController.getPOVRight().whileTrue(swerveDriveSubsystem.cardinalCommand(Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        rightDriveController.getPOVDown().whileTrue(swerveDriveSubsystem.cardinalCommand(Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        rightDriveController.getPOVLeft().whileTrue(swerveDriveSubsystem.cardinalCommand(Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVUp()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVRight()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVDown()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVLeft()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
 
         /* Set operator controller bindings */
         operatorController.getY().onTrue(armSubsystem.highManualCubeCommand());
@@ -220,15 +238,13 @@ public class RobotContainer {
         return Math.copySign(value * value, value);
     }
 
-    public Supplier<Pose2d> getTargetPoseSupplier() {
+    public Supplier<PlacementLocation> getTargetPoseSupplier() {
         return () -> {
             PlacementLocation targetLocation =
                     FieldConstants.getNearestPlacementLocation(swerveDriveSubsystem.getPose());
 
-            var targetPose = targetLocation.robotPlacementPose;
-
-            Logger.log("/SwerveDriveSubsystem/TargetPose", targetPose);
-            return targetPose;
+            Logger.log("/SwerveDriveSubsystem/TargetPose", targetLocation.robotPlacementPose);
+            return targetLocation;
         };
     }
 

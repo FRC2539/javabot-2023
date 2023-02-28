@@ -59,7 +59,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private LoggedReceiver isSecondOrder;
 
     // PID controller used for auto-leveling
-    private PIDController tiltController = new PIDController(0.75/15, 0, 0.02);
+    private PIDController tiltController = new PIDController(0.75 / 15, 0, 0.02);
 
     // PID controller used for cardinal command
     private ProfiledPIDController omegaController =
@@ -97,7 +97,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 getModulePositions(),
                 new Pose2d(),
                 VecBuilder.fill(0.01, 0.01, 0.01),
-                VecBuilder.fill(0.5, 0.5, 0.5)); // might need to bring these back up
+                VecBuilder.fill(0.7, 0.7, 0.7)); // might need to bring these back up (was 0.5)
 
         // Allow us to toggle on second order kinematics
         isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);
@@ -131,8 +131,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         return run(() -> {
-            var rotationVelocity =
-                    omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
+            var rotationVelocity = omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
 
             setVelocity(new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationVelocity), true);
         });
@@ -192,8 +191,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 
-                    Translation2d direction = new Translation2d(1, new Rotation2d(
-                            getNormalVector3d().getX(), getNormalVector3d().getY()));
+                    Translation2d direction = new Translation2d(
+                            1,
+                            new Rotation2d(
+                                    getNormalVector3d().getX(),
+                                    getNormalVector3d().getY()));
 
                     double speed = tiltController.calculate(tilt, 0);
                     if (speed >= .75) speed = .75;
