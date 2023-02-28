@@ -48,6 +48,7 @@ public class VisionSubsystem extends SubsystemBase {
     private Optional<Pose2d> LLFieldRelativeRetroreflectiveEstimate = Optional.empty();
     private Optional<Pose2d> LLMLFieldPoseEstimate = Optional.empty();
     private Optional<Pose2d> validLLMLFieldPoseEstimate = Optional.empty();
+    private Optional<LimelightRawAngles> LLRawAngles = Optional.empty();
 
     private double lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
 
@@ -115,6 +116,8 @@ public class VisionSubsystem extends SubsystemBase {
         // Send the time since the last apriltag update to the dashboard
         Logger.log("/VisionSubsystem/Last Update", Timer.getFPGATimestamp() - lastApriltagUpdateTimestamp);
 
+        Logger.log("/VisionSubsystem/Vision Mode", limelightMode.name());
+
         Logger.log("/VisionSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
 
@@ -136,6 +139,10 @@ public class VisionSubsystem extends SubsystemBase {
 
     private boolean limelightHasTarget() {
         return limelightHasTargetReceiver.getInteger() == 1;
+    }
+
+    public Optional<LimelightRawAngles> getLimelightRawAngles() {
+        return LLRawAngles;
     }
 
     private boolean limelightHasApriltag() {
@@ -180,19 +187,31 @@ public class VisionSubsystem extends SubsystemBase {
         return validLLFieldRelativeRetroreflectiveEstimate;
     }
 
+    /**
+     * @return The pose of the retroreflective target using the robot's pose to make it field relative
+     */
     private Optional<Pose2d> calculateLLFieldRelativeRetroreflectiveEstimate() {
         if (visionDisabled) return Optional.empty();
 
         if (!limelightHasTarget()
                 || (limelightMode != LimelightMode.RETROREFLECTIVEMID
-                        && limelightMode != LimelightMode.RETROREFLECTIVEHIGH)) return Optional.empty();
+                        && limelightMode != LimelightMode.RETROREFLECTIVEHIGH)) {
+
+            LLRawAngles = Optional.empty();
+
+            return Optional.empty();
+        }
 
         double limelightTX = limelightTXReceiver.getDouble();
         double limelightTY = limelightTYReceiver.getDouble();
 
+        // Store raw limelight angles
+        LLRawAngles = Optional.of(new LimelightRawAngles(limelightTX, limelightTY));
+
         double retroreflectiveHeight;
 
-        if (limelightMode == LimelightMode.RETROREFLECTIVEMID) {
+        if (limelightMode == LimelightMode.RETROREFLECTIVEMID
+                && limelightTY < VisionConstants.retroreflectiveAngleThreshold) {
             retroreflectiveHeight = VisionConstants.lowerRetroreflectiveHeight;
         } else {
             retroreflectiveHeight = VisionConstants.upperRetroreflectiveHeight;
@@ -228,6 +247,9 @@ public class VisionSubsystem extends SubsystemBase {
         return () -> validLLMLFieldPoseEstimate.get();
     }
 
+    /**
+     * @return The pose of the machine learning target using the robot's pose to make it field relative
+     */
     private Optional<Pose2d> calculateLLMLFieldPoseEstimate() {
         if (visionDisabled) return Optional.empty();
 
@@ -236,6 +258,9 @@ public class VisionSubsystem extends SubsystemBase {
         // Use bottom edge if possible
         double limelightTX = limelightTXReceiver.getDouble();
         double limelightTY = limelightTYReceiver.getDouble();
+
+        // Store raw limelight angles
+        LLRawAngles = Optional.of(new LimelightRawAngles(limelightTX, limelightTY));
 
         // Cones and cubes are always picked up from the floor
         double targetHeight = 0;
@@ -326,4 +351,6 @@ public class VisionSubsystem extends SubsystemBase {
             this.pipelineNumber = pipelineNumber;
         }
     }
+
+    public record LimelightRawAngles(double tx, double ty) {}
 }

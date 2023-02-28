@@ -579,14 +579,6 @@ public class ArmSubsystem extends SubsystemBase {
                 } else {
                     stopMotors();
                 }
-
-                // if (swerveDriveSubsystem.getAcceleration().vxMetersPerSecond < -0.05) {
-                //     // These are experimentally discovered numbers (keep the arm in place)
-                //     joint1Motor.set(0.05);
-                //     joint2Motor.set(-0.037);
-                // } else {
-                //     stopMotors();
-                // }
             } else {
                 executePIDFeedforward();
             }
