@@ -20,6 +20,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.gyro.GenericGyro;
 import frc.lib.gyro.NavXGyro;
 import frc.lib.gyro.PigeonGyro;
@@ -49,6 +50,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private ChassisSpeeds velocity = new ChassisSpeeds();
     private ChassisSpeeds previousVelocity = new ChassisSpeeds();
     private SwerveDriveSignal driveSignal = new SwerveDriveSignal();
+
+    private LoggedReceiver pidValueReciever;
+
+    private double levelingMaxSpeed;
+
+    private boolean isLevelingAuto = false;
 
     private SwerveModule[] modules;
 
@@ -101,6 +108,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
         // Allow us to toggle on second order kinematics
         isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);
+        pidValueReciever = Logger.tunable("/SwerveDriveSubsystem/levelPIDValues", new double[]{0.75/15, 0, .02, 8, 0.75}); //P I D stopAngle leveingMaxSpeed
     }
 
     public Command driveCommand(
@@ -182,9 +190,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     public Command levelChargeStationCommandDestiny() {
-        // Four degrees of tolerance
-        tiltController.setTolerance(4);
-
         return run(() -> {
                     double tilt = getTiltAmountInDegrees();
 
@@ -196,16 +201,30 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                             getNormalVector3d().getX(), getNormalVector3d().getY()));
 
                     double speed = tiltController.calculate(tilt, 0);
-                    if (speed >= .75) speed = .75;
+                    if (speed >= levelingMaxSpeed) speed = levelingMaxSpeed;
 
                     Translation2d finalDirection = direction.times(tiltController.calculate(tilt, 0));
 
                     ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
 
-                    if (tilt <= 6) lock();
+                    if (tiltController.atSetpoint()) {
+                        lock();
+                        LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1);
+                    }
                     else setVelocity(velocity, false);
+                }).beforeStarting(() -> {
+                    isLevelingAuto = true;
+                    var values = pidValueReciever.getDoubleArray();
+                    if (values.length < 5) return;
+                    tiltController.setPID(values[0], values[1], values[2]);
+                    tiltController.setTolerance(values[3]);
+                    levelingMaxSpeed = values[4];
                 })
-                .finallyDo((interrupted) -> tiltController.reset());
+                .finallyDo((interrupted) -> {tiltController.reset(); isLevelingAuto = false;});
+    }
+
+    public boolean isLevelDestiny() {
+        return tiltController.atSetpoint() && isLevelingAuto;
     }
 
     public Command levelChargeStationCommandBrooklyn() {

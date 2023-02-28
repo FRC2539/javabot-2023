@@ -9,6 +9,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.lib.logging.Logger;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightMode;
@@ -27,13 +28,11 @@ public class AssistedMLPickupCommand extends CommandBase {
 
     private final DoubleSupplier forward;
     private final DoubleSupplier strafe;
-
-    @SuppressWarnings("unused")
     private final DoubleSupplier rotate;
 
     private Optional<Pose2d> lastSeenCargoPose = Optional.empty();
 
-    private static final double PICKUP_DISTANCE = 0.97;
+    private static final double PICKUP_DISTANCE = 0.97 - 0.2; //drive in a bit
 
     /**
      * Drives to the given pose on the field automatically.
@@ -69,11 +68,11 @@ public class AssistedMLPickupCommand extends CommandBase {
         lastSeenCargoPose = Optional.empty();
 
         var robotPose = swerveDriveSubsystem.getPose();
-        var robotVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(
-                swerveDriveSubsystem.getDesiredVelocity(), swerveDriveSubsystem.getRotation());
+        //var robotVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(
+                //swerveDriveSubsystem.getDesiredVelocity(), swerveDriveSubsystem.getRotation());
 
         omegaController.reset(robotPose.getRotation().getRadians(), 0);
-        distanceController.reset(robotPose.getX(), 0);
+        //distanceController.reset(0, 0);
 
         visionSubsystem.setLimelightMode(LimelightMode.ML);
     }
@@ -85,26 +84,41 @@ public class AssistedMLPickupCommand extends CommandBase {
             lastSeenCargoPose = optionalCargo;
         }
 
-        var robotPose = swerveDriveSubsystem.getPose();
+        if (lastSeenCargoPose.isEmpty()) {
+            swerveDriveSubsystem.setVelocity(
+                new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotate.getAsDouble()), true, true
+            );
+            return;
+        }
+
         var targetPose = getDesiredPosition();
+        Logger.log("/SwerveDriveSubsystem/DesiredPosition", targetPose);
+
+        var robotPose = swerveDriveSubsystem.getPose();
 
         // Update controllers
-        distanceController.setGoal(0);
         omegaController.setGoal(targetPose.getRotation().getRadians());
 
-        var distanceSpeed = distanceController.calculate(getDesiredPosition()
-                .minus(swerveDriveSubsystem.getPose())
-                .getTranslation()
-                .getNorm());
+        // var distanceSpeed = distanceController.calculate(getDesiredPosition()
+        //         .minus(swerveDriveSubsystem.getPose())
+        //         .getTranslation()
+        //         .getNorm());
+
+        var distance = targetPose.getTranslation().minus(robotPose.getTranslation()).getNorm();
+
+        double distanceSpeed = 1.0;
+        if (distance <= 0.5) distanceSpeed = 0.5;
+        else if (distance <= 0.1) distanceSpeed = 0.0;
+
         var omegaSpeed = omegaController.calculate(robotPose.getRotation().getRadians());
 
-        if (distanceController.atGoal()) distanceSpeed = 0;
+        //if (distanceController.atGoal()) distanceSpeed = 0;
         if (omegaController.atGoal()) omegaSpeed = 0;
 
-        double towardsValue = getDriverValueTowardsBall();
+        //double towardsValue = getDriverValueTowardsBall();
 
         Translation2d finalMotion = new Translation2d(
-                /*distanceSpeed * towardsValue*/ 1, targetPose.getRotation().plus(Rotation2d.fromDegrees(180)));
+                /*distanceSpeed * towardsValue*/ distanceSpeed, targetPose.getTranslation().minus(robotPose.getTranslation()).getAngle());
 
         swerveDriveSubsystem.setVelocity(
                 new ChassisSpeeds(finalMotion.getX(), finalMotion.getY(), omegaSpeed), true, true);
@@ -131,14 +145,14 @@ public class AssistedMLPickupCommand extends CommandBase {
         return new Pose2d(finalTranslationLocation, intendedRotation);
     }
 
-    private Rotation2d getAngleToDesiredPose() {
-        return getDesiredPosition().getRotation().unaryMinus();
-    }
+    // private Rotation2d getAngleToDesiredPose() {
+    //     return getDesiredPosition().getRotation().unaryMinus();
+    // }
 
-    private double getDriverValueTowardsBall() {
-        var desiredPositionAngle = getAngleToDesiredPose();
-        double towardsValue = -forward.getAsDouble() * desiredPositionAngle.getCos()
-                + -strafe.getAsDouble() * desiredPositionAngle.getSin();
-        return towardsValue;
-    }
+    // private double getDriverValueTowardsBall() {
+    //     var desiredPositionAngle = getAngleToDesiredPose();
+    //     double towardsValue = -forward.getAsDouble() * desiredPositionAngle.getCos()
+    //             + -strafe.getAsDouble() * desiredPositionAngle.getSin();
+    //     return towardsValue;
+    // }
 }

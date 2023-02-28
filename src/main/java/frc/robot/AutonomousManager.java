@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.HashMap;
 import java.util.List;
@@ -34,10 +35,12 @@ public class AutonomousManager {
     private List<PathPlannerTrajectory> chosenAuto = defaultAuto.getPath();
 
     SwerveDriveSubsystem swerveDriveSubsystem;
+    LightsSubsystem lightsSubsystem;
 
     public AutonomousManager(RobotContainer container) {
         swerveDriveSubsystem = container.getSwerveDriveSubsystem();
         ArmSubsystem armSubsystem = container.getArmSubsystem();
+        lightsSubsystem = container.getLightsSubsystem();
 
         initializeNetworkTables();
 
@@ -47,7 +50,7 @@ public class AutonomousManager {
         eventMap.put(
                 "shouldClimb",
                 either(none(), run(swerveDriveSubsystem::stop, swerveDriveSubsystem), () -> shouldClimb.getBoolean()));
-        eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommandArlene());
+        eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommandDestiny());
         eventMap.put(
                 "placeHigh",
                 armSubsystem
