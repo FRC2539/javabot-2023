@@ -47,9 +47,10 @@ public class AutonomousManager {
         // Create an event map for use in all autos
         HashMap<String, Command> eventMap = new HashMap<>();
         eventMap.put("stop", runOnce(swerveDriveSubsystem::stop, swerveDriveSubsystem));
-        eventMap.put(
-                "shouldClimb",
-                either(none(), run(swerveDriveSubsystem::stop, swerveDriveSubsystem), () -> shouldClimb.getBoolean()));
+        // eventMap.put(
+        //         "shouldClimb",
+        //         either(none(), run(swerveDriveSubsystem::stop, swerveDriveSubsystem), () ->
+        // shouldClimb.getBoolean()));
         eventMap.put("levelChargeStation", swerveDriveSubsystem.levelChargeStationCommandDestiny());
         eventMap.put(
                 "placeHigh",
@@ -61,8 +62,12 @@ public class AutonomousManager {
                                 .ejectFromGripperCommand()
                                 .withTimeout(0.5))
                         .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.0)));
-        eventMap.put("reverseIntake", container.getIntakeSubsystem().reverseIntakeModeCommand().withTimeout(0.5));
-        eventMap.put("intakePickup", container.getIntakeSubsystem().intakeModeCommand().withTimeout(0.4));
+        eventMap.put(
+                "intakePickup",
+                container.getIntakeSubsystem().intakeModeCommand().withTimeout(0.3));
+        eventMap.put(
+                "reverseIntake",
+                container.getIntakeSubsystem().reverseIntakeModeCommand().withTimeout(0.5));
 
         // eventMap.put(
         //         "placeHigh",
@@ -154,7 +159,7 @@ public class AutonomousManager {
         OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
         STATION_PLACE1ANDCLIMB(StartingLocation.STATION, 1, "station_place1andclimb", new PathConstraints(5, 4)),
         CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, "cable_place1andclimb", new PathConstraints(5, 5)),
-        CABLE_PLACE2(StartingLocation.CABLE, 2, "cable_place2", new PathConstraints(5, 5));
+        CABLE_PLACE2(StartingLocation.CABLE, 2, "cable_place2", new PathConstraints(3, 3));
 
         private List<PathPlannerTrajectory> path;
         private String pathName;

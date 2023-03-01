@@ -262,6 +262,20 @@ public class ArmSubsystem extends SubsystemBase {
                 armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL_CUBE));
     }
 
+    public Command handoffCommand() {
+        return Commands.sequence(
+                armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_1),
+                armStateCommand(ArmState.HANDOFF_MIDPOINT_2),
+                armStateCommand(ArmState.HANDOFF));
+    }
+
+    public Command undoHandoffCommand() {
+        return Commands.sequence(
+                armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_2),
+                armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_1),
+                armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+    }
+
     // public Command highAutoCommand() {
     //     return Commands.sequence(
     //             armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
@@ -275,6 +289,10 @@ public class ArmSubsystem extends SubsystemBase {
     public Command pickupCommand() {
         return Commands.sequence(
                 armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1), armStateCommand(ArmState.HYBRID_MANUAL));
+    }
+
+    public Command slidePickupCommand() {
+        return armStateCommand(ArmState.SLIDE_PICKUP);
     }
 
     public Command tippedPickupCommand() {
@@ -781,6 +799,7 @@ public class ArmSubsystem extends SubsystemBase {
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
+        SLIDE_PICKUP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
         // MID_MANUAL(Static.fromBumper(
@@ -805,6 +824,9 @@ public class ArmSubsystem extends SubsystemBase {
                 FieldConstants.highX + 0.14, // gripper offset
                 FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior
                 Rotation2d.fromDegrees(-25))),
+        HANDOFF_MIDPOINT_1(Static.fromWrist(0.31, 0.33, Rotation2d.fromDegrees(-50))),
+        HANDOFF_MIDPOINT_2(Static.fromWrist(0.31, 0.33, Rotation2d.fromDegrees(-180))),
+        HANDOFF(Static.fromWrist(0.16, 0.33, Rotation2d.fromDegrees(-180))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
         HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())), // name my variables

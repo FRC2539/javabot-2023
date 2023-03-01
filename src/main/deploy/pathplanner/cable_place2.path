@@ -43,9 +43,7 @@
       "isLocked": false,
       "isStopPoint": true,
       "stopEvent": {
-        "names": [
-          "intakePickup"
-        ],
+        "names": [],
         "executionBehavior": "parallel",
         "waitBehavior": "none",
         "waitTime": 0
@@ -53,16 +51,16 @@
     },
     {
       "anchorPoint": {
-        "x": 1.7485513282525837,
-        "y": 1.078937751943917
+        "x": 1.7413566113522332,
+        "y": 1.0248598144576204
       },
       "prevControl": {
-        "x": 2.9455344946352815,
-        "y": 0.7320198656011321
+        "x": 2.9383397777349307,
+        "y": 0.6779419281148356
       },
       "nextControl": {
-        "x": 2.9455344946352815,
-        "y": 0.7320198656011321
+        "x": 2.9383397777349307,
+        "y": 0.6779419281148356
       },
       "holonomicAngle": 179.78,
       "isReversal": true,

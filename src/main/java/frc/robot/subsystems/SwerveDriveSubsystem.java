@@ -20,7 +20,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.gyro.GenericGyro;
 import frc.lib.gyro.NavXGyro;
 import frc.lib.gyro.PigeonGyro;
@@ -108,7 +107,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
         // Allow us to toggle on second order kinematics
         isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);
-        pidValueReciever = Logger.tunable("/SwerveDriveSubsystem/levelPIDValues", new double[]{0.75/15, 0, .02, 8, 0.75}); //P I D stopAngle leveingMaxSpeed
+        pidValueReciever = Logger.tunable(
+                "/SwerveDriveSubsystem/levelPIDValues",
+                new double[] {0.75 / 15, 0, .02, 8, 0.75}); // P I D stopAngle leveingMaxSpeed
     }
 
     public Command driveCommand(
@@ -212,9 +213,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                     if (tiltController.atSetpoint()) {
                         lock();
                         LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1);
-                    }
-                    else setVelocity(velocity, false);
-                }).beforeStarting(() -> {
+                    } else setVelocity(velocity, false);
+                })
+                .beforeStarting(() -> {
                     isLevelingAuto = true;
                     var values = pidValueReciever.getDoubleArray();
                     if (values.length < 5) return;
@@ -222,7 +223,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                     tiltController.setTolerance(values[3]);
                     levelingMaxSpeed = values[4];
                 })
-                .finallyDo((interrupted) -> {tiltController.reset(); isLevelingAuto = false;});
+                .finallyDo((interrupted) -> {
+                    tiltController.reset();
+                    isLevelingAuto = false;
+                });
     }
 
     public boolean isLevelDestiny() {

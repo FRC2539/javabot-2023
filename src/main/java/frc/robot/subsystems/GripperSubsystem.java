@@ -63,21 +63,23 @@ public class GripperSubsystem extends SubsystemBase {
     }
 
     public Command openGripperCommand() {
-        return run(() -> setState(GripperState.OPEN)).until(this::hasGamePiece);
+        return startEnd(() -> setState(GripperState.OPEN), () -> {}).until(this::hasGamePiece);
     }
 
     public Command closeGripperCommand() {
-        return runOnce(() -> {
-            setState(GripperState.CLOSED);
-        });
+        return startEnd(
+                () -> {
+                    setState(GripperState.CLOSED);
+                },
+                () -> {});
     }
 
     public Command ejectFromGripperCommand() {
-        return run(() -> setState(GripperState.EJECT));
+        return startEnd(() -> setState(GripperState.EJECT), () -> {});
     }
 
     public Command dropFromGripperCommand() {
-        return run(() -> setState(GripperState.DISABLED));
+        return startEnd(() -> setState(GripperState.DISABLED), () -> {});
     }
 
     public Command gripperCommand() {

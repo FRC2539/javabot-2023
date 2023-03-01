@@ -57,7 +57,7 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.7);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
-        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.3);
+        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.35);
 
         shootingDelayReceiver = Logger.tunable("/IntakeSubsystem/ShootingDelay", 0.0);
 
@@ -72,32 +72,44 @@ public class IntakeSubsystem extends SubsystemBase {
         return intakeSensor1.getValue() < 50 || intakeSensor2.getValue() < 50;
     }
 
+    public Command handoffCommand() {
+        return startEnd(() -> setIntakeMode(IntakeMode.HANDOFF), () -> {});
+    }
+
     public Command intakeCommand() {
         return Commands.either(reverseIntakeModeCommand(), intakeModeCommand(), this::hasGamePiece);
     }
 
     public Command intakeModeCommand() {
-        return run(() -> {
-            setIntakeMode(IntakeMode.INTAKE);
-        });
+        return startEnd(
+                () -> {
+                    setIntakeMode(IntakeMode.INTAKE);
+                },
+                () -> {});
     }
 
     public Command reverseIntakeModeCommand() {
-        return run(() -> {
-            setIntakeMode(IntakeMode.REVERSE);
-        });
+        return startEnd(
+                () -> {
+                    setIntakeMode(IntakeMode.REVERSE);
+                },
+                () -> {});
     }
 
     public Command shootCommand() {
-        return run(() -> {
-            setIntakeMode(IntakeMode.SHOOT);
-        });
+        return startEnd(
+                () -> {
+                    setIntakeMode(IntakeMode.SHOOT);
+                },
+                () -> {});
     }
 
     public Command stopIntakeCommand() {
-        return run(() -> {
-            setIntakeMode(IntakeMode.DISABLED);
-        });
+        return startEnd(
+                () -> {
+                    setIntakeMode(IntakeMode.DISABLED);
+                },
+                () -> {});
     }
 
     public void setIntakeMode(IntakeMode intakeMode) {
@@ -120,7 +132,7 @@ public class IntakeSubsystem extends SubsystemBase {
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);
 
-                if (holdDelayTimer.hasElapsed(0.5)) intakeMotor.stopMotor();
+                if (holdDelayTimer.hasElapsed(0.7)) intakeMotor.stopMotor();
                 else intakeMotor.set(ControlMode.PercentOutput, holdingSpeedReciever.getDouble());
 
                 break;
@@ -132,6 +144,10 @@ public class IntakeSubsystem extends SubsystemBase {
                 else intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
 
                 break;
+            case HANDOFF:
+                positionSolenoid.set(Value.kReverse);
+                shootingSolenoid.set(Value.kReverse);
+                intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
             case REVERSE:
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);
@@ -148,13 +164,20 @@ public class IntakeSubsystem extends SubsystemBase {
                 break;
         }
 
-        // Logger.log("/IntakeSubsystem/IntakeMotorSupplyCurrent", intakeMotor.getSupplyCurrent());
+        Logger.log("/IntakeSubsystem/IntakeMotorPortion", intakeMotor.get());
+        var currentCommand = getCurrentCommand();
+        if (currentCommand != null) {
+            Logger.log("/IntakeSubsytem/ActiveCommand", currentCommand.getName());
+        } else {
+            Logger.log("/IntakeSubsytem/ActiveCommand", "null");
+        }
     }
 
     public enum IntakeMode {
         DISABLED,
         INTAKE,
         REVERSE,
-        SHOOT
+        SHOOT,
+        HANDOFF,
     }
 }

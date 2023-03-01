@@ -18,8 +18,8 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
-import frc.robot.commands.AimAtPoseCommand;
 import frc.robot.commands.AssistToGridCommand;
+import frc.robot.commands.AssistedMLPickupCommand;
 import frc.robot.commands.MusicRevealCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
@@ -68,7 +68,8 @@ public class RobotContainer {
                 this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, true));
 
         /* Set non-button, multi-subsystem triggers */
-        var hasGamePieceTrigger = new Trigger(() -> gripperSubsystem.hasGamePiece() || intakeSubsystem.hasGamePiece());
+        Trigger hasGamePieceTrigger =
+                new Trigger(() -> gripperSubsystem.hasGamePiece() || intakeSubsystem.hasGamePiece());
         hasGamePieceTrigger.onTrue(runOnce(() -> Logger.log("/Robot/Has Game Piece", true)));
         hasGamePieceTrigger.onFalse(runOnce(() -> Logger.log("/Robot/Has Game Piece", false)));
 
@@ -96,7 +97,8 @@ public class RobotContainer {
         // Leveling
         leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandDestiny());
 
-        new Trigger(() -> swerveDriveSubsystem.isLevelDestiny()).whileTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem));
+        new Trigger(() -> swerveDriveSubsystem.isLevelDestiny())
+                .whileTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem));
 
         leftDriveController.getLeftBottomMiddle().whileTrue(run(swerveDriveSubsystem::lock, swerveDriveSubsystem));
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
@@ -111,17 +113,27 @@ public class RobotContainer {
                         lightsSubsystem,
                         getTargetPoseSupplier(),
                         this::getDriveForwardAxis));
+        // leftDriveController
+        //         .getLeftThumb()
+        //         .whileTrue(new AimAtPoseCommand(
+        //                         swerveDriveSubsystem,
+        //                         getTargetAimPoseSupplier(),
+        //                         this::getDriveForwardAxis,
+        //                         this::getDriveStrafeAxis)
+        //                 .alongWith(visionSubsystem.customLimelightModeCommand()));
+
         leftDriveController
                 .getLeftThumb()
-                .whileTrue(new AimAtPoseCommand(
-                                swerveDriveSubsystem,
-                                getTargetAimPoseSupplier(),
-                                this::getDriveForwardAxis,
-                                this::getDriveStrafeAxis)
-                        .alongWith(visionSubsystem.customLimelightModeCommand()));
+                .whileTrue(new AssistedMLPickupCommand(
+                        swerveDriveSubsystem,
+                        visionSubsystem,
+                        this::getDriveForwardAxis,
+                        this::getDriveStrafeAxis,
+                        this::getDriveRotationAxis)); // before running set the pipeline
+        leftDriveController.nameLeftThumb("ML Pickup");
+
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
         leftDriveController.nameRightThumb("Assist to Pose");
-        leftDriveController.nameLeftThumb("Aim at Pose");
 
         /* Set right joystick bindings */
         rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
@@ -170,10 +182,13 @@ public class RobotContainer {
 
         /* Set operator controller bindings */
         operatorController.getY().onTrue(armSubsystem.highManualCubeCommand());
+        operatorController.getX().onTrue(armSubsystem.slidePickupCommand());
         operatorController.getA().onTrue(armSubsystem.tippedPickupCommand());
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
         operatorController.nameY("High Manual for Cube");
+        operatorController.nameX("Slide Pickup");
         operatorController.nameA("Tipped Pickup");
+        operatorController.nameB("Substation Pickup");
 
         operatorController.getBack().whileTrue(gripperSubsystem.ejectFromGripperCommand());
         operatorController.nameBack("Backup Gripper");
@@ -205,6 +220,15 @@ public class RobotContainer {
                         lightsSubsystem));
         operatorController.nameRightTrigger("Indicate Cone");
         operatorController.nameLeftTrigger("Indicate Cube");
+
+        // operatorController
+        //         .getRightBumper()
+        //         .onTrue(armSubsystem
+        //                 .handoffCommand()
+        //                 .andThen(gripperSubsystem.openGripperCommand().deadlineWith(intakeSubsystem.handoffCommand()))
+        //                 .until(operatorController.getRightBumper().negate())
+        //                 .andThen(armSubsystem.undoHandoffCommand()));
+        // operatorController.nameRightBumper("Handoff Button \"Dont use\"");
 
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();

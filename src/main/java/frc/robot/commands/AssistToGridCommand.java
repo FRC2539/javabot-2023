@@ -6,6 +6,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.lib.logging.Logger;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.LightsSubsystem.LEDSegment;
@@ -17,8 +18,8 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class AssistToGridCommand extends CommandBase {
-    private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(2, 3);
-    private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(6, 7);
+    private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(3, 3);
+    private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(7, 7);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem;
     private final VisionSubsystem visionSubsystem;
@@ -28,7 +29,7 @@ public class AssistToGridCommand extends CommandBase {
 
     private Optional<Pose2d> validTargetPose;
 
-    private final ProfiledPIDController yController = new ProfiledPIDController(8, 0, 0, yConstraints);
+    private final ProfiledPIDController yController = new ProfiledPIDController(9, 0, 0, yConstraints);
     private final ProfiledPIDController omegaController = new ProfiledPIDController(6, 0, 0, omegaConstraints);
 
     /**
@@ -51,7 +52,7 @@ public class AssistToGridCommand extends CommandBase {
         this.targetPoseSupplier = targetPoseSupplier;
 
         this.xAxis = forward;
-        yController.setTolerance(0.01);
+        yController.setTolerance(0.008);
         omegaController.setTolerance(Units.degreesToRadians(0.5));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
@@ -66,8 +67,6 @@ public class AssistToGridCommand extends CommandBase {
 
         omegaController.reset(robotPose.getRotation().getRadians(), robotVelocity.omegaRadiansPerSecond);
         yController.reset(robotPose.getY(), robotVelocity.vyMetersPerSecond);
-
-        validTargetPose = Optional.empty();
     }
 
     @Override
@@ -78,7 +77,7 @@ public class AssistToGridCommand extends CommandBase {
 
         // Use vision for cones if it is available
         if (targetPlacementLocation.isCone) {
-            visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEMID);
+            visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
 
             var retroreflectivePose = visionSubsystem.getLLFieldRelativeRetroflectiveEstimate();
 
@@ -86,22 +85,16 @@ public class AssistToGridCommand extends CommandBase {
             if (retroreflectivePose.isPresent()) {
                 targetPose =
                         new Pose2d(targetPose.getX(), retroreflectivePose.get().getY(), targetPose.getRotation());
-
-                validTargetPose = Optional.of(targetPose);
-            } else {
-                // No tape? Use original placement location
-                if (validTargetPose.isEmpty()) validTargetPose = Optional.of(targetPose);
             }
         } else {
             visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
-
-            // Not a cone? Use the original placement location
-            if (validTargetPose.isEmpty()) validTargetPose = Optional.of(targetPose);
         }
 
+        Logger.log("/SwerveDriveSubsystem/ValidTargetPose", targetPose);
+
         // Update controllers
-        yController.setGoal(validTargetPose.get().getY());
-        omegaController.setGoal(validTargetPose.get().getRotation().getRadians());
+        yController.setGoal(targetPose.getY());
+        omegaController.setGoal(targetPose.getRotation().getRadians());
 
         var xSpeed = xAxis.getAsDouble();
         var ySpeed = yController.calculate(robotPose.getY());
@@ -112,7 +105,7 @@ public class AssistToGridCommand extends CommandBase {
         if (omegaController.atGoal()) omegaSpeed = 0;
 
         // Indicate to the driver if we are aimed within tolerance
-        LEDSegment.MainStrip.setColor(LightsSubsystem.green);
+        if (yController.atGoal() && omegaController.atGoal()) LEDSegment.MainStrip.setColor(LightsSubsystem.green);
 
         swerveDriveSubsystem.setVelocity(new ChassisSpeeds(xSpeed, ySpeed, omegaSpeed), true, true);
     }
