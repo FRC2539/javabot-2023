@@ -37,6 +37,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private LoggedReceiver reverseSpeedReceiver;
     private LoggedReceiver shootingSpeedReceiver;
     private LoggedReceiver shootingDelayReceiver;
+    private LoggedReceiver handoffSpeedReceiver;
 
     private Timer shootingDelayTimer = new Timer();
     private Timer holdDelayTimer = new Timer();
@@ -57,7 +58,8 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.7);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
-        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.35);
+        handoffSpeedReceiver = Logger.tunable("/IntakeSubsystem/HandoffSpeed", 1.0);
+        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.45);
 
         shootingDelayReceiver = Logger.tunable("/IntakeSubsystem/ShootingDelay", 0.0);
 
@@ -73,7 +75,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public Command handoffCommand() {
-        return startEnd(() -> setIntakeMode(IntakeMode.HANDOFF), () -> {});
+        return startEnd(() -> {setIntakeMode(IntakeMode.HANDOFF);}, () -> {});
     }
 
     public Command intakeCommand() {
@@ -132,7 +134,7 @@ public class IntakeSubsystem extends SubsystemBase {
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);
 
-                if (holdDelayTimer.hasElapsed(0.7)) intakeMotor.stopMotor();
+                if (holdDelayTimer.hasElapsed(2.7)) intakeMotor.stopMotor();
                 else intakeMotor.set(ControlMode.PercentOutput, holdingSpeedReciever.getDouble());
 
                 break;
@@ -147,7 +149,8 @@ public class IntakeSubsystem extends SubsystemBase {
             case HANDOFF:
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);
-                intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
+                intakeMotor.set(ControlMode.PercentOutput, handoffSpeedReceiver.getDouble());
+                break;
             case REVERSE:
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);

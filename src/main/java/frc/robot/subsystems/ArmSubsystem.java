@@ -66,6 +66,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     private double arm1Speed = 0; // radians / second
     private double arm2Speed = 0;
+
+    @SuppressWarnings("unused")
     private double gripperSpeed = 0;
 
     private LinearFilter arm1SpeedFilter = LinearFilter.movingAverage(10);
@@ -476,12 +478,14 @@ public class ArmSubsystem extends SubsystemBase {
                         + ArmConstants.boomEncoderOffset);
     }
 
+    @SuppressWarnings("unused")
     private Rotation2d getJoint1IntegratedAngle() {
         // These motors don't loop around after a full rotation so no need to change scope
         return new Rotation2d(
                 Conversions.falconToRadians(joint1Motor.getSelectedSensorPosition(), ArmConstants.arm1GearRatio));
     }
 
+    @SuppressWarnings("unused")
     private Rotation2d getJoint2IntegratedAngle() {
         // These motors don't loop around after a full rotation so no need to change scope
         return new Rotation2d(

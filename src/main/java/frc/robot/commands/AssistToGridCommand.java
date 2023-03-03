@@ -6,19 +6,17 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.lib.logging.Logger;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.LightsSubsystem.LEDSegment;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightMode;
-import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class AssistToGridCommand extends CommandBase {
-    private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(3, 3);
+    private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(5, 5);
     private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(7, 7);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem;
@@ -27,10 +25,8 @@ public class AssistToGridCommand extends CommandBase {
     private Supplier<PlacementLocation> targetPoseSupplier;
     private DoubleSupplier xAxis;
 
-    private Optional<Pose2d> validTargetPose;
-
     private final ProfiledPIDController yController = new ProfiledPIDController(9, 0, 0, yConstraints);
-    private final ProfiledPIDController omegaController = new ProfiledPIDController(6, 0, 0, omegaConstraints);
+    private final ProfiledPIDController omegaController = new ProfiledPIDController(8, 0, 0, omegaConstraints);
 
     /**
      * Drives to the given pose on the field automatically.
@@ -53,7 +49,7 @@ public class AssistToGridCommand extends CommandBase {
 
         this.xAxis = forward;
         yController.setTolerance(0.008);
-        omegaController.setTolerance(Units.degreesToRadians(0.5));
+        omegaController.setTolerance(Units.degreesToRadians(0.4));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         addRequirements(swerveDriveSubsystem, visionSubsystem, lightsSubsystem);
@@ -89,8 +85,6 @@ public class AssistToGridCommand extends CommandBase {
         } else {
             visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
         }
-
-        Logger.log("/SwerveDriveSubsystem/ValidTargetPose", targetPose);
 
         // Update controllers
         yController.setGoal(targetPose.getY());

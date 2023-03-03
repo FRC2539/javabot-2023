@@ -341,8 +341,8 @@ public class VisionSubsystem extends SubsystemBase {
 
     public enum LimelightMode {
         APRILTAG(0),
-        RETROREFLECTIVEMID(2),
-        RETROREFLECTIVEHIGH(1),
+        RETROREFLECTIVEMID(1),
+        RETROREFLECTIVEHIGH(2),
         ML(3);
 
         public int pipelineNumber;
