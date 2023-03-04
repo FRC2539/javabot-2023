@@ -5,6 +5,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.subsystems.LightsSubsystem;
@@ -16,7 +17,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class AssistToGridCommand extends CommandBase {
-    private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(5, 5);
+    private static final TrapezoidProfile.Constraints yConstraints = new TrapezoidProfile.Constraints(4, 4);
     private static final TrapezoidProfile.Constraints omegaConstraints = new TrapezoidProfile.Constraints(7, 7);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem;
@@ -27,6 +28,8 @@ public class AssistToGridCommand extends CommandBase {
 
     private final ProfiledPIDController yController = new ProfiledPIDController(9, 0, 0, yConstraints);
     private final ProfiledPIDController omegaController = new ProfiledPIDController(8, 0, 0, omegaConstraints);
+
+    private Timer waitForVisionTimer = new Timer();
 
     /**
      * Drives to the given pose on the field automatically.
@@ -63,6 +66,9 @@ public class AssistToGridCommand extends CommandBase {
 
         omegaController.reset(robotPose.getRotation().getRadians(), robotVelocity.omegaRadiansPerSecond);
         yController.reset(robotPose.getY(), robotVelocity.vyMetersPerSecond);
+
+        waitForVisionTimer.stop();
+        waitForVisionTimer.reset();
     }
 
     @Override
@@ -75,10 +81,12 @@ public class AssistToGridCommand extends CommandBase {
         if (targetPlacementLocation.isCone) {
             visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
 
+            waitForVisionTimer.start();
+
             var retroreflectivePose = visionSubsystem.getLLFieldRelativeRetroflectiveEstimate();
 
             // Use retroreflective y estimate
-            if (retroreflectivePose.isPresent()) {
+            if (retroreflectivePose.isPresent() && waitForVisionTimer.hasElapsed(0.3)) {
                 targetPose =
                         new Pose2d(targetPose.getX(), retroreflectivePose.get().getY(), targetPose.getRotation());
             }

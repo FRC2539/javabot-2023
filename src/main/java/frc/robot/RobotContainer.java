@@ -122,6 +122,13 @@ public class RobotContainer {
         //                         this::getDriveStrafeAxis)
         //                 .alongWith(visionSubsystem.customLimelightModeCommand()));
 
+        leftDriveController.getLeftThumb().whileTrue(new AssistToGridCommand(
+                swerveDriveSubsystem,
+                visionSubsystem,
+                lightsSubsystem,
+                getTargetPoseSupplier(),
+                this::getDriveForwardAxis));
+
         // leftDriveController
         //         .getLeftThumb()
         //         .whileTrue(new AssistedMLPickupCommand(
