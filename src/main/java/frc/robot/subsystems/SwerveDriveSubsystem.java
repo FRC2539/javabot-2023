@@ -65,7 +65,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private LoggedReceiver isSecondOrder;
 
     // PID controller used for auto-leveling
-    private PIDController tiltController = new PIDController(0.75 / 15, 0, 0.02);
+    // private PIDController tiltController = new PIDController(0.75 / 15, 0, 0.02);
+    private PIDController tiltController = new PIDController(0.75 / 12, 0, 0.02);
 
     // PID controller used for cardinal command
     private ProfiledPIDController omegaController =
@@ -109,7 +110,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);
         pidValueReciever = Logger.tunable(
                 "/SwerveDriveSubsystem/levelPIDValues",
-                new double[] {0.75 / 15, 0, .02, 8, 0.75}); // P I D stopAngle leveingMaxSpeed
+                new double[] {0.8 / 15, 0, .01, 8, 0.8}); // P I D stopAngle leveingMaxSpeed
+                //[0.055,0,0.01,10,0.55]\][]
+                // new double[] {0.75 / 15, 0, .02, 8, 0.85}
     }
 
     public Command driveCommand(

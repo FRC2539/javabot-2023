@@ -17,7 +17,7 @@
       "isStopPoint": false,
       "stopEvent": {
         "names": [
-          "placeHigh"
+          "placeHighInstant"
         ],
         "executionBehavior": "sequential",
         "waitBehavior": "none",
@@ -44,7 +44,7 @@
       "isStopPoint": true,
       "stopEvent": {
         "names": [],
-        "executionBehavior": "parallel",
+        "executionBehavior": "sequential",
         "waitBehavior": "none",
         "waitTime": 0
       }
@@ -55,12 +55,12 @@
         "y": 4.40651783050291
       },
       "prevControl": {
-        "x": 2.400804117847552,
-        "y": 4.955918971667003
+        "x": 2.423642454122515,
+        "y": 4.944499803529522
       },
       "nextControl": {
-        "x": 2.400804117847552,
-        "y": 4.955918971667003
+        "x": 2.423642454122515,
+        "y": 4.944499803529522
       },
       "holonomicAngle": 179.78,
       "isReversal": true,
@@ -78,32 +78,66 @@
     },
     {
       "anchorPoint": {
-        "x": 6.495228419028266,
-        "y": 4.222849159984035
+        "x": 6.88853719587781,
+        "y": 3.7226488128189934
       },
       "prevControl": {
-        "x": 5.653260560524033,
-        "y": 5.069889538432644
+        "x": 5.769458718404615,
+        "y": 5.229979006966562
+      },
+      "nextControl": {
+        "x": 5.769458718404615,
+        "y": 5.229979006966562
+      },
+      "holonomicAngle": -62.281498371816674,
+      "isReversal": true,
+      "velOverride": null,
+      "isLocked": false,
+      "isStopPoint": true,
+      "stopEvent": {
+        "names": [],
+        "executionBehavior": "sequential",
+        "waitBehavior": "none",
+        "waitTime": 0
+      }
+    },
+    {
+      "anchorPoint": {
+        "x": 1.8184265428359916,
+        "y": 5.0015956442169305
+      },
+      "prevControl": {
+        "x": 4.661799409068904,
+        "y": 4.373541396655443
       },
       "nextControl": null,
-      "holonomicAngle": 123.11134196037206,
+      "holonomicAngle": -178.68308759420674,
       "isReversal": false,
       "velOverride": null,
       "isLocked": false,
       "isStopPoint": false,
       "stopEvent": {
         "names": [
-          "stop"
+          "reverseIntake"
         ],
-        "executionBehavior": "parallel",
+        "executionBehavior": "sequential",
         "waitBehavior": "none",
         "waitTime": 0
       }
     }
   ],
+  "maxVelocity": 5.0,
+  "maxAcceleration": 5.0,
+  "isReversed": null,
   "markers": [
     {
-      "position": 0.47,
+      "position": 0.4945454545454759,
+      "names": [
+        "intakePickup"
+      ]
+    },
+    {
+      "position": 2.559999999999865,
       "names": [
         "intakePickup"
       ]

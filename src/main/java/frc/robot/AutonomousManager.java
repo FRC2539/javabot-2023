@@ -60,6 +60,17 @@ public class AutonomousManager {
                                 .asProxy())
                         .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.0)));
         eventMap.put(
+            "placeHighInstant",
+            armSubsystem
+                    .highManualConeCommand()
+                    .andThen(waitSeconds(0.06))
+                    .andThen(container
+                            .getGripperSubsystem()
+                            .ejectFromGripperCommand()
+                            .withTimeout(0.3)
+                            .asProxy())
+                    .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(0.6)));
+        eventMap.put(
                 "intakePickup",
                 container.getIntakeSubsystem().intakeModeCommand().withTimeout(1.4).asProxy());
         eventMap.put(
@@ -140,8 +151,9 @@ public class AutonomousManager {
     private enum AutonomousOption {
         OPEN_PLACE1ANDCLIMB(StartingLocation.OPEN, 1, "open_place1andclimb", new PathConstraints(5, 5)),
         OPEN_PLACE2(StartingLocation.OPEN, 2, "open_place2", new PathConstraints(4, 3)),
+        OPEN_PLACE3(StartingLocation.OPEN, 3, "open_place3", new PathConstraints(4, 4)),
         // OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, "open_place2andclimb", new PathConstraints(5, 4)),
-        OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
+        // OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
         OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
         STATION_PLACE1ANDCLIMB(StartingLocation.STATION, 1, "station_place1andclimb", new PathConstraints(5, 4)),
         CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, "cable_place1andclimb", new PathConstraints(5, 5)),
