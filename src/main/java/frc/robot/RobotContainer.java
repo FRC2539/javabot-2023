@@ -228,15 +228,14 @@ public class RobotContainer {
         operatorController.nameRightTrigger("Indicate Cone");
         operatorController.nameLeftTrigger("Indicate Cube");
 
-        // operatorController
-        //         .getRightBumper()
-        //         .onTrue(armSubsystem
-        //                 .handoffCommand()
-        //
-        // .andThen(gripperSubsystem.openGripperCommand().deadlineWith(intakeSubsystem.handoffCommand()))
-        //                 .until(operatorController.getRightBumper().negate())
-        //                 .andThen(armSubsystem.undoHandoffCommand()));
-        // operatorController.nameRightBumper("Handoff Button \"Dont use\"");
+        operatorController
+                .getRightBumper()
+                .onTrue(armSubsystem
+                        .handoffCommand()
+                        .andThen(gripperSubsystem.openGripperCommand().deadlineWith(intakeSubsystem.handoffCommand()))
+                        .until(operatorController.getRightBumper().negate())
+                        .andThen(armSubsystem.undoHandoffCommand()));
+        operatorController.nameRightBumper("Handoff Button \"Dont use\"");
 
 
         // operatorController.getRightBumper().whileTrue(intakeSubsystem.handoffCommand());

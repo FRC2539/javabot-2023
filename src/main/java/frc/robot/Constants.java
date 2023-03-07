@@ -283,6 +283,7 @@ public final class Constants {
         public static final Rotation2d arm2StartingAngle = Rotation2d.fromDegrees(-180);
 
         public static final double angularTolerance = Math.toRadians(4);
+        public static final double gripperAngularTolerance = Math.toRadians(8);
 
         public static final int mastMotorPort = 8;
         public static final int boomMotorPort = 9;

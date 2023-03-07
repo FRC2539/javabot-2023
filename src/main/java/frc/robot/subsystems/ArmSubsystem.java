@@ -246,6 +246,7 @@ public class ArmSubsystem extends SubsystemBase {
 
         // Don't die when arm is backwards slightly
         motor2Controller.enableContinuousInput(-Math.PI, Math.PI);
+        gripperMotorController.enableContinuousInput(-Math.PI, Math.PI);
 
         motor1Controller.setTolerance(ArmConstants.angularTolerance);
         motor2Controller.setTolerance(ArmConstants.angularTolerance);
@@ -264,18 +265,26 @@ public class ArmSubsystem extends SubsystemBase {
                 armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL_CUBE));
     }
 
+    // public Command handoffCommand() {
+    //     return Commands.sequence(
+    //             armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_1),
+    //             armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_2),
+    //             armStateCommand(ArmState.HANDOFF));
+    // }
+
+    // public Command undoHandoffCommand() {
+    //     return Commands.sequence(
+    //             armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_2),
+    //             armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_1),
+    //             armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+    // }
+
     public Command handoffCommand() {
-        return Commands.sequence(
-                armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_1),
-                armStateCommand(ArmState.HANDOFF_MIDPOINT_2),
-                armStateCommand(ArmState.HANDOFF));
+        return armHandoffStateCommand(ArmState.COOL_HANDOFF);
     }
 
     public Command undoHandoffCommand() {
-        return Commands.sequence(
-                armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_2),
-                armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_1),
-                armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+        return Commands.sequence(armHandoffStateCommand(ArmState.COOL_HANDOFF_REVERSE), armStateCommand(ArmState.AWAITING_DEPLOYMENT));
     }
 
     // public Command highAutoCommand() {
@@ -513,7 +522,16 @@ public class ArmSubsystem extends SubsystemBase {
                 && MathUtils.equalsWithinError(
                         arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance)
                 && MathUtils.equalsWithinError(
-                        gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.angularTolerance);
+                        gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.gripperAngularTolerance);
+    }
+
+    public boolean isArmAtHandoffGoal() {
+        return MathUtils.equalsWithinError(
+                        arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 1.3)
+                && MathUtils.equalsWithinError(
+                        arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 1.3)
+                && MathUtils.equalsWithinError(
+                        gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.gripperAngularTolerance * 1.5);
     }
 
     public boolean isArmApproximatelyAtGoal() {
@@ -783,6 +801,10 @@ public class ArmSubsystem extends SubsystemBase {
         return runOnce(() -> setState(armState)).andThen(Commands.waitUntil(this::isArmAtGoal));
     }
 
+    public Command armHandoffStateCommand(ArmState armState) {
+        return runOnce(() -> setState(armState)).andThen(Commands.waitUntil(this::isArmAtHandoffGoal));
+    }
+
     public Command armStateApproximateCommand(ArmState armState) {
         return runOnce(() -> setState(armState)).andThen(Commands.waitUntil(this::isArmApproximatelyAtGoal));
     }
@@ -830,9 +852,12 @@ public class ArmSubsystem extends SubsystemBase {
                 Rotation2d.fromDegrees(-25))),
         HANDOFF_MIDPOINT_1(Static.fromWrist(0.31, 0.33, Rotation2d.fromDegrees(-50))),
         HANDOFF_MIDPOINT_2(Static.fromWrist(0.31, 0.33, Rotation2d.fromDegrees(-180))),
-        HANDOFF(Static.fromWrist(0.16, 0.33, Rotation2d.fromDegrees(-180))),
+        HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(-180))),
+        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(156))),
+        COOL_HANDOFF_REVERSE(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(150))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
+
         HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())), // name my variables
         NETWORK_TABLES_AIM(new NetworkTablesAim()),
         PASSTHROUGH(new PassthroughAim()),
