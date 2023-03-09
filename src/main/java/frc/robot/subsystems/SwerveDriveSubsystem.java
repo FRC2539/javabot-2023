@@ -111,8 +111,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         pidValueReciever = Logger.tunable(
                 "/SwerveDriveSubsystem/levelPIDValues",
                 new double[] {0.8 / 15, 0, .01, 8, 0.8}); // P I D stopAngle leveingMaxSpeed
-                //[0.055,0,0.01,10,0.55]\][]
-                // new double[] {0.75 / 15, 0, .02, 8, 0.85}
+        // [0.055,0,0.01,10,0.55]\][]
+        // new double[] {0.75 / 15, 0, .02, 8, 0.85}
     }
 
     public Command driveCommand(

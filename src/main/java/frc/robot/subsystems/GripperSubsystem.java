@@ -24,6 +24,7 @@ public class GripperSubsystem extends SubsystemBase {
 
     private LoggedReceiver gripperIntakeSpeed;
     private LoggedReceiver gripperEjectSpeed;
+    private LoggedReceiver gripperShootSpeed;
 
     private AnalogInput gamePieceSensor1 = new AnalogInput(0);
     private AnalogInput gamePieceSensor2 = new AnalogInput(1);
@@ -50,6 +51,7 @@ public class GripperSubsystem extends SubsystemBase {
 
         gripperIntakeSpeed = Logger.tunable("/Gripper/Intake Speed", 1.0);
         gripperEjectSpeed = Logger.tunable("/Gripper/Eject Speed", -0.3);
+        gripperShootSpeed = Logger.tunable("/Gripper/Shoot Speed", -1.0);
 
         holdTimer.restart();
     }
@@ -72,6 +74,10 @@ public class GripperSubsystem extends SubsystemBase {
                     setState(GripperState.CLOSED);
                 },
                 () -> {});
+    }
+
+    public Command gripperShootCommand() {
+        return openGripperCommand().withTimeout(0.4).andThen(startEnd(() -> setState(GripperState.SHOOT), () -> {}));
     }
 
     public Command ejectFromGripperCommand() {
@@ -108,6 +114,10 @@ public class GripperSubsystem extends SubsystemBase {
                 gripperSolenoid.set(Value.kReverse);
                 gripperMotor.set(gripperEjectSpeed.getDouble());
                 break;
+            case SHOOT:
+                gripperSolenoid.set(Value.kReverse);
+                gripperMotor.set(gripperShootSpeed.getDouble());
+                break;
         }
     }
 
@@ -123,6 +133,7 @@ public class GripperSubsystem extends SubsystemBase {
         DISABLED,
         OPEN, // Open with spinning motor
         CLOSED, // Closed and spin motor until supply limit
-        EJECT // Reverse motors and then open
+        EJECT, // Reverse motors and then open
+        SHOOT
     }
 }

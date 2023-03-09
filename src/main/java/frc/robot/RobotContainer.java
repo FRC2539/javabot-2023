@@ -19,7 +19,6 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AssistToGridCommand;
-import frc.robot.commands.AssistedMLPickupCommand;
 import frc.robot.commands.MusicRevealCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
@@ -122,12 +121,14 @@ public class RobotContainer {
         //                         this::getDriveStrafeAxis)
         //                 .alongWith(visionSubsystem.customLimelightModeCommand()));
 
-        leftDriveController.getLeftThumb().whileTrue(new AssistToGridCommand(
-                swerveDriveSubsystem,
-                visionSubsystem,
-                lightsSubsystem,
-                getTargetPoseSupplier(),
-                this::getDriveForwardAxis));
+        leftDriveController
+                .getLeftThumb()
+                .whileTrue(new AssistToGridCommand(
+                        swerveDriveSubsystem,
+                        visionSubsystem,
+                        lightsSubsystem,
+                        getTargetPoseSupplier(),
+                        this::getDriveForwardAxis));
 
         // leftDriveController
         //         .getLeftThumb()
@@ -150,7 +151,7 @@ public class RobotContainer {
 
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
-        rightDriveController.getBottomThumb().whileTrue(intakeSubsystem.shootCommand());
+        rightDriveController.getBottomThumb().whileTrue(gripperSubsystem.gripperShootCommand());
         rightDriveController.getRightThumb().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
         rightDriveController.nameLeftThumb("Run Intake");
         rightDriveController.nameRightThumb("Reverse Intake");
@@ -232,11 +233,12 @@ public class RobotContainer {
                 .getRightBumper()
                 .onTrue(armSubsystem
                         .handoffCommand()
-                        .andThen(gripperSubsystem.openGripperCommand().deadlineWith(intakeSubsystem.handoffCommand()))
+                        .andThen(gripperSubsystem
+                                .openGripperCommand()
+                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
                         .until(operatorController.getRightBumper().negate())
-                        .andThen(armSubsystem.undoHandoffCommand()));
+                        .andThen(armSubsystem.undoHandoffCommand().asProxy()));
         operatorController.nameRightBumper("Handoff Button \"Dont use\"");
-
 
         // operatorController.getRightBumper().whileTrue(intakeSubsystem.handoffCommand());
 

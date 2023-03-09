@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.GripperSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import java.util.HashMap;
@@ -40,6 +42,8 @@ public class AutonomousManager {
     public AutonomousManager(RobotContainer container) {
         swerveDriveSubsystem = container.getSwerveDriveSubsystem();
         ArmSubsystem armSubsystem = container.getArmSubsystem();
+        GripperSubsystem gripperSubsystem = container.getGripperSubsystem();
+        IntakeSubsystem intakeSubsystem = container.getIntakeSubsystem();
         lightsSubsystem = container.getLightsSubsystem();
 
         initializeNetworkTables();
@@ -52,27 +56,20 @@ public class AutonomousManager {
                 "placeHigh",
                 armSubsystem
                         .highManualConeCommand()
-                        .andThen(waitSeconds(1.5))
+                        .andThen(waitSeconds(0.06))
                         .andThen(container
                                 .getGripperSubsystem()
                                 .ejectFromGripperCommand()
-                                .withTimeout(0.5)
+                                .withTimeout(0.3)
                                 .asProxy())
-                        .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(1.0)));
-        eventMap.put(
-            "placeHighInstant",
-            armSubsystem
-                    .highManualConeCommand()
-                    .andThen(waitSeconds(0.06))
-                    .andThen(container
-                            .getGripperSubsystem()
-                            .ejectFromGripperCommand()
-                            .withTimeout(0.3)
-                            .asProxy())
-                    .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(0.6)));
+                        .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(0.6)));
         eventMap.put(
                 "intakePickup",
-                container.getIntakeSubsystem().intakeModeCommand().withTimeout(1.4).asProxy());
+                container
+                        .getIntakeSubsystem()
+                        .intakeModeCommand()
+                        .withTimeout(1.4)
+                        .asProxy());
         eventMap.put(
                 "reverseIntake",
                 container
@@ -80,6 +77,14 @@ public class AutonomousManager {
                         .reverseIntakeModeCommand()
                         .withTimeout(0.75)
                         .asProxy());
+        eventMap.put(
+                "handoff",
+                armSubsystem
+                        .handoffCommand()
+                        .andThen(gripperSubsystem
+                                .openGripperCommand()
+                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
+                        .andThen(armSubsystem.undoHandoffCommand().asProxy()));
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
@@ -155,9 +160,10 @@ public class AutonomousManager {
         // OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, "open_place2andclimb", new PathConstraints(5, 4)),
         // OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
         // OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
-        STATION_PLACE1ANDCLIMB(StartingLocation.STATION, 1, "station_place1andclimb", new PathConstraints(5, 4)),
+        STATION_PLACE1ANDCLIMB(StartingLocation.STATION, 1, "station_place1andclimb_fancy", new PathConstraints(3, 2.25)),
         CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, "cable_place1andclimb", new PathConstraints(5, 5)),
-        CABLE_PLACE2(StartingLocation.CABLE, 2, "cable_place2", new PathConstraints(4, 3));
+        CABLE_PLACE2(StartingLocation.CABLE, 2, "cable_place2", new PathConstraints(4, 3)),
+        CABLE_PLACE3(StartingLocation.CABLE, 3, "cable_place3", new PathConstraints(3.5, 3));
 
         private List<PathPlannerTrajectory> path;
         private String pathName;

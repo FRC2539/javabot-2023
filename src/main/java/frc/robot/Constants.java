@@ -27,7 +27,7 @@ public final class Constants {
 
     public static final class GlobalConstants {
         public static final String CANIVORE_NAME = "CANivore";
-        public static final int PCM_ID = 12;//19;
+        public static final int PCM_ID = 12; // 19;
         public static final double targetVoltage = 12.0; // Used for voltage compensation
 
         public static final double batteryVoltageThreshold = 12.3;
@@ -232,7 +232,7 @@ public final class Constants {
         public static final int positionReverseChannel = 6;
 
         public static final int shootingForwardChannel = 7;
-        public static final int shootingReverseChannel = 0;//1;
+        public static final int shootingReverseChannel = 0; // 1;
     }
 
     public static final class ArmConstants {
@@ -329,8 +329,13 @@ public final class Constants {
 
         public static final Rotation2d startingAngle = Rotation2d.fromDegrees(180);
 
+        // This is old
+        // public static final double minimumAngle = Math.toDegrees(-90);
+        // public static final double maximumAngle = Math.toDegrees(180);
+
+        // weird implementation. basically does not allow values between -90 and -110
         public static final double minimumAngle = Math.toDegrees(-90);
-        public static final double maximumAngle = Math.toDegrees(180);
+        public static final double maximumAngle = Math.toDegrees(-110);
 
         public static final double gearRatio = 5 * 4 * 7; // 3 gear boxes
 
@@ -340,7 +345,7 @@ public final class Constants {
         public static final double ka = 0;
 
         public static final int FORWARD_CHANNEL = 5; // Tory made a mistake lol
-        public static final int REVERSE_CHANNEL = 8;//4;
+        public static final int REVERSE_CHANNEL = 8; // 4;
 
         public static final int gripperMotor = 14;
 

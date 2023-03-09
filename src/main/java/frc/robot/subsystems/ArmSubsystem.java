@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ArmFeedforward;
@@ -156,21 +157,6 @@ public class ArmSubsystem extends SubsystemBase {
         joint2Motor.enableVoltageCompensation(true);
         gripperMotor.enableVoltageCompensation(true);
 
-        // Configure motor soft limits for safety
-        // joint1Motor.configForwardSoftLimitEnable(true);
-        // joint1Motor.configForwardSoftLimitThreshold(Conversions.radiansToFalcon(ArmConstants.arm1MaximumAngle,
-        // ArmConstants.arm1GearRatio));
-        // joint1Motor.configReverseSoftLimitEnable(true);
-        // joint1Motor.configReverseSoftLimitThreshold(Conversions.radiansToFalcon(ArmConstants.arm1MinimumAngle,
-        // ArmConstants.arm1GearRatio));
-
-        // joint2Motor.configForwardSoftLimitEnable(true);
-        // joint2Motor.configForwardSoftLimitThreshold(Conversions.radiansToFalcon(ArmConstants.arm2MaximumAngle,
-        // ArmConstants.arm2GearRatio));
-        // joint2Motor.configReverseSoftLimitEnable(true);
-        // joint2Motor.configReverseSoftLimitThreshold(Conversions.radiansToFalcon(ArmConstants.arm2MinimumAngle,
-        // ArmConstants.arm2GearRatio));
-
         joint1AbsoluteEncoder = new DutyCycleEncoder(ArmConstants.mastEncoderChannel);
         joint2AbsoluteEncoder = new DutyCycleEncoder(ArmConstants.boomEncoderChannel);
         gripperAbsoluteEncoder = new DutyCycleEncoder(ArmConstants.gripperEncoderChannel);
@@ -265,33 +251,14 @@ public class ArmSubsystem extends SubsystemBase {
                 armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL_CUBE));
     }
 
-    // public Command handoffCommand() {
-    //     return Commands.sequence(
-    //             armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_1),
-    //             armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_2),
-    //             armStateCommand(ArmState.HANDOFF));
-    // }
-
-    // public Command undoHandoffCommand() {
-    //     return Commands.sequence(
-    //             armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_2),
-    //             armStateApproximateCommand(ArmState.HANDOFF_MIDPOINT_1),
-    //             armStateCommand(ArmState.AWAITING_DEPLOYMENT));
-    // }
-
     public Command handoffCommand() {
         return armHandoffStateCommand(ArmState.COOL_HANDOFF);
     }
 
     public Command undoHandoffCommand() {
-        return Commands.sequence(armHandoffStateCommand(ArmState.COOL_HANDOFF_REVERSE), armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+        return Commands.sequence(
+                armStateCommand(ArmState.COOL_HANDOFF_REVERSE), armStateCommand(ArmState.AWAITING_DEPLOYMENT));
     }
-
-    // public Command highAutoCommand() {
-    //     return Commands.sequence(
-    //             armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
-    //             armStateApproximateCommand(ArmState.HIGH_MANUAL_CONE));
-    // }
 
     public Command substationPickupCommand() {
         return armStateCommand(ArmState.SUBSTATION_PICKUP);
@@ -441,8 +408,16 @@ public class ArmSubsystem extends SubsystemBase {
                 armAndWristAngles.get(0, 0), ArmConstants.arm1MinimumAngle, ArmConstants.arm1MaximumAngle);
         joint2DesiredMotorPosition = MathUtils.ensureRange(
                 armAndWristAngles.get(1, 0), ArmConstants.arm2MinimumAngle, ArmConstants.arm2MaximumAngle);
-        gripperDesiredMotorPosition = MathUtils.ensureRange(
-                armAndWristAngles.get(2, 0), GripperConstants.minimumAngle, GripperConstants.maximumAngle);
+        gripperDesiredMotorPosition = armAndWristAngles.get(2, 0);
+        if (gripperDesiredMotorPosition > GripperConstants.maximumAngle
+                && gripperDesiredMotorPosition < GripperConstants.minimumAngle) {
+            if (Math.abs(gripperDesiredMotorPosition - GripperConstants.maximumAngle)
+                    < Math.abs(gripperDesiredMotorPosition - GripperConstants.minimumAngle)) {
+                gripperDesiredMotorPosition = GripperConstants.maximumAngle;
+            } else {
+                gripperDesiredMotorPosition = GripperConstants.minimumAngle;
+            }
+        }
         ghostArm1.setAngle(Math.toDegrees(armAndWristAngles.get(0, 0)));
         ghostArm2.setAngle(Math.toDegrees(armAndWristAngles.get(1, 0)));
         ghostGripper.setAngle(Math.toDegrees(armAndWristAngles.get(2, 0)));
@@ -522,7 +497,9 @@ public class ArmSubsystem extends SubsystemBase {
                 && MathUtils.equalsWithinError(
                         arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance)
                 && MathUtils.equalsWithinError(
-                        gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.gripperAngularTolerance);
+                        MathUtil.angleModulus(gripperAngle.getRadians() - gripperDesiredMotorPosition),
+                        0,
+                        ArmConstants.gripperAngularTolerance * 2);
     }
 
     public boolean isArmAtHandoffGoal() {
@@ -531,7 +508,9 @@ public class ArmSubsystem extends SubsystemBase {
                 && MathUtils.equalsWithinError(
                         arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 1.3)
                 && MathUtils.equalsWithinError(
-                        gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.gripperAngularTolerance * 1.5);
+                        MathUtil.angleModulus(gripperAngle.getRadians() - gripperDesiredMotorPosition),
+                        0,
+                        ArmConstants.gripperAngularTolerance * 2);
     }
 
     public boolean isArmApproximatelyAtGoal() {
@@ -641,6 +620,7 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/isBraking", brakingActivated);
         // Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
         Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
+        Logger.log("/ArmSubsystem/isArmAtHandoffPosition", isArmAtHandoffGoal());
 
         Logger.log("/ArmSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
@@ -825,7 +805,8 @@ public class ArmSubsystem extends SubsystemBase {
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
-        SLIDE_PICKUP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
+        SLIDE_PICKUP(Static.fromWrist(0.23, 0.36, Rotation2d.fromDegrees(60))),
+        // SLIDE_PICKUP_COMP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
         // MID_MANUAL(Static.fromBumper(
@@ -840,7 +821,7 @@ public class ArmSubsystem extends SubsystemBase {
                 Static.fromBumper(FieldConstants.midX, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
         HIGH_MANUAL_1(new Static(0.9, 1.2, Rotation2d.fromDegrees(60))),
         HIGH_MANUAL_CONE(Static.fromBumper(
-                FieldConstants.highX + 0.1,//0.14, // gripper offset
+                FieldConstants.highX + 0.1, // 0.14, // gripper offset
                 FieldConstants.highConeZ
                         + ArmConstants.placementHeightOffset
                         + 0.3
@@ -850,11 +831,8 @@ public class ArmSubsystem extends SubsystemBase {
                 FieldConstants.highX + 0.14, // gripper offset
                 FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior
                 Rotation2d.fromDegrees(-25))),
-        HANDOFF_MIDPOINT_1(Static.fromWrist(0.31, 0.33, Rotation2d.fromDegrees(-50))),
-        HANDOFF_MIDPOINT_2(Static.fromWrist(0.31, 0.33, Rotation2d.fromDegrees(-180))),
-        HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(-180))),
-        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(156))),
-        COOL_HANDOFF_REVERSE(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(150))),
+        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(175))),
+        COOL_HANDOFF_REVERSE(Static.fromWrist(0.4, 0.4, Rotation2d.fromDegrees(170))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
 
