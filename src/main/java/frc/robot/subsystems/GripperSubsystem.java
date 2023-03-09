@@ -39,7 +39,7 @@ public class GripperSubsystem extends SubsystemBase {
                 GripperConstants.REVERSE_CHANNEL);
 
         gripperMotor.setNeutralMode(NeutralMode.Brake);
-        gripperMotor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
+        gripperMotor.configVoltageCompSaturation(GlobalConstants.targetVoltage); // try this at 10
         gripperMotor.enableVoltageCompensation(true);
         gripperMotor.setInverted(false);
 

@@ -111,7 +111,7 @@ public class SwerveModule {
 
         lastAngle = 0;
 
-        // Set the drive motor to the specified voltage
+        // Stop the motor to bypass the speed check
         driveMotor.stopMotor();
     }
 
