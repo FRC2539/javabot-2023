@@ -35,6 +35,8 @@ public class AssistedMLPickupCommand extends CommandBase {
     private static final double PICKUP_DISTANCE = 0.97 - 0.2; // drive in a bit
 
     /**
+     * Is in Early Access (for only $49.99)
+     * 
      * Drives to the given pose on the field automatically.
      *
      * While the driving is generally smooth and fast, this algorithm currently assumes zero initial velocity.

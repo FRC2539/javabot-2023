@@ -286,10 +286,12 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Command midManualCommand() {
-        return run(() -> {
-            if (isCurrentLocationCone()) setState(ArmState.MID_MANUAL_CONE);
-            else setState(ArmState.MID_MANUAL_CUBE);
-        });
+        return armStateApproximateCommand(ArmState.HIGH_MANUAL_1).andThen(
+            Commands.either(
+                armStateCommand(ArmState.MID_MANUAL_CONE),
+                armStateCommand(ArmState.MID_MANUAL_CUBE),
+                this::isCurrentLocationCone
+        ));
     }
 
     public boolean isCurrentLocationCone() {

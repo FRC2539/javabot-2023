@@ -66,8 +66,4 @@ public class AssistedMLAimCommand extends CommandBase {
         }
         swerveDriveSubsystem.setVelocity(new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), desiredRotation), true, true);
     }
-
-    public void end(boolean interrupted) {
-
-    }
 }

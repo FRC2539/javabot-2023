@@ -19,6 +19,7 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AssistToGridCommand;
+import frc.robot.commands.AssistedMLAimCommand;
 import frc.robot.commands.MusicRevealCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
@@ -123,12 +124,7 @@ public class RobotContainer {
 
         leftDriveController
                 .getLeftThumb()
-                .whileTrue(new AssistToGridCommand(
-                        swerveDriveSubsystem,
-                        visionSubsystem,
-                        lightsSubsystem,
-                        getTargetPoseSupplier(),
-                        this::getDriveForwardAxis));
+                .whileTrue(new AssistedMLAimCommand(swerveDriveSubsystem, visionSubsystem, this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis));
 
         // leftDriveController
         //         .getLeftThumb()
@@ -142,6 +138,7 @@ public class RobotContainer {
 
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
         leftDriveController.nameRightThumb("Assist to Pose");
+        leftDriveController.nameRightThumb("Assisted ML Aim");
 
         /* Set right joystick bindings */
         rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
