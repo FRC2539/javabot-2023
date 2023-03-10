@@ -47,8 +47,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class ArmSubsystem extends SubsystemBase {
-    private Mechanism2d mechanism = new Mechanism2d(4, 4);
-    private MechanismRoot2d root = mechanism.getRoot("Arm", 2, 2);
+    private Mechanism2d mechanism = new Mechanism2d(3, 2);
+    private MechanismRoot2d root = mechanism.getRoot("Arm", 1, 0.5);
     private MechanismLigament2d arm1;
     private MechanismLigament2d arm2;
     private MechanismLigament2d gripper;
@@ -117,6 +117,7 @@ public class ArmSubsystem extends SubsystemBase {
     public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
 
+        /* Create arm and ghost arms in mechanism 2d */
         arm1 = root.append(
                 new MechanismLigament2d("Arm 1", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
         arm2 = arm1.append(
@@ -141,6 +142,17 @@ public class ArmSubsystem extends SubsystemBase {
         arm1.setLineWeight(5);
         arm2.setLineWeight(5);
         gripper.setLineWeight(5);
+
+        /* Create the grid */
+        var robotBase = root.append(new MechanismLigament2d("RobotBase", ArmConstants.robotToArm.getZ(), -90, 3, new Color8Bit(Color.kBlue)));
+        var robotRight = robotBase.append(new MechanismLigament2d("RobotRight", SwerveConstants.lengthWithBumpers / 2, 90, 3, new Color8Bit(Color.kBlue)));
+        robotBase.append(new MechanismLigament2d("RobotLeft", SwerveConstants.lengthWithBumpers / 2, -90, 3, new Color8Bit(Color.kBlue)));
+
+        var gridBottom = robotRight.append(new MechanismLigament2d("GridBottom", FieldConstants.outerX, 0, 2, new Color8Bit(Color.kGray)));
+        var highBase = gridBottom.append(new MechanismLigament2d("HighBase", FieldConstants.highX, 180, 2, new Color8Bit(Color.kGray)));
+        highBase.append(new MechanismLigament2d("HighCone", FieldConstants.highConeZ, -90, 2, new Color8Bit(Color.kGray)));
+        var midBase = gridBottom.append(new MechanismLigament2d("MidBase", FieldConstants.midX, 180, 2, new Color8Bit(Color.kGray)));
+        midBase.append(new MechanismLigament2d("MidCone", FieldConstants.midConeZ, -90, 2, new Color8Bit(Color.kGray)));
 
         arm1Angle = ArmConstants.arm1StartingAngle;
         arm2Angle = ArmConstants.arm2StartingAngle;
