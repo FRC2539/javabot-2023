@@ -807,7 +807,8 @@ public class ArmSubsystem extends SubsystemBase {
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
-        SLIDE_PICKUP(Static.fromWrist(0.23, 0.36, Rotation2d.fromDegrees(60))),
+        SHOOT_POSITION(Static.fromWrist(0.29, 0.41, Rotation2d.fromDegrees(50))),
+        SLIDE_PICKUP(Static.fromWrist(0.21, 0.34, Rotation2d.fromDegrees(67))),
         // SLIDE_PICKUP_COMP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
@@ -818,9 +819,9 @@ public class ArmSubsystem extends SubsystemBase {
         SUBSTATION_PICKUP(
                 Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.07, Rotation2d.fromDegrees(-10))),
         MID_MANUAL_CONE(
-                Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.02, Rotation2d.fromDegrees(30))),
+                Static.fromBumper(FieldConstants.midX + 0.2, FieldConstants.highConeZ - 0.12, Rotation2d.fromDegrees(30))),
         MID_MANUAL_CUBE(
-                Static.fromBumper(FieldConstants.midX, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
+                Static.fromBumper(FieldConstants.midX + 0.2, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
         HIGH_MANUAL_1(new Static(0.9, 1.2, Rotation2d.fromDegrees(60))),
         HIGH_MANUAL_CONE(Static.fromBumper(
                 FieldConstants.highX + 0.1, // 0.14, // gripper offset

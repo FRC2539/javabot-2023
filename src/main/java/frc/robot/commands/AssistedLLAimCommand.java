@@ -33,7 +33,8 @@ public class AssistedLLAimCommand extends CommandBase {
     private OptionalDouble lastRawEstimate;
 
     public AssistedLLAimCommand(SwerveDriveSubsystem swerveDriveSubsystem, VisionSubsystem visionSubsystem, DoubleSupplier forward, DoubleSupplier strafe, DoubleSupplier rotate) {
-        
+        this.swerveDriveSubsystem = swerveDriveSubsystem;
+        this.visionSubsystem = visionSubsystem;
         
         addRequirements(swerveDriveSubsystem, visionSubsystem);
         

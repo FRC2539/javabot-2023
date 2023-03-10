@@ -55,11 +55,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
         intakeMotor.configSupplyCurrentLimit(supplyLimit);
 
-        intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.4);
+        intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.50);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
         handoffSpeedReceiver = Logger.tunable("/IntakeSubsystem/HandoffSpeed", 0.99);
-        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.05);
+        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.15);
 
         shootingDelayReceiver = Logger.tunable("/IntakeSubsystem/ShootingDelay", 0.0);
 

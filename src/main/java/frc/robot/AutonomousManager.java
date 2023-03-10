@@ -160,7 +160,8 @@ public class AutonomousManager {
         // OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, "open_place2andclimb", new PathConstraints(5, 4)),
         // OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
         // OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
-        STATION_PLACE1ANDCLIMB(StartingLocation.STATION, 1, "station_place1andclimb_fancy", new PathConstraints(3, 2.25)),
+        STATION_PLACE1ANDCLIMB(
+                StartingLocation.STATION, 1, "station_place1andclimb_fancy", new PathConstraints(3, 2.25)),
         CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, "cable_place1andclimb", new PathConstraints(5, 5)),
         CABLE_PLACE2(StartingLocation.CABLE, 2, "cable_place2", new PathConstraints(4, 3)),
         CABLE_PLACE3(StartingLocation.CABLE, 3, "cable_place3", new PathConstraints(3.5, 3));

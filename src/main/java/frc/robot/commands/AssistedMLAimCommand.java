@@ -28,7 +28,8 @@ public class AssistedMLAimCommand extends CommandBase {
     private OptionalDouble lastRawEstimate;
 
     public AssistedMLAimCommand(SwerveDriveSubsystem swerveDriveSubsystem, VisionSubsystem visionSubsystem, DoubleSupplier forward, DoubleSupplier strafe, DoubleSupplier rotate) {
-        
+        this.swerveDriveSubsystem = swerveDriveSubsystem;
+        this.visionSubsystem = visionSubsystem;
         
         addRequirements(swerveDriveSubsystem, visionSubsystem);
         
