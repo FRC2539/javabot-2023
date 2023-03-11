@@ -37,12 +37,14 @@ public class AssistedLLAimCommand extends CommandBase {
         strafeController.setSetpoint(0);
     }
 
+    @Override
     public void initialize() {
         angleController.reset();
         strafeController.reset();
         visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
     }
 
+    @Override
     public void execute() {
         double strafeingValue;
 

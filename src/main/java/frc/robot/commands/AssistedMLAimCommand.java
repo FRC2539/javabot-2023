@@ -41,6 +41,7 @@ public class AssistedMLAimCommand extends CommandBase {
         pidController.setGoal(goalState);
     }
 
+    @Override
     public void initialize() {
         pidController.reset(0);
         visionSubsystem.setLimelightMode(LimelightMode.ML);
@@ -48,6 +49,7 @@ public class AssistedMLAimCommand extends CommandBase {
         lastRawAngles = Optional.empty();
     }
 
+    @Override
     public void execute() {
         if (visionSubsystem.hasLLMLFieldPoseEstimate() && !stopAcceptingNewPoses) {
             lastRawAngles = visionSubsystem.getLimelightRawAngles();
