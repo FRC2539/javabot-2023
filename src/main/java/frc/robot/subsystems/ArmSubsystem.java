@@ -144,14 +144,21 @@ public class ArmSubsystem extends SubsystemBase {
         gripper.setLineWeight(5);
 
         /* Create the grid */
-        var robotBase = root.append(new MechanismLigament2d("RobotBase", ArmConstants.robotToArm.getZ(), -90, 3, new Color8Bit(Color.kBlue)));
-        var robotRight = robotBase.append(new MechanismLigament2d("RobotRight", SwerveConstants.lengthWithBumpers / 2, 90, 3, new Color8Bit(Color.kBlue)));
-        robotBase.append(new MechanismLigament2d("RobotLeft", SwerveConstants.lengthWithBumpers / 2, -90, 3, new Color8Bit(Color.kBlue)));
+        var robotBase = root.append(new MechanismLigament2d(
+                "RobotBase", ArmConstants.robotToArm.getZ(), -90, 3, new Color8Bit(Color.kBlue)));
+        var robotRight = robotBase.append(new MechanismLigament2d(
+                "RobotRight", SwerveConstants.lengthWithBumpers / 2, 90, 3, new Color8Bit(Color.kBlue)));
+        robotBase.append(new MechanismLigament2d(
+                "RobotLeft", SwerveConstants.lengthWithBumpers / 2, -90, 3, new Color8Bit(Color.kBlue)));
 
-        var gridBottom = robotRight.append(new MechanismLigament2d("GridBottom", FieldConstants.outerX, 0, 2, new Color8Bit(Color.kGray)));
-        var highBase = gridBottom.append(new MechanismLigament2d("HighBase", FieldConstants.highX, 180, 2, new Color8Bit(Color.kGray)));
-        highBase.append(new MechanismLigament2d("HighCone", FieldConstants.highConeZ, -90, 2, new Color8Bit(Color.kGray)));
-        var midBase = gridBottom.append(new MechanismLigament2d("MidBase", FieldConstants.midX, 180, 2, new Color8Bit(Color.kGray)));
+        var gridBottom = robotRight.append(
+                new MechanismLigament2d("GridBottom", FieldConstants.outerX, 0, 2, new Color8Bit(Color.kGray)));
+        var highBase = gridBottom.append(
+                new MechanismLigament2d("HighBase", FieldConstants.highX, 180, 2, new Color8Bit(Color.kGray)));
+        highBase.append(
+                new MechanismLigament2d("HighCone", FieldConstants.highConeZ, -90, 2, new Color8Bit(Color.kGray)));
+        var midBase = gridBottom.append(
+                new MechanismLigament2d("MidBase", FieldConstants.midX, 180, 2, new Color8Bit(Color.kGray)));
         midBase.append(new MechanismLigament2d("MidCone", FieldConstants.midConeZ, -90, 2, new Color8Bit(Color.kGray)));
 
         arm1Angle = ArmConstants.arm1StartingAngle;
@@ -269,7 +276,7 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command undoHandoffCommand() {
         return Commands.sequence(
-                armStateCommand(ArmState.COOL_HANDOFF_REVERSE), armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+                armStateApproximateCommand(ArmState.COOL_HANDOFF_REVERSE), armStateCommand(ArmState.AWAITING_DEPLOYMENT));
     }
 
     public Command substationPickupCommand() {
@@ -297,13 +304,13 @@ public class ArmSubsystem extends SubsystemBase {
                 armStateCommand(ArmState.AWAITING_DEPLOYMENT));
     }
 
-    public Command midManualCommand() {
-        return 
-            Commands.either(
-                armStateCommand(ArmState.MID_MANUAL_CONE),
-                armStateCommand(ArmState.MID_MANUAL_CUBE),
-                () -> true //this::isCurrentLocationCone
-        );
+    public Command midManualConeCommand() {
+        return armStateCommand(ArmState.MID_MANUAL_CONE);
+    }
+
+    public Command midManualCubeCommand() {
+        return Commands.sequence(
+                armStateApproximateCommand(ArmState.MID_MANUAL_CUBE_1), armStateCommand(ArmState.MID_MANUAL_CUBE));
     }
 
     public boolean isCurrentLocationCone() {
@@ -819,7 +826,7 @@ public class ArmSubsystem extends SubsystemBase {
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
-        SHOOT_POSITION(new Static(0.9, 1.2, Rotation2d.fromDegrees(60))),
+        SHOOT_POSITION(new Static(0.9, 1.2, Rotation2d.fromDegrees(40))),
         SLIDE_PICKUP(Static.fromWrist(0.21, 0.34, Rotation2d.fromDegrees(67))),
         // SLIDE_PICKUP_COMP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
@@ -830,12 +837,11 @@ public class ArmSubsystem extends SubsystemBase {
         //         Rotation2d.fromDegrees(20))),
         SUBSTATION_PICKUP(
                 Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.07, Rotation2d.fromDegrees(-10))),
-        // MID_MANUAL_CONE(
-        //         Static.fromBumper(FieldConstants.midX + 0.07, FieldConstants.highConeZ - 0.09, Rotation2d.fromDegrees(24))),
-        MID_MANUAL_CONE(
-                Static.fromBumper(FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.09, Rotation2d.fromDegrees(60))),
-        MID_MANUAL_CUBE(
-                Static.fromBumper(FieldConstants.midX + 0.10, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
+        MID_MANUAL_CONE(Static.fromBumper(
+                FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.09, Rotation2d.fromDegrees(60))),
+        MID_MANUAL_CUBE_1(new Static(0.66, 0.70, Rotation2d.fromDegrees(55))),
+        MID_MANUAL_CUBE(Static.fromBumper(
+                FieldConstants.midX + 0.10, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
         HIGH_MANUAL_1(new Static(0.9, 1.2, Rotation2d.fromDegrees(60))),
         HIGH_MANUAL_CONE(Static.fromBumper(
                 FieldConstants.highX + 0.1, // 0.14, // gripper offset
@@ -852,7 +858,6 @@ public class ArmSubsystem extends SubsystemBase {
         COOL_HANDOFF_REVERSE(Static.fromWrist(0.4, 0.4, Rotation2d.fromDegrees(170))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
-
         HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())), // name my variables
         NETWORK_TABLES_AIM(new NetworkTablesAim()),
         PASSTHROUGH(new PassthroughAim()),
@@ -906,6 +911,12 @@ public class ArmSubsystem extends SubsystemBase {
 
         public Rotation2d getGripperAngle() {
             return angle;
+        }
+
+        public Translation2d getWrist() {
+            return new Translation2d(
+                    endEffector.getX() - angle.getCos() * GripperConstants.length,
+                    endEffector.getY() - angle.getSin() * GripperConstants.length);
         }
     }
 

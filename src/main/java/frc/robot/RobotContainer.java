@@ -11,6 +11,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
@@ -18,9 +19,8 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
-import frc.robot.commands.AssistToGridCommand;
+import frc.robot.commands.AimAssistIntakeCommand;
 import frc.robot.commands.AssistedLLAimCommand;
-import frc.robot.commands.AssistedMLAimCommand;
 import frc.robot.commands.MusicRevealCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
@@ -43,8 +43,7 @@ public class RobotContainer {
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
     private final GripperSubsystem gripperSubsystem = new GripperSubsystem();
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
-    private final VisionSubsystem visionSubsystem =
-            new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate, swerveDriveSubsystem::getPose);
+    private final VisionSubsystem visionSubsystem = new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate);
     private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem);
 
     public AutonomousManager autonomousManager;
@@ -79,14 +78,21 @@ public class RobotContainer {
                         .withTimeout(1.5));
 
         Trigger isDeadOn = new Trigger(() -> intakeSubsystem.isDeadOn()).debounce(0.05);
-        
-        new Trigger(() -> intakeSubsystem.hasGamePiece()).debounce(0.05)
-                .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem).until(isDeadOn)
+
+        new Trigger(() -> intakeSubsystem.hasGamePiece())
+                .debounce(0.05)
+                .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
+                        .until(isDeadOn)
                         .withTimeout(1.5));
 
+        // isDeadOn.onTrue(
+        //         run(() -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.blue, .3), lightsSubsystem)
+        //                 .withTimeout(1.5));
+
         isDeadOn.onTrue(
-                run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.purple), lightsSubsystem)
-                        .withTimeout(1.5));
+                Commands.repeatingSequence(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
+                        .withTimeout(0.163), run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem)
+                        .withTimeout(0.163)).withTimeout(2));
 
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
@@ -103,7 +109,7 @@ public class RobotContainer {
         leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
         rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
         leftDriveController.nameTrigger("Run Gripper");
-        leftDriveController.nameTrigger("Eject Gripper");
+        rightDriveController.nameTrigger("Eject Gripper");
 
         // Leveling
         leftDriveController.getLeftBottomLeft().toggleOnTrue(swerveDriveSubsystem.levelChargeStationCommandDestiny());
@@ -131,8 +137,7 @@ public class RobotContainer {
                         visionSubsystem,
                         this::getDriveForwardAxis,
                         this::getDriveStrafeAxis,
-                        this::getDriveRotationAxis
-                ));
+                        this::getDriveRotationAxis));
         // leftDriveController
         //         .getLeftThumb()
         //         .whileTrue(new AimAtPoseCommand(
@@ -144,7 +149,15 @@ public class RobotContainer {
 
         leftDriveController
                 .getLeftThumb()
-                .whileTrue(new AssistedMLAimCommand(swerveDriveSubsystem, visionSubsystem, this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis));
+                .whileTrue(new AimAssistIntakeCommand(
+                        visionSubsystem,
+                        swerveDriveSubsystem,
+                        lightsSubsystem,
+                        this::getDriveForwardAxis,
+                        this::getDriveStrafeAxis,
+                        this::getDriveRotationAxis).alongWith(
+                        intakeSubsystem.intakeModeCommand()
+                        ));
 
         // leftDriveController
         //         .getLeftThumb()
@@ -232,7 +245,7 @@ public class RobotContainer {
         operatorController.getDPadDown().onTrue(armSubsystem.pickupCommand());
         operatorController.getDPadLeft().onTrue(armSubsystem.awaitingDeploymentCommand());
         operatorController.getDPadUp().onTrue(armSubsystem.highManualConeCommand());
-        operatorController.getDPadRight().onTrue(armSubsystem.midManualCommand());
+        operatorController.getDPadRight().onTrue(armSubsystem.midManualConeCommand());
         operatorController.nameDPadDown("Pickup");
         operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
@@ -260,10 +273,10 @@ public class RobotContainer {
                                 .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
                         .until(operatorController.getRightBumper().negate())
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
-        operatorController.nameRightBumper("Handoff Button \"Dont use\"");
+        operatorController.nameRightBumper("Handoff Button");
 
         // operatorController.getLeftBumper().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_POSITION));
-        operatorController.getLeftBumper().onTrue(armSubsystem.armStateCommand(ArmState.MID_MANUAL_CUBE));
+        operatorController.getLeftBumper().onTrue(armSubsystem.midManualCubeCommand());
 
         // operatorController.getRightBumper().whileTrue(intakeSubsystem.handoffCommand());
 

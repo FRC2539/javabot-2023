@@ -371,8 +371,9 @@ public final class Constants {
 
         // Pretty sure 6 needs to negative
         public static final Transform3d limelightRobotToCamera = new Transform3d(
-                new Translation3d(Units.inchesToMeters(6), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
-                new Rotation3d(0, Math.toRadians(15), Math.PI));
+                new Translation3d(
+                        Units.inchesToMeters(6 + 1), Units.inchesToMeters(0), Units.inchesToMeters(34.25 - 4)),
+                new Rotation3d(0, Math.toRadians(35), 0));
 
         public static final Transform3d limelightCameraToRobot = limelightRobotToCamera.inverse();
     }

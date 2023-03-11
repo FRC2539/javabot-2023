@@ -2,9 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -19,7 +17,6 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -33,34 +30,41 @@ public class VisionSubsystem extends SubsystemBase {
             camera,
             VisionConstants.photonRobotToCamera);
 
-    private LimelightMode limelightMode = LimelightMode.APRILTAG;
+    private LimelightMode backLimelightMode = LimelightMode.APRILTAG;
+    private LimelightMode frontLimelightMode = LimelightMode.APRILTAG;
 
-    private LoggedReceiver limelightHasTargetReceiver = Logger.receive("/limelight/tv", 0);
-    private LoggedReceiver limelightTXReceiver = Logger.receive("/limelight/tx", 0.0);
-    private LoggedReceiver limelightTYReceiver = Logger.receive("/limelight/ty", 0.0);
-    private LoggedReceiver limelightApriltagIDReceiver = Logger.receive("/limelight/tid", -1);
-    private LoggedReceiver botposeRedReceiver = Logger.receive("/limelight/botpose_wpired", new double[] {});
-    private LoggedReceiver botposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
+    // Back limelight
+    private LoggedReceiver backLimelightHasTargetReceiver = Logger.receive("/limelight/tv", 0);
+    private LoggedReceiver backLimelightTXReceiver = Logger.receive("/limelight/tx", 0.0);
+    private LoggedReceiver backLimelightTYReceiver = Logger.receive("/limelight/ty", 0.0);
+    private LoggedReceiver backLimelightApriltagIDReceiver = Logger.receive("/limelight/tid", -1);
+    private LoggedReceiver backBotposeRedReceiver = Logger.receive("/limelight/botpose_wpired", new double[] {});
+    private LoggedReceiver backBotposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
 
-    private Optional<TimestampedPose> LLApriltagEstimate = Optional.empty();
-    private Optional<EstimatedRobotPose> photonVisionEstimate = Optional.empty();
-    private Optional<Pose2d> validLLFieldRelativeRetroreflectiveEstimate = Optional.empty();
-    private Optional<Pose2d> LLFieldRelativeRetroreflectiveEstimate = Optional.empty();
-    private Optional<Pose2d> LLMLFieldPoseEstimate = Optional.empty();
-    private Optional<Pose2d> validLLMLFieldPoseEstimate = Optional.empty();
-    private Optional<LimelightRawAngles> LLRawAngles = Optional.empty();
+    // Front limelight
+    private LoggedReceiver frontLimelightHasTargetReceiver = Logger.receive("/limelight-ml/tv", 0);
+    private LoggedReceiver frontLimelightTXReceiver = Logger.receive("/limelight-ml/tx", 0.0);
+    private LoggedReceiver frontLimelightTYReceiver = Logger.receive("/limelight-ml/ty", 0.0);
+
+    // Note: Front is intake side, Back is arm side
+    private Optional<TimestampedPose> BackApriltagEstimate = Optional.empty();
+    private Optional<EstimatedRobotPose> FrontApriltagEstimate = Optional.empty();
+    private Optional<LimelightRawAngles> BackRetroreflectiveAngles = Optional.empty();
+    private Optional<LimelightRawAngles> FrontMLAngles = Optional.empty();
+    // private Optional<Pose2d> validLLFieldRelativeRetroreflectiveEstimate = Optional.empty();
+    // private Optional<Pose2d> LLFieldRelativeRetroreflectiveEstimate = Optional.empty();
+    // private Optional<Pose2d> LLMLFieldPoseEstimate = Optional.empty();
+    // private Optional<Pose2d> validLLMLFieldPoseEstimate = Optional.empty();
+    // private Optional<LimelightRawAngles> LLRawAngles = Optional.empty();
 
     private double lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
 
     private BiConsumer<Pose2d, Double> addVisionMeasurement;
-    private Supplier<Pose2d> robotPoseSupplier;
 
-    private static boolean visionDisabled = false;
-
-    public VisionSubsystem(BiConsumer<Pose2d, Double> addVisionMeasurement, Supplier<Pose2d> robotPoseSupplier) {
+    public VisionSubsystem(BiConsumer<Pose2d, Double> addVisionMeasurement) {
         this.addVisionMeasurement = addVisionMeasurement;
-        this.robotPoseSupplier = robotPoseSupplier;
-        setLimelightMode(limelightMode);
+
+        setBackLimelightMode(backLimelightMode);
 
         setDefaultCommand(defaultLimelightCommand());
     }
@@ -70,62 +74,51 @@ public class VisionSubsystem extends SubsystemBase {
         var startTimeMS = Timer.getFPGATimestamp() * 1000;
 
         /* Use limelight apriltag estimate to update robot pose estimator */
-        LLApriltagEstimate = calculateLLApriltagEstimate();
+        //BackApriltagEstimate = calculateLLApriltagEstimate();
 
-        if (LLApriltagEstimate.isPresent()) {
-            addVisionPoseEstimate(LLApriltagEstimate.get());
+        if (BackApriltagEstimate.isPresent()) {
+            addVisionPoseEstimate(BackApriltagEstimate.get());
 
             Logger.log(
-                    "/VisionSubsystem/LLApriltagPose",
-                    LLApriltagEstimate.get().estimatedPose.toPose2d());
+                    "/VisionSubsystem/BackApriltagPose",
+                    BackApriltagEstimate.get().estimatedPose.toPose2d());
 
             lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
         }
 
         /* Use photonvision apriltag estimate to update robot pose estimator */
-        photonVisionEstimate = calculatePhotonVisionEstimate();
+        FrontApriltagEstimate = calculatePhotonVisionEstimate();
 
-        if (photonVisionEstimate.isPresent()) {
-            addVisionPoseEstimate(photonVisionEstimate.get());
+        if (FrontApriltagEstimate.isPresent()) {
+            addVisionPoseEstimate(FrontApriltagEstimate.get());
 
             Logger.log(
-                    "/VisionSubsystem/photonVisionPose",
-                    photonVisionEstimate.get().estimatedPose.toPose2d());
+                    "/VisionSubsystem/FrontApriltagPose",
+                    FrontApriltagEstimate.get().estimatedPose.toPose2d());
 
             lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
         }
 
         /* Estimate the location of the retroreflective target */
-        LLFieldRelativeRetroreflectiveEstimate = calculateLLFieldRelativeRetroreflectiveEstimate();
-
-        if (LLFieldRelativeRetroreflectiveEstimate.isPresent()) {
-            validLLFieldRelativeRetroreflectiveEstimate = LLFieldRelativeRetroreflectiveEstimate;
-
-            Logger.log("/VisionSubsystem/LLRobotRelativeRetroreflective", LLFieldRelativeRetroreflectiveEstimate.get());
-        }
+        //BackRetroreflectiveAngles = calculateBackRetroreflectiveAngles();
 
         /* Estimate the location of a game piece detected by ML */
-        LLMLFieldPoseEstimate = calculateLLMLFieldPoseEstimate();
-
-        if (LLMLFieldPoseEstimate.isPresent()) {
-            validLLMLFieldPoseEstimate = LLMLFieldPoseEstimate;
-
-            Logger.log("/VisionSubsystem/LLMLFieldPoseEstimate", LLMLFieldPoseEstimate.get());
-        }
+        FrontMLAngles = calculateFrontMLAngles();
 
         // Send the time since the last apriltag update to the dashboard
         Logger.log("/VisionSubsystem/Last Update", Timer.getFPGATimestamp() - lastApriltagUpdateTimestamp);
 
-        Logger.log("/VisionSubsystem/Vision Mode", limelightMode.name());
+        Logger.log("/VisionSubsystem/Back Vision Mode", backLimelightMode.name());
+        Logger.log("/VisionSubsystem/Front Vision Mode", frontLimelightMode.name());
 
         Logger.log("/VisionSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
 
-    public void setLimelightMode(LimelightMode limelightMode) {
+    public void setBackLimelightMode(LimelightMode limelightMode) {
         // No need to update the mode if we are already on the correct pipeline
-        if (this.limelightMode == limelightMode) return;
+        if (this.backLimelightMode == limelightMode) return;
 
-        this.limelightMode = limelightMode;
+        this.backLimelightMode = limelightMode;
 
         NetworkTableInstance.getDefault()
                 .getTable("limelight")
@@ -133,20 +126,40 @@ public class VisionSubsystem extends SubsystemBase {
                 .setNumber(limelightMode.pipelineNumber);
     }
 
-    public LimelightMode getLimelightMode() {
-        return this.limelightMode;
+    public void setFrontLimelightMode(LimelightMode limelightMode) {
+        // No need to update the mode if we are already on the correct pipeline
+        if (this.frontLimelightMode == limelightMode) return;
+
+        this.frontLimelightMode = limelightMode;
+
+        NetworkTableInstance.getDefault()
+                .getTable("limelight-ml")
+                .getEntry("pipeline")
+                .setNumber(limelightMode.pipelineNumber);
     }
 
-    private boolean limelightHasTarget() {
-        return limelightHasTargetReceiver.getInteger() == 1;
+    public LimelightMode getBackLimelightMode() {
+        return this.backLimelightMode;
     }
 
-    public Optional<LimelightRawAngles> getLimelightRawAngles() {
-        return LLRawAngles;
+    public LimelightMode getFrontLimelightMode() {
+        return this.frontLimelightMode;
     }
 
-    private boolean limelightHasApriltag() {
-        return limelightApriltagIDReceiver.getInteger() != -1;
+    private boolean backLimelightHasTarget() {
+        return backLimelightHasTargetReceiver.getInteger() == 1;
+    }
+
+    private boolean frontLimelightHasTarget() {
+        return frontLimelightHasTargetReceiver.getInteger() == 1;
+    }
+
+    private boolean hasBackApriltagEstimate() {
+        return backLimelightApriltagIDReceiver.getInteger() != -1;
+    }
+
+    public boolean hasFrontApriltagEstimate() {
+        return FrontApriltagEstimate.isPresent();
     }
 
     private void addVisionPoseEstimate(EstimatedRobotPose estimate) {
@@ -157,17 +170,53 @@ public class VisionSubsystem extends SubsystemBase {
         addVisionMeasurement.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
     }
 
-    public boolean hasPhotonVisionEstimate() {
-        return photonVisionEstimate.isPresent();
+    public Optional<EstimatedRobotPose> getFrontApriltagEstimate() {
+        return FrontApriltagEstimate;
     }
 
-    public Optional<EstimatedRobotPose> getPhotonVisionEstimate() {
-        return photonVisionEstimate;
+    public Optional<TimestampedPose> getBackApriltagEstimate() {
+        return BackApriltagEstimate;
+    }
+
+    private Optional<LimelightRawAngles> calculateBackRetroreflectiveAngles() {
+        if (!backLimelightHasTarget()
+                || (backLimelightMode != LimelightMode.RETROREFLECTIVEMID
+                        && backLimelightMode != LimelightMode.RETROREFLECTIVEHIGH)) return Optional.empty();
+
+        double limelightTX = backLimelightTXReceiver.getDouble();
+        double limelightTY = backLimelightTYReceiver.getDouble();
+
+        // Store raw limelight angles
+        return Optional.of(new LimelightRawAngles(limelightTX, limelightTY));
+    }
+
+    private Optional<LimelightRawAngles> calculateFrontMLAngles() {
+        if (!frontLimelightHasTarget() || frontLimelightMode != LimelightMode.ML) return Optional.empty();
+
+        double limelightTX = frontLimelightTXReceiver.getDouble();
+        double limelightTY = frontLimelightTYReceiver.getDouble();
+
+        // Store raw limelight angles
+        return Optional.of(new LimelightRawAngles(limelightTX, limelightTY));
+    }
+
+    public Optional<LimelightRawAngles> getBackRetroreflectiveAngles() {
+        return BackRetroreflectiveAngles;
+    }
+
+    public Optional<LimelightRawAngles> getFrontMLAngles() {
+        return FrontMLAngles;
+    }
+
+    public boolean hasBackRetroreflectiveAngles() {
+        return BackRetroreflectiveAngles.isPresent();
+    }
+
+    public boolean hasFrontMLAngles() {
+        return FrontMLAngles.isPresent();
     }
 
     private Optional<EstimatedRobotPose> calculatePhotonVisionEstimate() {
-        if (visionDisabled) return Optional.empty();
-
         var botpose = photonPoseEstimator.update();
 
         if (botpose.isEmpty() || !isValidPose(botpose.get().estimatedPose)) return Optional.empty();
@@ -175,132 +224,16 @@ public class VisionSubsystem extends SubsystemBase {
         return botpose;
     }
 
-    public boolean hasLLFieldRelativeRetroflectiveEstimate() {
-        return LLFieldRelativeRetroreflectiveEstimate.isPresent();
-    }
-
-    public Optional<Pose2d> getLLFieldRelativeRetroflectiveEstimate() {
-        return LLFieldRelativeRetroreflectiveEstimate;
-    }
-
-    public Optional<Pose2d> getValidLLRetroreflectiveEstimate() {
-        return validLLFieldRelativeRetroreflectiveEstimate;
-    }
-
-    /**
-     * @return The pose of the retroreflective target using the robot's pose to make it field relative
-     */
-    private Optional<Pose2d> calculateLLFieldRelativeRetroreflectiveEstimate() {
-        if (visionDisabled) return Optional.empty();
-
-        if (!limelightHasTarget()
-                || (limelightMode != LimelightMode.RETROREFLECTIVEMID
-                        && limelightMode != LimelightMode.RETROREFLECTIVEHIGH)) {
-
-            LLRawAngles = Optional.empty();
-
-            return Optional.empty();
-        }
-
-        double limelightTX = limelightTXReceiver.getDouble();
-        double limelightTY = limelightTYReceiver.getDouble();
-
-        // Store raw limelight angles
-        LLRawAngles = Optional.of(new LimelightRawAngles(limelightTX, limelightTY));
-
-        double retroreflectiveHeight;
-
-        if (limelightMode == LimelightMode.RETROREFLECTIVEMID
-                && limelightTY < VisionConstants.retroreflectiveAngleThreshold) {
-            retroreflectiveHeight = VisionConstants.lowerRetroreflectiveHeight;
-        } else {
-            retroreflectiveHeight = VisionConstants.upperRetroreflectiveHeight;
-        }
-
-        var distance = (retroreflectiveHeight - VisionConstants.limelightRobotToCamera.getZ())
-                / Math.tan(VisionConstants.limelightRobotToCamera.getRotation().getY() + Math.toRadians(limelightTY));
-
-        var robotPose = robotPoseSupplier.get();
-
-        Translation2d cameraToRetroreflective =
-                new Translation2d(distance, Rotation2d.fromDegrees(-limelightTX).plus(robotPose.getRotation()));
-
-        Translation2d cameraToRobot = new Translation2d(
-                VisionConstants.limelightCameraToRobot.getX(), VisionConstants.limelightCameraToRobot.getY());
-
-        Translation2d relativeTarget = cameraToRetroreflective.minus(cameraToRobot);
-
-        Pose2d fieldPose = new Pose2d(robotPose.getTranslation().minus(relativeTarget), new Rotation2d());
-
-        return Optional.of(fieldPose);
-    }
-
-    public boolean hasLLMLFieldPoseEstimate() {
-        return LLMLFieldPoseEstimate.isPresent();
-    }
-
-    public Optional<Pose2d> getLLMLFieldPoseEstimate() {
-        return LLMLFieldPoseEstimate;
-    }
-
-    public Supplier<Pose2d> getMLPoseSupplier() {
-        return () -> validLLMLFieldPoseEstimate.get();
-    }
-
-    /**
-     * @return The pose of the machine learning target using the robot's pose to make it field relative
-     */
-    private Optional<Pose2d> calculateLLMLFieldPoseEstimate() {
-        if (visionDisabled) return Optional.empty();
-
-        if (!limelightHasTarget() || limelightMode != LimelightMode.ML) return Optional.empty();
-
-        // Use bottom edge if possible
-        double limelightTX = limelightTXReceiver.getDouble();
-        double limelightTY = limelightTYReceiver.getDouble();
-
-        // Store raw limelight angles
-        LLRawAngles = Optional.of(new LimelightRawAngles(limelightTX, limelightTY));
-
-        // Cones and cubes are always picked up from the floor
-        double targetHeight = 0;
-
-        var distance = (targetHeight - VisionConstants.limelightRobotToCamera.getZ())
-                / Math.tan(VisionConstants.limelightRobotToCamera.getRotation().getY() + Math.toRadians(limelightTY));
-
-        var robotPose = robotPoseSupplier.get();
-
-        Translation2d cameraToMLTarget =
-                new Translation2d(distance, Rotation2d.fromDegrees(-limelightTX).plus(robotPose.getRotation()));
-
-        Translation2d cameraToRobot = new Translation2d(
-                VisionConstants.limelightCameraToRobot.getX(), VisionConstants.limelightCameraToRobot.getY());
-
-        Translation2d relativeTarget = cameraToMLTarget.minus(cameraToRobot);
-
-        Pose2d fieldPose = new Pose2d(robotPose.getTranslation().minus(relativeTarget), new Rotation2d());
-
-        return Optional.of(fieldPose);
-    }
-
-    public boolean hasLLApriltagEstimate() {
-        return LLApriltagEstimate.isPresent();
-    }
-
-    public Optional<TimestampedPose> getLLApriltagEstimate() {
-        return LLApriltagEstimate;
-    }
-
     private Optional<TimestampedPose> calculateLLApriltagEstimate() {
-        if (visionDisabled || getLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
+        if (getBackLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
 
         // gets the botpose array from the limelight and a timestamp
         double[] botposeArray = DriverStation.getAlliance() == Alliance.Red
-                ? botposeRedReceiver.getDoubleArray()
-                : botposeBlueReceiver.getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw}
+                ? backBotposeRedReceiver.getDoubleArray()
+                : backBotposeBlueReceiver.getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw}
 
         // if botpose exists and the limelight has an april tag, it adds the pose to our kalman filter
-        if (limelightHasApriltag() && botposeArray.length == 7) {
+        if (hasBackApriltagEstimate() && botposeArray.length == 7) {
             Pose3d botPose = new Pose3d(
                             botposeArray[0],
                             botposeArray[1],
@@ -328,11 +261,14 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     public Command defaultLimelightCommand() {
-        return runOnce(() -> setLimelightMode(LimelightMode.APRILTAG));
+        return runOnce(() -> {
+            setBackLimelightMode(LimelightMode.APRILTAG);
+            setFrontLimelightMode(LimelightMode.ML);
+        });
     }
 
     public Command setLimelightModeCommand(LimelightMode limelightMode) {
-        return startEnd(() -> setLimelightMode(limelightMode), () -> {});
+        return startEnd(() -> setBackLimelightMode(limelightMode), () -> {});
     }
 
     public Command customLimelightModeCommand() {
@@ -343,7 +279,7 @@ public class VisionSubsystem extends SubsystemBase {
         APRILTAG(0),
         RETROREFLECTIVEMID(1),
         RETROREFLECTIVEHIGH(2),
-        ML(3);
+        ML(0); // Runs by default on the front limelight
 
         public int pipelineNumber;
 

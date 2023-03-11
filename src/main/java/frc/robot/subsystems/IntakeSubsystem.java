@@ -55,11 +55,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
         intakeMotor.configSupplyCurrentLimit(supplyLimit);
 
-        intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.53);
-        reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);
+        intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.85);
+        reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.4);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
         handoffSpeedReceiver = Logger.tunable("/IntakeSubsystem/HandoffSpeed", 0.99);
-        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.15);
+        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.06);
 
         shootingDelayReceiver = Logger.tunable("/IntakeSubsystem/ShootingDelay", 0.0);
 
@@ -95,7 +95,7 @@ public class IntakeSubsystem extends SubsystemBase {
                 () -> {
                     setIntakeMode(IntakeMode.INTAKE);
                 },
-                () -> {});
+                () -> {}).until(this::hasGamePiece);
     }
 
     public Command reverseIntakeModeCommand() {
@@ -150,8 +150,8 @@ public class IntakeSubsystem extends SubsystemBase {
                 shootingSolenoid.set(Value.kReverse);
                 positionSolenoid.set(Value.kForward);
 
-                if (hasGamePiece()) intakeMotor.set(ControlMode.PercentOutput, holdingSpeedReciever.getDouble());
-                else intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
+                // if (hasGamePiece()) intakeMotor.set(ControlMode.PercentOutput, holdingSpeedReciever.getDouble());
+                intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
 
                 break;
             case HANDOFF:

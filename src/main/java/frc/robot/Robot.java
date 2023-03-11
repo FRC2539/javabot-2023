@@ -98,7 +98,7 @@ public class Robot extends TimedRobot {
         // robotContainer.getSwerveDriveSubsystem().calibrateIntegratedEncoders();
 
         // Set correct limelight mode (run while disabled for consistency)
-        robotContainer.getVisionSubsystem().setLimelightMode(LimelightMode.APRILTAG);
+        robotContainer.getVisionSubsystem().setBackLimelightMode(LimelightMode.APRILTAG);
 
         // Update the autonomous command with driver station configuration
         robotContainer.autonomousManager.update();
