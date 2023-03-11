@@ -11,7 +11,6 @@ import frc.robot.Constants.SwerveConstants;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.LightsSubsystem.Color;
 import frc.robot.subsystems.VisionSubsystem.LimelightRawAngles;
 
 public class AimAssistIntakeCommand extends CommandBase {
@@ -29,9 +28,13 @@ public class AimAssistIntakeCommand extends CommandBase {
 
     private static final double INTAKE_DOWN_DISTANCE = 1.2;
 
+    private static final double RELIABILITY_MINIMUM_ANGLE = -20;
+
     private LimelightRawAngles lastSeenLLAngles = new LimelightRawAngles(0,0);
 
     private boolean sawGamePieceSoFar;
+
+    private boolean hasGamePieceGottenTooClose;
 
     private ProfiledPIDController rotationControl = new ProfiledPIDController(
             1,
@@ -65,6 +68,7 @@ public class AimAssistIntakeCommand extends CommandBase {
     public void initialize() {
         speedModifier = 1;
         sawGamePieceSoFar = false;
+        hasGamePieceGottenTooClose = false;
     }
 
     @Override
@@ -73,15 +77,22 @@ public class AimAssistIntakeCommand extends CommandBase {
             LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
             lastSeenLLAngles = visionSubsystem.getLimelightRawAngles().get();
             sawGamePieceSoFar = true;
+            if (lastSeenLLAngles.ty() < RELIABILITY_MINIMUM_ANGLE) {
+                hasGamePieceGottenTooClose = true;
+            }
         }
 
-        double rotationAngle = lastSeenLLAngles.tx();
+        double rotationAngle = Math.toRadians(lastSeenLLAngles.tx());
+
+        if (hasGamePieceGottenTooClose) {
+            rotationAngle = 0;
+        }
+
         if (isDriverGoingForBall() && sawGamePieceSoFar) {
             swerveDriveSubsystem.setVelocity(
                     new ChassisSpeeds(
-                            // NOTE: RE ADD - SIGNS
-                            getDriverValueTowardsBall() * Math.cos(rotationAngle) * speedModifier,
-                            getDriverValueTowardsBall() * Math.sin(rotationAngle) * speedModifier,
+                            -getDriverValueTowardsBall() * Math.cos(rotationAngle) * speedModifier,
+                            -getDriverValueTowardsBall() * Math.sin(rotationAngle) * speedModifier,
                             rotationControl.calculate(rotationAngle)),
                     false, true);
         } else {
@@ -94,7 +105,6 @@ public class AimAssistIntakeCommand extends CommandBase {
             true, true);
         }
         // if (shouldIntake()) {
-        //     balltrackSubsystem.intakeMode();
         //     speedModifier = INTAKE_FACTOR;
         // }
     }
@@ -112,7 +122,7 @@ public class AimAssistIntakeCommand extends CommandBase {
     private boolean isDriverGoingForBall() {
         // if (Math.abs(getDriverStrafeFromBall()) < 0.5) return false;
 
-        if (Math.abs(lastSeenLLAngles.tx()) < Math.toRadians(30)) {
+        if (Math.abs(lastSeenLLAngles.tx()) < 30) {
             return true;
         } else {
             return false;
@@ -133,16 +143,20 @@ public class AimAssistIntakeCommand extends CommandBase {
         return strafeBall;
     }
 
-    // private boolean shouldIntake() {
-    //     if (!visionSubsystem.getBallDistance().isPresent()) return false;
+    private double getDistanceFromBall() {
+        return (0.6 /*height of ll*/ - .12 /*height of mid of cube*/) / Math.tan(Math.toRadians(lastSeenLLAngles.ty() + -20 /*angle of camera*/));
+    }
 
-    //     if (visionSubsystem.getBallDistance().orElse(2) / getVelocity()
-    //             < (INTAKE_DOWN_DISTANCE * INTAKE_FACTOR)) {
-    //         return true;
-    //     }
+    private boolean shouldIntake() {
+        if (!visionSubsystem.hasLLMLFieldPoseEstimate()) return false;
 
-    //     if (visionSubsystem.getBallDistance().orElse(2) < 0.6) return true;
+        if (getDistanceFromBall() / getVelocity()
+                < (INTAKE_DOWN_DISTANCE * INTAKE_FACTOR)) {
+            return true;
+        }
 
-    //     return false;
-    // }
+        if (getDistanceFromBall() < 0.6) return true;
+
+        return false;
+    }
 }
