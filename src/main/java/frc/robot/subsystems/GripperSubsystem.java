@@ -80,13 +80,13 @@ public class GripperSubsystem extends SubsystemBase {
 
     public Command gripperShootHighCommand() {
         return startEnd(() -> setState(GripperState.OPEN), () -> {})
-                .withTimeout(0.1)
+                .withTimeout(0.25)
                 .andThen(startEnd(() -> setState(GripperState.SHOOT_HIGH), () -> {}));
     }
 
     public Command gripperShootMidCommand() {
         return startEnd(() -> setState(GripperState.OPEN), () -> {})
-                .withTimeout(0.1)
+                .withTimeout(0.25)
                 .andThen(startEnd(() -> setState(GripperState.SHOOT_MID), () -> {}));
     }
 

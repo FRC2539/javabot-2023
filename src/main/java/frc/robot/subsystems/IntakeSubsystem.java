@@ -55,7 +55,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
         intakeMotor.configSupplyCurrentLimit(supplyLimit);
 
-        intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.50);
+        intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.53);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.3);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
         handoffSpeedReceiver = Logger.tunable("/IntakeSubsystem/HandoffSpeed", 0.99);
@@ -142,7 +142,7 @@ public class IntakeSubsystem extends SubsystemBase {
                 positionSolenoid.set(Value.kReverse);
                 shootingSolenoid.set(Value.kReverse);
 
-                if (holdDelayTimer.hasElapsed(2.7)) intakeMotor.stopMotor();
+                if (holdDelayTimer.hasElapsed(2.7) && !hasGamePiece()) intakeMotor.stopMotor();
                 else intakeMotor.set(ControlMode.PercentOutput, holdingSpeedReciever.getDouble());
 
                 break;
@@ -175,13 +175,15 @@ public class IntakeSubsystem extends SubsystemBase {
                 break;
         }
 
-        Logger.log("/IntakeSubsystem/IntakeMotorPortion", intakeMotor.get());
-        var currentCommand = getCurrentCommand();
-        if (currentCommand != null) {
-            Logger.log("/IntakeSubsytem/ActiveCommand", currentCommand.getName());
-        } else {
-            Logger.log("/IntakeSubsytem/ActiveCommand", "null");
-        }
+        // Logger.log("/IntakeSubsystem/IntakeMotorPortion", intakeMotor.get());
+        // var currentCommand = getCurrentCommand();
+        // if (currentCommand != null) {
+        //     Logger.log("/IntakeSubsytem/ActiveCommand", currentCommand.getName());
+        // } else {
+        //     Logger.log("/IntakeSubsytem/ActiveCommand", "null");
+        // }
+        Logger.log("/IntakeSubsystem/IntakeSensor1", intakeSensor1.getValue() < 50);
+        Logger.log("/IntakeSubsystem/IntakeSensor2", intakeSensor2.getValue() < 50);
     }
 
     public enum IntakeMode {

@@ -80,15 +80,12 @@ public class RobotContainer {
 
         Trigger isDeadOn = new Trigger(() -> intakeSubsystem.isDeadOn()).debounce(0.05);
         
-        new Trigger(() -> intakeSubsystem.hasGamePiece()).debounce(0.05).and(isDeadOn.negate())
-                .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
+        new Trigger(() -> intakeSubsystem.hasGamePiece()).debounce(0.05)
+                .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem).until(isDeadOn)
                         .withTimeout(1.5));
 
         isDeadOn.onTrue(
-                repeatingSequence(
-                run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem).withTimeout(0.2),
-                run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem).withTimeout(.2)
-                )
+                run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.purple), lightsSubsystem)
                         .withTimeout(1.5));
 
         /* Set left joystick bindings */
@@ -265,7 +262,8 @@ public class RobotContainer {
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
         operatorController.nameRightBumper("Handoff Button \"Dont use\"");
 
-        operatorController.getLeftBumper().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_POSITION));
+        // operatorController.getLeftBumper().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_POSITION));
+        operatorController.getLeftBumper().onTrue(armSubsystem.armStateCommand(ArmState.MID_MANUAL_CUBE));
 
         // operatorController.getRightBumper().whileTrue(intakeSubsystem.handoffCommand());
 
