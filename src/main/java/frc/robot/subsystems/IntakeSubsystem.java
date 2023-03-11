@@ -74,6 +74,10 @@ public class IntakeSubsystem extends SubsystemBase {
         return intakeSensor1.getValue() < 50 || intakeSensor2.getValue() < 50;
     }
 
+    public boolean isDeadOn() {
+        return intakeSensor1.getValue() < 50 && intakeSensor2.getValue() < 50;
+    }
+
     public Command handoffCommand() {
         return startEnd(
                 () -> {

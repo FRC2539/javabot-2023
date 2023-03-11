@@ -78,6 +78,19 @@ public class RobotContainer {
                 .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
                         .withTimeout(1.5));
 
+        Trigger isDeadOn = new Trigger(() -> intakeSubsystem.isDeadOn()).debounce(0.05);
+        
+        new Trigger(() -> intakeSubsystem.hasGamePiece()).debounce(0.05).and(isDeadOn.negate())
+                .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
+                        .withTimeout(1.5));
+
+        isDeadOn.onTrue(
+                repeatingSequence(
+                run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem).withTimeout(0.2),
+                run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem).withTimeout(.2)
+                )
+                        .withTimeout(1.5));
+
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
         leftDriveController
