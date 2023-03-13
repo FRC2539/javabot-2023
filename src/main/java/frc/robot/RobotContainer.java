@@ -86,13 +86,16 @@ public class RobotContainer {
                         .withTimeout(1.5));
 
         // isDeadOn.onTrue(
-        //         run(() -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.blue, .3), lightsSubsystem)
+        //         run(() -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.blue, .3),
+        // lightsSubsystem)
         //                 .withTimeout(1.5));
 
-        isDeadOn.onTrue(
-                Commands.repeatingSequence(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
-                        .withTimeout(0.163), run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem)
-                        .withTimeout(0.163)).withTimeout(2));
+        isDeadOn.onTrue(Commands.repeatingSequence(
+                        run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.red), lightsSubsystem)
+                                .withTimeout(0.163),
+                        run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem)
+                                .withTimeout(0.163))
+                .withTimeout(2));
 
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
@@ -134,14 +137,13 @@ public class RobotContainer {
         leftDriveController
                 .getLeftThumb()
                 .whileTrue(new AimAssistIntakeCommand(
-                        visionSubsystem,
-                        swerveDriveSubsystem,
-                        lightsSubsystem,
-                        this::getDriveForwardAxis,
-                        this::getDriveStrafeAxis,
-                        this::getDriveRotationAxis).alongWith(
-                        intakeSubsystem.intakeModeCommand()
-                        ));
+                                visionSubsystem,
+                                swerveDriveSubsystem,
+                                lightsSubsystem,
+                                this::getDriveForwardAxis,
+                                this::getDriveStrafeAxis,
+                                this::getDriveRotationAxis)
+                        .alongWith(intakeSubsystem.intakeModeCommand()));
         leftDriveController.nameLeftThumb("ML Pickup");
 
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
@@ -170,28 +172,32 @@ public class RobotContainer {
         rightDriveController.nameRightTopLeft("Symphony");
 
         // Cardinal drive commands (inverted since arm is back of robot)
-        // rightDriveController
-        //         .getPOVUp()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVRight()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVDown()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVLeft()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVUp()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVRight()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVDown()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVLeft()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
 
         /* Set operator controller bindings */
         var shiftButton = operatorController.getRightBumper();
 
+        operatorController.getA().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID));
+        operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
         operatorController.getX().onTrue(armSubsystem.slidePickupCommand());
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
+        operatorController.nameA("Shoot Hybrid");
+        operatorController.nameY("Shoot High");
         operatorController.nameX("Slide Pickup");
         operatorController.nameB("Substation Pickup");
 

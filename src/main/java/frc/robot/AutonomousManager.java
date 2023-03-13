@@ -31,6 +31,7 @@ public class AutonomousManager {
 
     private String previousStartPosition = defaultAuto.startPosition.name();
     private int previousGamePieces = defaultAuto.gamePieces;
+    private boolean previousDoesClimb = defaultAuto.doesClimb;
 
     private SwerveAutoBuilder autoBuilder;
 
@@ -64,6 +65,17 @@ public class AutonomousManager {
                                 .asProxy())
                         .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(0.6)));
         eventMap.put(
+                "placeHighCube",
+                armSubsystem
+                        .highManualCubeCommand()
+                        .andThen(waitSeconds(0.06))
+                        .andThen(container
+                                .getGripperSubsystem()
+                                .ejectFromGripperCommand()
+                                .withTimeout(0.3)
+                                .asProxy())
+                        .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(0.6)));
+        eventMap.put(
                 "intakePickup",
                 container
                         .getIntakeSubsystem()
@@ -83,7 +95,7 @@ public class AutonomousManager {
                         .handoffCommand()
                         .andThen(gripperSubsystem
                                 .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
+                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())).withTimeout(0.8))
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
 
         autoBuilder = new SwerveAutoBuilder(
@@ -100,13 +112,17 @@ public class AutonomousManager {
     public void update() {
         var newStartPosition = startPosition.getString();
         var newGamePieces = gamePieces.getInteger();
+        var newDoesClimb = shouldClimb.getBoolean();
 
         // Only update the chosen auto if a different option has been chosen
-        if (previousStartPosition != newStartPosition || previousGamePieces != newGamePieces) {
+        if (previousStartPosition != newStartPosition
+                || previousGamePieces != newGamePieces
+                || previousDoesClimb != newDoesClimb) {
             // Match the auto based on the dashboard configuration
             List<AutonomousOption> options = Stream.of(AutonomousOption.values())
-                    .filter(option ->
-                            option.startPosition.name().equals(newStartPosition) && option.gamePieces == newGamePieces)
+                    .filter(option -> option.startPosition.name().equals(newStartPosition)
+                            && option.gamePieces == newGamePieces
+                            && option.doesClimb == newDoesClimb)
                     .toList();
 
             if (options.size() == 1) chosenAuto = options.get(0).getPath();
@@ -114,7 +130,8 @@ public class AutonomousManager {
 
             // Determine all of the game piece options for this starting position
             long[] gamePieceOptions = Stream.of(AutonomousOption.values())
-                    .filter(option -> option.startPosition.name().equals(newStartPosition))
+                    .filter(option ->
+                            option.startPosition.name().equals(newStartPosition) && option.doesClimb == newDoesClimb)
                     .mapToLong(option -> option.gamePieces)
                     .toArray();
 
@@ -122,6 +139,7 @@ public class AutonomousManager {
 
             previousStartPosition = newStartPosition;
             previousGamePieces = (int) newGamePieces;
+            previousDoesClimb = newDoesClimb;
         }
     }
 
@@ -140,13 +158,14 @@ public class AutonomousManager {
         startPosition = Logger.tunable(
                 "/Autonomous/Start Position", defaultAuto.startPosition.name()); // 0 = Left, 1 = Center, 2 = Right
         gamePieces = Logger.tunable("/Autonomous/Game Pieces", defaultAuto.gamePieces);
-        shouldClimb = Logger.tunable("/Autonomous/Should Climb", true);
+        shouldClimb = Logger.tunable("/Autonomous/Should Climb", defaultAuto.doesClimb);
 
         Logger.log("/Autonomous/Start Position Options", getStartingLocations()).alwaysNT();
 
         // Determine all of the game piece options for this starting position
         long[] gamePieceOptions = Stream.of(AutonomousOption.values())
-                .filter(option -> option.startPosition.equals(defaultAuto.startPosition))
+                .filter(option -> option.startPosition.equals(defaultAuto.startPosition)
+                        && option.doesClimb == defaultAuto.doesClimb)
                 .mapToLong(option -> option.gamePieces)
                 .toArray();
 
@@ -154,35 +173,44 @@ public class AutonomousManager {
     }
 
     private enum AutonomousOption {
-        OPEN_PLACE1ANDCLIMB(StartingLocation.OPEN, 1, "open_place1andclimb", new PathConstraints(5, 5)),
-        OPEN_PLACE2(StartingLocation.OPEN, 2, "open_place2", new PathConstraints(4, 3)),
-        OPEN_PLACE3(StartingLocation.OPEN, 3, "open_place3", new PathConstraints(3.5, 3)),
-        // OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, "open_place2andclimb", new PathConstraints(5, 4)),
+        OPEN_PLACE1ANDCLIMB(StartingLocation.OPEN, 1, true, "open_place1andclimb", new PathConstraints(5, 5)),
+        // OPEN_PLACE2(StartingLocation.OPEN, 2, "open_place2", new PathConstraints(3.5, 3)),
+        OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, true, "open_place2andclimb", new PathConstraints(3.5, 3)),
+        OPEN_PLACE3(StartingLocation.OPEN, 3, false, "open_place3", new PathConstraints(3.5, 3)),
         // OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
         // OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
         STATION_PLACE1ANDCLIMB(
-                StartingLocation.STATION, 1, "station_place1andclimb_fancy", new PathConstraints(3, 2.25)),
-        CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, "cable_place1andclimb", new PathConstraints(5, 5)),
-        CABLE_PLACE2(StartingLocation.CABLE, 2, "cable_place2", new PathConstraints(4, 3)),
-        CABLE_PLACE3(StartingLocation.CABLE, 3, "cable_place3", new PathConstraints(3.5, 3));
+                StartingLocation.STATION, 1, true, "station_place1andclimb_fancy", new PathConstraints(3, 2.25)),
+        CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, true, "cable_place1andclimb", new PathConstraints(5, 5)),
+        CABLE_PLACE2(StartingLocation.CABLE, 2, false, "cable_place2", new PathConstraints(4, 3)),
+        CABLE_PLACE3(StartingLocation.CABLE, 3, false, "cable_place3", new PathConstraints(3.5, 3));
 
         private List<PathPlannerTrajectory> path;
         private String pathName;
-        private PathConstraints constraints;
+        private PathConstraints constraint;
+        private PathConstraints[] constraints;
         public StartingLocation startPosition;
         public int gamePieces;
+        public boolean doesClimb;
 
         private AutonomousOption(
-                StartingLocation startPosition, int gamePieces, String pathName, PathConstraints constraints) {
+                StartingLocation startPosition,
+                int gamePieces,
+                boolean doesClimb,
+                String pathName,
+                PathConstraints constraint,
+                PathConstraints... constraints) {
             this.startPosition = startPosition;
             this.gamePieces = gamePieces;
+            this.doesClimb = doesClimb;
             this.pathName = pathName;
+            this.constraint = constraint;
             this.constraints = constraints;
         }
 
         public List<PathPlannerTrajectory> getPath() {
             // Lazy load the path
-            if (path == null) path = PathPlanner.loadPathGroup(pathName, constraints);
+            if (path == null) path = PathPlanner.loadPathGroup(pathName, constraint, constraints);
 
             return path;
         }

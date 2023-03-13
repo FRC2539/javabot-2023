@@ -276,7 +276,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command undoHandoffCommand() {
         return Commands.sequence(
-                armStateApproximateCommand(ArmState.COOL_HANDOFF_REVERSE), armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+                armStateApproximateCommand(ArmState.COOL_HANDOFF_REVERSE),
+                armStateCommand(ArmState.AWAITING_DEPLOYMENT));
     }
 
     public Command substationPickupCommand() {
@@ -822,11 +823,11 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public enum ArmState {
-        PICKUP(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
-        SHOOT_POSITION(new Static(0.9, 1.2, Rotation2d.fromDegrees(40))),
+        SHOOT_HYBRID(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(0))),
+        SHOOT_HIGH(new Static(0.88, 0.8, Rotation2d.fromDegrees(40))),
         SLIDE_PICKUP(Static.fromWrist(0.21, 0.34, Rotation2d.fromDegrees(67))),
         // SLIDE_PICKUP_COMP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),

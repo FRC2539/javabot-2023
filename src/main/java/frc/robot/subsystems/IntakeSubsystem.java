@@ -5,6 +5,7 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -44,6 +45,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     AnalogInput intakeSensor1 = new AnalogInput(2);
     AnalogInput intakeSensor2 = new AnalogInput(3);
+    DigitalInput intakeSensorCenter = new DigitalInput(3);
 
     public IntakeSubsystem() {
         intakeMotor.setNeutralMode(NeutralMode.Brake);
@@ -66,8 +68,11 @@ public class IntakeSubsystem extends SubsystemBase {
         setDefaultCommand(stopIntakeCommand());
 
         holdDelayTimer.restart();
-
         shootingDelayTimer.restart();
+    }
+
+    public boolean hasCenterGamePiece() {
+        return !intakeSensorCenter.get();
     }
 
     public boolean hasGamePiece() {
@@ -75,7 +80,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public boolean isDeadOn() {
-        return intakeSensor1.getValue() < 50 && intakeSensor2.getValue() < 50;
+        return hasCenterGamePiece();
     }
 
     public Command handoffCommand() {
@@ -92,10 +97,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public Command intakeModeCommand() {
         return startEnd(
-                () -> {
-                    setIntakeMode(IntakeMode.INTAKE);
-                },
-                () -> {}).until(this::hasGamePiece);
+                        () -> {
+                            setIntakeMode(IntakeMode.INTAKE);
+                        },
+                        () -> {})
+                .until(this::hasGamePiece);
     }
 
     public Command reverseIntakeModeCommand() {
@@ -174,15 +180,9 @@ public class IntakeSubsystem extends SubsystemBase {
                 break;
         }
 
-        // Logger.log("/IntakeSubsystem/IntakeMotorPortion", intakeMotor.get());
-        // var currentCommand = getCurrentCommand();
-        // if (currentCommand != null) {
-        //     Logger.log("/IntakeSubsytem/ActiveCommand", currentCommand.getName());
-        // } else {
-        //     Logger.log("/IntakeSubsytem/ActiveCommand", "null");
-        // }
         Logger.log("/IntakeSubsystem/IntakeSensor1", intakeSensor1.getValue() < 50);
         Logger.log("/IntakeSubsystem/IntakeSensor2", intakeSensor2.getValue() < 50);
+        Logger.log("/IntakeSubsystem/IntakeSensorCenter", hasCenterGamePiece());
     }
 
     public enum IntakeMode {

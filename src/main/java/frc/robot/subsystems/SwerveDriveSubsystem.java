@@ -4,7 +4,6 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
-import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -35,7 +34,6 @@ import frc.robot.Constants.SwerveConstants;
 import frc.robot.RobotContainer;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.FeedForwardCharacterization.FeedForwardCharacterizationData;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -50,11 +48,24 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private ChassisSpeeds previousVelocity = new ChassisSpeeds();
     private SwerveDriveSignal driveSignal = new SwerveDriveSignal();
 
+    /* Old leveling values */
     private LoggedReceiver pidValueReciever;
+
+    private double previousTilt = 0;
+    private double tiltRate = 0;
 
     private double levelingMaxSpeed;
 
     private boolean isLevelingAuto = false;
+
+    // PID controller used for auto-leveling
+    // private PIDController tiltController = new PIDController(0.75 / 15, 0, 0.02);
+    private PIDController tiltController = new PIDController(0.75 / 12, 0, 0.02);
+
+    /* New leveling values */
+    private LoggedReceiver levelMaxSpeedReceiver;
+    private LoggedReceiver angleThresholdReceiver;
+    private LoggedReceiver angleRateThresholdReceiver;
 
     private SwerveModule[] modules;
 
@@ -64,16 +75,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     private LoggedReceiver isSecondOrder;
 
-    // PID controller used for auto-leveling
-    // private PIDController tiltController = new PIDController(0.75 / 15, 0, 0.02);
-    private PIDController tiltController = new PIDController(0.75 / 12, 0, 0.02);
-
     // PID controller used for cardinal command
     private ProfiledPIDController omegaController =
-            new ProfiledPIDController(5, 0, 0, new TrapezoidProfile.Constraints(8, 8));
+            new ProfiledPIDController(0.5, 0, 0, new TrapezoidProfile.Constraints(4, 4));
 
-    private double previousTilt = 0;
-    private double tiltRate = 0;
     private DoubleSupplier maxSpeedSupplier = () -> Constants.SwerveConstants.maxSpeed;
 
     public SwerveDriveSubsystem() {
@@ -113,6 +118,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 new double[] {0.8 / 15, 0, .01, 8, 0.8}); // P I D stopAngle leveingMaxSpeed
         // [0.055,0,0.01,10,0.55]\][]
         // new double[] {0.75 / 15, 0, .02, 8, 0.85}
+
+        levelMaxSpeedReceiver = Logger.tunable("/SwerveDriveSubsystem/levelMaxSpeed", 0.3);
+        angleThresholdReceiver = Logger.tunable("/SwerveDriveSubsystem/angleThreshold", 5.0);
+        angleRateThresholdReceiver = Logger.tunable("/SwerveDriveSubsystem/angleRateThreshold", 8.0);
     }
 
     public Command driveCommand(
@@ -143,7 +152,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         return run(() -> {
-            var rotationVelocity = omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
+            var rotationCorrection =
+                    omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
+            var rotationVelocity = omegaController.getSetpoint().velocity + rotationCorrection;
 
             setVelocity(new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationVelocity), true);
         });
@@ -160,6 +171,29 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                             RobotContainer.orchestra.stop();
                         })
                 .withName("Orchestra");
+    }
+
+    public Command levelChargeStationCommandTurtle() {
+        return run(() -> {
+                    double tilt = getTiltAmountInDegrees();
+
+                    Logger.log("/SwerveDriveSubsystem/Tilt Rate", getTiltRate());
+
+                    // Negative pitch -> drive forward, Positive pitch -> drive backward
+
+                    Translation2d direction = new Translation2d(
+                            getNormalVector3d().getX(), getNormalVector3d().getY());
+
+                    Translation2d finalDirection = direction.times(levelMaxSpeedReceiver.getDouble());
+
+                    ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
+
+                    if (MathUtils.equalsWithinError(0, tilt, Units.degreesToRadians(angleThresholdReceiver.getDouble()))
+                            || Math.abs(getTiltRate())
+                                    >= Units.degreesToRadians(angleRateThresholdReceiver.getDouble())) lock();
+                    else setVelocity(velocity, false);
+                })
+                .repeatedly();
     }
 
     public Command levelChargeStationCommandArlene() {
@@ -234,48 +268,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     public boolean isLevelDestiny() {
         return tiltController.atSetpoint() && isLevelingAuto;
-    }
-
-    public Command levelChargeStationCommandBrooklyn() {
-        // 0.05 is the response time. this prevents the wheels from going all crazy
-        Debouncer isLevelEnough = new Debouncer(0.05, Debouncer.DebounceType.kBoth);
-
-        return run(() -> {
-            double tilt = getTiltAmount();
-
-            Translation2d finalDirection = new Translation2d(
-                            getNormalVector3d().getX(), getNormalVector3d().getY())
-                    .times(0.5); // 0.05 is the max speed
-
-            if (isLevelEnough.calculate(tilt < Math.toRadians(6))) {
-                lock();
-            } else {
-                setVelocity(new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0), false);
-            }
-        });
-    }
-
-    public Command levelChargeStationCommandCatherine() {
-        // 0.05 is the response time. this prevents the wheels from going all crazy
-        Debouncer isFastEnough = new Debouncer(0.05, Debouncer.DebounceType.kBoth);
-
-        BooleanSupplier whenToStop = () -> {
-            return isFastEnough.calculate(getTiltRate() < -15);
-        };
-
-        return runEnd(
-                        () -> {
-                            Translation2d finalDirection = new Translation2d(
-                                            getNormalVector3d().getX(),
-                                            getNormalVector3d().getY())
-                                    .times(0.5); // 0.05 is the max speed
-
-                            setVelocity(new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0), false);
-                        },
-                        () -> {
-                            lock();
-                        })
-                .until(whenToStop);
     }
 
     public Command characterizeCommand(boolean forwards, boolean isDriveMotors) {
@@ -458,8 +450,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         previousVelocity = velocity;
         velocity = Constants.SwerveConstants.swerveKinematics.toChassisSpeeds(moduleStates);
 
-        // velocityEstimator.add(velocity);
-
         pose = swervePoseEstimator.update(getGyroRotation(), modulePositions);
     }
 
@@ -494,7 +484,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
             }
         } else {
             setModuleStates(moduleStates, isDriveSignalStopped(driveSignal) ? true : driveSignal.isOpenLoop());
-            // setModuleStates(moduleStates, driveSignal.isOpenLoop());
         }
     }
 
