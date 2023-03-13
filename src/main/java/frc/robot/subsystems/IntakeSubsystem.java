@@ -92,10 +92,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public Command intakeModeCommand() {
         return startEnd(
-                () -> {
-                    setIntakeMode(IntakeMode.INTAKE);
-                },
-                () -> {}).until(this::hasGamePiece);
+                        () -> {
+                            setIntakeMode(IntakeMode.INTAKE);
+                        },
+                        () -> {})
+                .until(this::hasGamePiece);
     }
 
     public Command reverseIntakeModeCommand() {

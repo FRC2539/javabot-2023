@@ -19,9 +19,10 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
-import frc.robot.commands.AimAssistIntakeCommand;
 import frc.robot.commands.AssistedLLAimCommand;
+import frc.robot.commands.IntakingAimAssistCommand;
 import frc.robot.commands.MusicRevealCommand;
+import frc.robot.commands.TestCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
@@ -86,13 +87,16 @@ public class RobotContainer {
                         .withTimeout(1.5));
 
         // isDeadOn.onTrue(
-        //         run(() -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.blue, .3), lightsSubsystem)
+        //         run(() -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.blue, .3),
+        // lightsSubsystem)
         //                 .withTimeout(1.5));
 
-        isDeadOn.onTrue(
-                Commands.repeatingSequence(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
-                        .withTimeout(0.163), run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem)
-                        .withTimeout(0.163)).withTimeout(2));
+        isDeadOn.onTrue(Commands.repeatingSequence(
+                        run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
+                                .withTimeout(0.163),
+                        run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem)
+                                .withTimeout(0.163))
+                .withTimeout(2));
 
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
@@ -133,15 +137,14 @@ public class RobotContainer {
 
         leftDriveController
                 .getLeftThumb()
-                .whileTrue(new AimAssistIntakeCommand(
-                        visionSubsystem,
-                        swerveDriveSubsystem,
-                        lightsSubsystem,
-                        this::getDriveForwardAxis,
-                        this::getDriveStrafeAxis,
-                        this::getDriveRotationAxis).alongWith(
-                        intakeSubsystem.intakeModeCommand()
-                        ));
+                .whileTrue(new IntakingAimAssistCommand(
+                                visionSubsystem,
+                                swerveDriveSubsystem,
+                                lightsSubsystem,
+                                this::getDriveForwardAxis,
+                                this::getDriveStrafeAxis,
+                                this::getDriveRotationAxis)
+                        .alongWith(intakeSubsystem.intakeModeCommand()));
         leftDriveController.nameLeftThumb("ML Pickup");
 
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
@@ -168,6 +171,8 @@ public class RobotContainer {
 
         rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
         rightDriveController.nameRightTopLeft("Symphony");
+
+        rightDriveController.getRightTopRight().whileTrue(new TestCommand());
 
         // Cardinal drive commands (inverted since arm is back of robot)
         // rightDriveController

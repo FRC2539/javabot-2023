@@ -276,7 +276,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command undoHandoffCommand() {
         return Commands.sequence(
-                armStateApproximateCommand(ArmState.COOL_HANDOFF_REVERSE), armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+                armStateApproximateCommand(ArmState.COOL_HANDOFF_REVERSE),
+                armStateCommand(ArmState.AWAITING_DEPLOYMENT));
     }
 
     public Command substationPickupCommand() {
