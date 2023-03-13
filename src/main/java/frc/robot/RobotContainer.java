@@ -121,15 +121,6 @@ public class RobotContainer {
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
 
-        // Auto Aim Behaviors
-        // leftDriveController
-        //         .getRightThumb()
-        //         .whileTrue(new AssistToGridCommand(
-        //                 swerveDriveSubsystem,
-        //                 visionSubsystem,
-        //                 lightsSubsystem,
-        //                 getTargetPoseSupplier(),
-        //                 this::getDriveForwardAxis));
         leftDriveController
                 .getRightThumb()
                 .whileTrue(new AssistedLLAimCommand(
@@ -138,14 +129,7 @@ public class RobotContainer {
                         this::getDriveForwardAxis,
                         this::getDriveStrafeAxis,
                         this::getDriveRotationAxis));
-        // leftDriveController
-        //         .getLeftThumb()
-        //         .whileTrue(new AimAtPoseCommand(
-        //                         swerveDriveSubsystem,
-        //                         getTargetAimPoseSupplier(),
-        //                         this::getDriveForwardAxis,
-        //                         this::getDriveStrafeAxis)
-        //                 .alongWith(visionSubsystem.customLimelightModeCommand()));
+        leftDriveController.nameRightThumb("Aim to Grid");
 
         leftDriveController
                 .getLeftThumb()
@@ -158,20 +142,10 @@ public class RobotContainer {
                         this::getDriveRotationAxis).alongWith(
                         intakeSubsystem.intakeModeCommand()
                         ));
-
-        // leftDriveController
-        //         .getLeftThumb()
-        //         .whileTrue(new AssistedMLPickupCommand(
-        //                 swerveDriveSubsystem,
-        //                 visionSubsystem,
-        //                 this::getDriveForwardAxis,
-        //                 this::getDriveStrafeAxis,
-        //                 this::getDriveRotationAxis)); // before running set the pipeline
-        // leftDriveController.nameLeftThumb("ML Pickup");
+        leftDriveController.nameLeftThumb("ML Pickup");
 
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
-        leftDriveController.nameRightThumb("Assist to Pose");
-        leftDriveController.nameRightThumb("Assisted ML Aim");
+        leftDriveController.nameBottomThumb("Drop Game Piece");
 
         /* Set right joystick bindings */
         rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
@@ -191,16 +165,6 @@ public class RobotContainer {
         rightDriveController.nameLeftThumb("Run Intake");
         rightDriveController.nameRightThumb("Reverse Intake");
         rightDriveController.nameBottomThumb("Shoot");
-
-        // rightDriveController
-        //         .getBottomThumb()
-        //         .whileTrue(new AssistedMLPickupCommand(
-        //                 swerveDriveSubsystem,
-        //                 visionSubsystem,
-        //                 this::getDriveForwardAxis,
-        //                 this::getDriveStrafeAxis,
-        //                 this::getDriveRotationAxis)); // before running set the pipeline
-        // rightDriveController.nameBottomThumb("ML Pickup");
 
         rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
         rightDriveController.nameRightTopLeft("Symphony");
@@ -224,32 +188,42 @@ public class RobotContainer {
         //                 Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
 
         /* Set operator controller bindings */
-        operatorController.getY().onTrue(armSubsystem.highManualCubeCommand());
+        var shiftButton = operatorController.getRightBumper();
+
         operatorController.getX().onTrue(armSubsystem.slidePickupCommand());
-        operatorController.getA().onTrue(armSubsystem.tippedPickupCommand());
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
-        operatorController.nameY("High Manual for Cube");
         operatorController.nameX("Slide Pickup");
-        operatorController.nameA("Tipped Pickup");
         operatorController.nameB("Substation Pickup");
 
-        operatorController.getBack().whileTrue(gripperSubsystem.ejectFromGripperCommand());
-        operatorController.nameBack("Backup Gripper");
+        // Pickup commands
+        operatorController.getDPadDown().and(shiftButton.negate()).onTrue(armSubsystem.pickupCommand());
+        operatorController.getDPadDown().and(shiftButton).onTrue(armSubsystem.tippedPickupCommand());
 
-        operatorController
-                .getStart()
-                .toggleOnTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem));
-        operatorController.nameStart("Rainbow Mode");
-
-        // Manual arm controls, no sussy stuff here
-        operatorController.getDPadDown().onTrue(armSubsystem.pickupCommand());
         operatorController.getDPadLeft().onTrue(armSubsystem.awaitingDeploymentCommand());
-        operatorController.getDPadUp().onTrue(armSubsystem.highManualConeCommand());
-        operatorController.getDPadRight().onTrue(armSubsystem.midManualConeCommand());
+
+        // High commands
+        operatorController.getDPadUp().and(shiftButton.negate()).onTrue(armSubsystem.highManualConeCommand());
+        operatorController.getDPadUp().and(shiftButton).onTrue(armSubsystem.highManualCubeCommand());
+
+        // Mid commands
+        operatorController.getDPadRight().and(shiftButton.negate()).onTrue(armSubsystem.midManualConeCommand());
+        operatorController.getDPadRight().and(shiftButton).onTrue(armSubsystem.midManualConeCommand());
+
         operatorController.nameDPadDown("Pickup");
         operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
         operatorController.nameDPadRight("Mid Manual");
+
+        operatorController
+                .getLeftBumper()
+                .onTrue(armSubsystem
+                        .handoffCommand()
+                        .andThen(gripperSubsystem
+                                .openGripperCommand()
+                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
+                        .until(operatorController.getRightBumper().negate())
+                        .andThen(armSubsystem.undoHandoffCommand().asProxy()));
+        operatorController.nameLeftBumper("Handoff Button");
 
         operatorController
                 .getRightTrigger()
@@ -265,21 +239,11 @@ public class RobotContainer {
         operatorController.nameLeftTrigger("Indicate Cube");
 
         operatorController
-                .getRightBumper()
-                .onTrue(armSubsystem
-                        .handoffCommand()
-                        .andThen(gripperSubsystem
-                                .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
-                        .until(operatorController.getRightBumper().negate())
-                        .andThen(armSubsystem.undoHandoffCommand().asProxy()));
-        operatorController.nameRightBumper("Handoff Button");
+                .getStart()
+                .toggleOnTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem));
+        operatorController.nameStart("Rainbow Mode");
 
-        // operatorController.getLeftBumper().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_POSITION));
-        operatorController.getLeftBumper().onTrue(armSubsystem.midManualCubeCommand());
-
-        // operatorController.getRightBumper().whileTrue(intakeSubsystem.handoffCommand());
-
+        // Send all button names to network tables
         rightDriveController.sendButtonNamesToNT();
         leftDriveController.sendButtonNamesToNT();
         operatorController.sendButtonNamesToNT();
@@ -339,45 +303,9 @@ public class RobotContainer {
                     break;
                 case MID_MANUAL_CONE:
                     targetPose3d = targetLocation.getMidPose();
-
-                    // If cone, enable limelight cone mode 1
-                    // if (targetLocation.isCone) {
-                    //     visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEMID);
-
-                    //     if (visionSubsystem.hasLLFieldRelativeRetroflectiveEstimate()) {
-                    //         var visionEstimate = visionSubsystem
-                    //                 .getValidLLRetroreflectiveEstimate()
-                    //                 .get();
-
-                    //         targetPose3d = new Pose3d(
-                    //                 visionEstimate.getX(),
-                    //                 visionEstimate.getY(),
-                    //                 targetPose3d.getZ(),
-                    //                 targetPose3d.getRotation());
-                    //     }
-                    // } else visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
-
                     break;
                 default: // HIGH or other
                     targetPose3d = targetLocation.getHighPose();
-
-                    // If cone, enable limelight cone mode 2
-                    // if (targetLocation.isCone) {
-                    //     visionSubsystem.setLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
-
-                    //     if (visionSubsystem.hasLLFieldRelativeRetroflectiveEstimate()) {
-                    //         var visionEstimate = visionSubsystem
-                    //                 .getValidLLRetroreflectiveEstimate()
-                    //                 .get();
-
-                    //         targetPose3d = new Pose3d(
-                    //                 visionEstimate.getX(),
-                    //                 visionEstimate.getY(),
-                    //                 targetPose3d.getZ(),
-                    //                 targetPose3d.getRotation());
-                    //     }
-                    // } else visionSubsystem.setLimelightMode(LimelightMode.APRILTAG);
-
                     break;
             }
 

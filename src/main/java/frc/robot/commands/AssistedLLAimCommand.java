@@ -45,14 +45,14 @@ public class AssistedLLAimCommand extends CommandBase {
     public void initialize() {
         angleController.reset();
         strafeController.reset();
-        visionSubsystem.setFrontLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
+        visionSubsystem.setBackLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
     }
 
     @Override
     public void execute() {
         double strafeingValue;
 
-        if (visionSubsystem.hasBackRetroreflectiveAngles()) {
+        if (visionSubsystem.hasBackRetroreflectiveAngles() && visionSubsystem.isBackLimelightAtPipeline()) {
             double lastTx = visionSubsystem.getBackRetroreflectiveAngles().get().tx();
             strafeingValue =
                     MathUtils.ensureRange(strafeController.calculate(lastTx), -maxStrafeVelocity, maxStrafeVelocity);

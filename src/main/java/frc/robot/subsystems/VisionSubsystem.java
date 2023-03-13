@@ -40,22 +40,19 @@ public class VisionSubsystem extends SubsystemBase {
     private LoggedReceiver backLimelightApriltagIDReceiver = Logger.receive("/limelight/tid", -1);
     private LoggedReceiver backBotposeRedReceiver = Logger.receive("/limelight/botpose_wpired", new double[] {});
     private LoggedReceiver backBotposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
+    private LoggedReceiver backLimelightPipelineReceiver = Logger.receive("/limelight/getpipe", 0);
 
     // Front limelight
     private LoggedReceiver frontLimelightHasTargetReceiver = Logger.receive("/limelight-ml/tv", 0);
     private LoggedReceiver frontLimelightTXReceiver = Logger.receive("/limelight-ml/tx", 0.0);
     private LoggedReceiver frontLimelightTYReceiver = Logger.receive("/limelight-ml/ty", 0.0);
+    private LoggedReceiver frontLimelightPipelineReceiver = Logger.receive("/limelight-ml/getpipe", 0);
 
     // Note: Front is intake side, Back is arm side
     private Optional<TimestampedPose> BackApriltagEstimate = Optional.empty();
     private Optional<EstimatedRobotPose> FrontApriltagEstimate = Optional.empty();
     private Optional<LimelightRawAngles> BackRetroreflectiveAngles = Optional.empty();
     private Optional<LimelightRawAngles> FrontMLAngles = Optional.empty();
-    // private Optional<Pose2d> validLLFieldRelativeRetroreflectiveEstimate = Optional.empty();
-    // private Optional<Pose2d> LLFieldRelativeRetroreflectiveEstimate = Optional.empty();
-    // private Optional<Pose2d> LLMLFieldPoseEstimate = Optional.empty();
-    // private Optional<Pose2d> validLLMLFieldPoseEstimate = Optional.empty();
-    // private Optional<LimelightRawAngles> LLRawAngles = Optional.empty();
 
     private double lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
 
@@ -146,6 +143,14 @@ public class VisionSubsystem extends SubsystemBase {
         return this.frontLimelightMode;
     }
 
+    public boolean isBackLimelightAtPipeline() {
+        return backLimelightPipelineReceiver.getInteger() == backLimelightMode.pipelineNumber;
+    }
+
+    public boolean isFrontLimelightAtPipeline() {
+        return frontLimelightPipelineReceiver.getInteger() == frontLimelightMode.pipelineNumber;
+    }
+
     private boolean backLimelightHasTarget() {
         return backLimelightHasTargetReceiver.getInteger() == 1;
     }
@@ -230,7 +235,7 @@ public class VisionSubsystem extends SubsystemBase {
         // gets the botpose array from the limelight and a timestamp
         double[] botposeArray = DriverStation.getAlliance() == Alliance.Red
                 ? backBotposeRedReceiver.getDoubleArray()
-                : backBotposeBlueReceiver.getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw}
+                : backBotposeBlueReceiver.getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw, latency}
 
         // if botpose exists and the limelight has an april tag, it adds the pose to our kalman filter
         if (hasBackApriltagEstimate() && botposeArray.length == 7) {
@@ -279,7 +284,7 @@ public class VisionSubsystem extends SubsystemBase {
         APRILTAG(0),
         RETROREFLECTIVEMID(1),
         RETROREFLECTIVEHIGH(2),
-        ML(0); // Runs by default on the front limelight
+        ML(0); // Only pipeline on front limelight
 
         public int pipelineNumber;
 

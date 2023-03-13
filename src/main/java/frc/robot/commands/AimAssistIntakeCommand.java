@@ -68,7 +68,7 @@ public class AimAssistIntakeCommand extends CommandBase {
 
     @Override
     public void execute() {
-        if (visionSubsystem.hasFrontMLAngles()) {
+        if (visionSubsystem.hasFrontMLAngles() && visionSubsystem.isFrontLimelightAtPipeline()) {
             LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
             if (sawCubeSoFar) {
                 LimelightRawAngles newRawAngles = visionSubsystem.getFrontMLAngles().get();

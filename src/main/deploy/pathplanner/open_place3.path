@@ -136,7 +136,7 @@
         "y": 4.694103317827362
       },
       "nextControl": null,
-      "holonomicAngle": -178.68308759420674,
+      "holonomicAngle": 180.0,
       "isReversal": false,
       "velOverride": null,
       "isLocked": false,
@@ -151,8 +151,8 @@
       }
     }
   ],
-  "maxVelocity": 5.0,
-  "maxAcceleration": 5.0,
+  "maxVelocity": 3.5,
+  "maxAcceleration": 3.0,
   "isReversed": null,
   "markers": [
     {

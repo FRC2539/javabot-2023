@@ -150,7 +150,6 @@ public class IntakeSubsystem extends SubsystemBase {
                 shootingSolenoid.set(Value.kReverse);
                 positionSolenoid.set(Value.kForward);
 
-                // if (hasGamePiece()) intakeMotor.set(ControlMode.PercentOutput, holdingSpeedReciever.getDouble());
                 intakeMotor.set(ControlMode.PercentOutput, intakeSpeedReceiver.getDouble());
 
                 break;
