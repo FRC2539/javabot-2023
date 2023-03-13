@@ -64,9 +64,10 @@ public class DriveToPositionCommand extends CommandBase {
         yController.setGoal(targetPose.getY());
         omegaController.setGoal(targetPose.getRotation().getRadians());
 
-        var xSpeed = xController.calculate(robotPose.getX());
-        var ySpeed = yController.calculate(robotPose.getY());
-        var omegaSpeed = omegaController.calculate(robotPose.getRotation().getRadians());
+        var xSpeed = xController.calculate(robotPose.getX()) + xController.getSetpoint().velocity;
+        var ySpeed = yController.calculate(robotPose.getY()) + yController.getSetpoint().velocity;
+        var omegaSpeed = omegaController.calculate(robotPose.getRotation().getRadians())
+                + omegaController.getSetpoint().velocity;
 
         if (xController.atGoal()) xSpeed = 0;
         if (yController.atGoal()) ySpeed = 0;

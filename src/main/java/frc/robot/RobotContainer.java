@@ -19,9 +19,10 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
-import frc.robot.commands.AimAssistIntakeCommand;
 import frc.robot.commands.AssistedLLAimCommand;
+import frc.robot.commands.IntakingAimAssistCommand;
 import frc.robot.commands.MusicRevealCommand;
+import frc.robot.commands.TestCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
@@ -136,7 +137,7 @@ public class RobotContainer {
 
         leftDriveController
                 .getLeftThumb()
-                .whileTrue(new AimAssistIntakeCommand(
+                .whileTrue(new IntakingAimAssistCommand(
                                 visionSubsystem,
                                 swerveDriveSubsystem,
                                 lightsSubsystem,
@@ -170,6 +171,8 @@ public class RobotContainer {
 
         rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
         rightDriveController.nameRightTopLeft("Symphony");
+
+        rightDriveController.getRightTopRight().whileTrue(new TestCommand());
 
         // Cardinal drive commands (inverted since arm is back of robot)
         rightDriveController
