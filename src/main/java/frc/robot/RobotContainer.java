@@ -263,13 +263,13 @@ public class RobotContainer {
     }
 
     public double getDriveForwardAxis() {
-        return forwardRateLimiter.calculate(
-                -square(deadband(leftDriveController.getYAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
+        return -forwardRateLimiter.calculate(
+                square(deadband(leftDriveController.getYAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
     }
 
     public double getDriveStrafeAxis() {
-        return strafeRateLimiter.calculate(
-                -square(deadband(leftDriveController.getXAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
+        return -strafeRateLimiter.calculate(
+                square(deadband(leftDriveController.getXAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
     }
 
     public double getDriveRotationAxis() {

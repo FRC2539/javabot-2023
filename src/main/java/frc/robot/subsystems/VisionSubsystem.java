@@ -71,7 +71,7 @@ public class VisionSubsystem extends SubsystemBase {
         var startTimeMS = Timer.getFPGATimestamp() * 1000;
 
         /* Use limelight apriltag estimate to update robot pose estimator */
-        // BackApriltagEstimate = calculateLLApriltagEstimate();
+        BackApriltagEstimate = calculateLLApriltagEstimate();
 
         if (BackApriltagEstimate.isPresent()) {
             addVisionPoseEstimate(BackApriltagEstimate.get());
@@ -97,7 +97,7 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         /* Estimate the location of the retroreflective target */
-        // BackRetroreflectiveAngles = calculateBackRetroreflectiveAngles();
+        BackRetroreflectiveAngles = calculateBackRetroreflectiveAngles();
 
         /* Estimate the location of a game piece detected by ML */
         FrontMLAngles = calculateFrontMLAngles();

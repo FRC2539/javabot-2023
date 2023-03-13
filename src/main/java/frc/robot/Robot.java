@@ -94,9 +94,6 @@ public class Robot extends TimedRobot {
 
     @Override
     public void disabledPeriodic() {
-        // Calibrate swerve encoders
-        // robotContainer.getSwerveDriveSubsystem().calibrateIntegratedEncoders();
-
         // Set correct limelight mode (run while disabled for consistency)
         robotContainer.getVisionSubsystem().setBackLimelightMode(LimelightMode.APRILTAG);
 
