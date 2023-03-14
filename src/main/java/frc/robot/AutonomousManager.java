@@ -95,7 +95,8 @@ public class AutonomousManager {
                         .handoffCommand()
                         .andThen(gripperSubsystem
                                 .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())).withTimeout(0.8))
+                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand()))
+                                .withTimeout(0.8))
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
 
         autoBuilder = new SwerveAutoBuilder(

@@ -37,8 +37,8 @@ public class RobotContainer {
 
     public static Orchestra orchestra = new Orchestra();
 
-    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(35, -16, 0);
-    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(35, -16, 0);
+    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(35, -30, 0);
+    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(35, -30, 0);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
@@ -78,7 +78,7 @@ public class RobotContainer {
                 .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
                         .withTimeout(1.5));
 
-        Trigger isDeadOn = new Trigger(() -> intakeSubsystem.isDeadOn()).debounce(0.05);
+        Trigger isDeadOn = new Trigger(() -> intakeSubsystem.isDeadOn()).debounce(0.25);
 
         new Trigger(() -> intakeSubsystem.hasGamePiece())
                 .debounce(0.05)
@@ -158,12 +158,7 @@ public class RobotContainer {
 
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
-        rightDriveController
-                .getBottomThumb()
-                .whileTrue(either(
-                        gripperSubsystem.gripperShootMidCommand(),
-                        gripperSubsystem.gripperShootHighCommand(),
-                        leftDriveController.getPOVDown()::getAsBoolean));
+        rightDriveController.getBottomThumb().whileTrue(gripperSubsystem.gripperShootHighCommand());
         rightDriveController.getRightThumb().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
         rightDriveController.nameLeftThumb("Run Intake");
         rightDriveController.nameRightThumb("Reverse Intake");
@@ -216,22 +211,44 @@ public class RobotContainer {
 
         // Mid commands
         operatorController.getDPadRight().and(shiftButton.negate()).onTrue(armSubsystem.midManualConeCommand());
-        operatorController.getDPadRight().and(shiftButton).onTrue(armSubsystem.midManualConeCommand());
+        operatorController.getDPadRight().and(shiftButton).onTrue(armSubsystem.midManualCubeCommand());
 
         operatorController.nameDPadDown("Pickup");
         operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
         operatorController.nameDPadRight("Mid Manual");
 
+        // operatorController
+        //         .getLeftBumper()
+        //         .onTrue(armSubsystem
+        //                 .handoffCommand()
+        //                 .deadlineWith(gripperSubsystem.dropFromGripperCommand())
+        //                 .andThen(gripperSubsystem
+        //                         .openGripperCommand()
+        //                         .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
+        //                 .until(operatorController.getLeftBumper().negate())
+        //                 .andThen(armSubsystem
+        //                         .undoHandoffCommand()
+        //                         .asProxy()
+        //                         .alongWith(intakeSubsystem
+        //                                 .handoffCommand()
+        //                                 .asProxy()
+        //                                 .withTimeout(0.2)
+        //                                 .until(operatorController
+        //                                         .getLeftBumper()
+        //                                         .negate()))));
+
         operatorController
                 .getLeftBumper()
                 .onTrue(armSubsystem
                         .handoffCommand()
+                        .deadlineWith(gripperSubsystem.dropFromGripperCommand())
                         .andThen(gripperSubsystem
                                 .openGripperCommand()
                                 .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
-                        .until(operatorController.getRightBumper().negate())
+                        .until(operatorController.getLeftBumper().negate())
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
+
         operatorController.nameLeftBumper("Handoff Button");
 
         operatorController

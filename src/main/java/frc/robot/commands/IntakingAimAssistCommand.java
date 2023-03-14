@@ -39,7 +39,7 @@ public class IntakingAimAssistCommand extends CommandBase {
 
     private TrapezoidProfile.Constraints rotationConstraints = new TrapezoidProfile.Constraints(maxAngularVelocity, 7);
 
-    private ProfiledPIDController rotationControl = new ProfiledPIDController(6, 0, .1, rotationConstraints);
+    private ProfiledPIDController rotationControl = new ProfiledPIDController(6, 0, 0.4, rotationConstraints);
 
     private Timer timeSinceLastGoodVision = new Timer();
 
@@ -76,7 +76,7 @@ public class IntakingAimAssistCommand extends CommandBase {
         if (visionSubsystem.hasFrontMLAngles() && visionSubsystem.isFrontLimelightAtPipeline()) {
             LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
             LimelightRawAngles newRawAngles = visionSubsystem.getFrontMLAngles().get();
-            if (MathUtils.equalsWithinError(lastSeenLLAngles.tx(), newRawAngles.tx(), 5)
+            if (MathUtils.equalsWithinError(lastSeenLLAngles.tx(), newRawAngles.tx(), 3)
                     || timeSinceLastGoodVision.hasElapsed(0.2)
                     || !sawCubeSoFar) {
                 lastSeenLLAngles = newRawAngles;
@@ -85,13 +85,13 @@ public class IntakingAimAssistCommand extends CommandBase {
             }
         }
 
-        if (timeSinceLastGoodVision.hasElapsed(0.6)) {
+        if (timeSinceLastGoodVision.hasElapsed(0.6) && !hasCubeGottenTooClose) {
             sawCubeSoFar = false;
         }
 
         double rotationAngle = Math.toRadians(lastSeenLLAngles.tx());
 
-        if (Math.abs(lastSeenLLAngles.tx()) < 4 && !visionSubsystem.hasFrontMLAngles() && sawCubeSoFar) {
+        if (Math.abs(lastSeenLLAngles.tx()) < 6 && !visionSubsystem.hasFrontMLAngles() && sawCubeSoFar) {
             hasCubeGottenTooClose = true;
         }
 

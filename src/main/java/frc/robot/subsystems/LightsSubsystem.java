@@ -32,7 +32,8 @@ public class LightsSubsystem extends SubsystemBase {
     public static final Color white = new Color(255, 230, 220);
     public static final Color green = new Color(56, 209, 0);
     public static final Color blue = new Color(8, 32, 255);
-    public static final Color red = new Color(227, 26, 0);
+    // public static final Color red = new Color(227, 26, 0);
+    public static final Color red = new Color(255, 0, 0);
 
     public LightsSubsystem() {
         CANdleConfiguration candleConfiguration = new CANdleConfiguration();

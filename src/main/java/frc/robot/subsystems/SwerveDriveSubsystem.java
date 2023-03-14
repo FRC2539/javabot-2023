@@ -77,7 +77,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     // PID controller used for cardinal command
     private ProfiledPIDController omegaController =
-            new ProfiledPIDController(0.5, 0, 0, new TrapezoidProfile.Constraints(4, 4));
+            new ProfiledPIDController(1.0, 0, 0, new TrapezoidProfile.Constraints(5, 5));
 
     private DoubleSupplier maxSpeedSupplier = () -> Constants.SwerveConstants.maxSpeed;
 
