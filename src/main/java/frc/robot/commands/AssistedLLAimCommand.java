@@ -1,9 +1,13 @@
 package frc.robot.commands;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.lib.logging.Logger;
+import frc.lib.math.MathUtils;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightMode;
@@ -16,11 +20,13 @@ public class AssistedLLAimCommand extends CommandBase {
     private SwerveDriveSubsystem swerveDriveSubsystem;
     private VisionSubsystem visionSubsystem;
 
-    private static final TrapezoidProfile.Constraints angleConstraints = new TrapezoidProfile.Constraints(4, 4);
-    private static final TrapezoidProfile.Constraints strafeConstraints = new TrapezoidProfile.Constraints(3, 3);
+    private LinearFilter txRollingAverage = LinearFilter.movingAverage(5);
 
-    private ProfiledPIDController angleController = new ProfiledPIDController(0.5, 0.0, 0.0, angleConstraints);
-    private ProfiledPIDController strafeController = new ProfiledPIDController(0.5, 0.0, 0.0, strafeConstraints);
+    private static final TrapezoidProfile.Constraints angleConstraints = new TrapezoidProfile.Constraints(4, 4);
+    private static final double maxStrafeVelocity = 2;
+
+    private ProfiledPIDController angleController = new ProfiledPIDController(1.5, 0.0, 0.0, angleConstraints);
+    private PIDController strafeController = new PIDController(0.05, 0.0, 0.1);
 
     public AssistedLLAimCommand(
             SwerveDriveSubsystem swerveDriveSubsystem,
@@ -39,7 +45,8 @@ public class AssistedLLAimCommand extends CommandBase {
         angleController.setGoal(0);
         angleController.enableContinuousInput(-Math.PI, Math.PI);
 
-        strafeController.setGoal(0);
+        strafeController.setSetpoint(0);
+        strafeController.setTolerance(1.3);
     }
 
     @Override
@@ -52,22 +59,28 @@ public class AssistedLLAimCommand extends CommandBase {
     @Override
     public void execute() {
         double strafeingValue;
+        double rollingAverage = 0;
 
         if (visionSubsystem.hasBackRetroreflectiveAngles() && visionSubsystem.isBackLimelightAtPipeline()) {
             double lastTx = visionSubsystem.getBackRetroreflectiveAngles().get().tx();
 
-            double setpointCorrection = strafeController.calculate(lastTx);
+            strafeingValue = -MathUtils.ensureRange(
+                    strafeController.calculate(rollingAverage = txRollingAverage.calculate(lastTx)),
+                    -maxStrafeVelocity,
+                    maxStrafeVelocity);
 
-            strafeingValue = -(strafeController.getSetpoint().velocity + setpointCorrection);
+            if (strafeController.atSetpoint()) strafeingValue = 0;
         } else {
             strafeingValue = strafe.getAsDouble();
         }
 
         double angularCorrection = angleController.calculate(
                 swerveDriveSubsystem.getPose().getRotation().getRadians());
-        double angularSpeed = angleController.getSetpoint().velocity + angularCorrection;
+        double angularSpeed = 0; // angleController.getSetpoint().velocity + angularCorrection;
 
         swerveDriveSubsystem.setVelocity(
                 new ChassisSpeeds(forward.getAsDouble(), strafeingValue, angularSpeed), true, true);
+
+        Logger.log("/LLAimCommand/tx", rollingAverage);
     }
 }

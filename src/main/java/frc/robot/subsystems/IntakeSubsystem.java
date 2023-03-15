@@ -31,6 +31,7 @@ public class IntakeSubsystem extends SubsystemBase {
     private LoggedReceiver intakeSpeedReceiver;
     private LoggedReceiver holdingSpeedReciever;
     private LoggedReceiver reverseSpeedReceiver;
+    private LoggedReceiver slowReverseSpeedReceiver;
     private LoggedReceiver shootingSpeedReceiver;
     private LoggedReceiver handoffSpeedReceiver;
 
@@ -51,6 +52,7 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeMotor.configSupplyCurrentLimit(supplyLimit);
 
         intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.85);
+        slowReverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/SlowReverseSpeed", -0.1);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.4);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
         handoffSpeedReceiver = Logger.tunable("/IntakeSubsystem/HandoffSpeed", 0.99);
@@ -98,6 +100,14 @@ public class IntakeSubsystem extends SubsystemBase {
         return startEnd(
                 () -> {
                     setIntakeMode(IntakeMode.REVERSE);
+                },
+                () -> {});
+    }
+
+    public Command slowReverseIntakeModeCommand() {
+        return startEnd(
+                () -> {
+                    setIntakeMode(IntakeMode.SLOW_REVERSE);
                 },
                 () -> {});
     }
@@ -152,6 +162,10 @@ public class IntakeSubsystem extends SubsystemBase {
                 positionSolenoid.set(Value.kReverse);
                 intakeMotor.set(ControlMode.PercentOutput, reverseSpeedReceiver.getDouble());
                 break;
+            case SLOW_REVERSE:
+                positionSolenoid.set(Value.kReverse);
+                intakeMotor.set(ControlMode.PercentOutput, slowReverseSpeedReceiver.getDouble());
+                break;
             case SHOOT:
                 // Shooting should be extended, and position should be retracted.
                 positionSolenoid.set(Value.kReverse);
@@ -168,6 +182,7 @@ public class IntakeSubsystem extends SubsystemBase {
         DISABLED,
         INTAKE,
         REVERSE,
+        SLOW_REVERSE,
         SHOOT,
         HANDOFF,
     }

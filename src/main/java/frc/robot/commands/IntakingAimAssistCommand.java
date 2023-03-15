@@ -77,7 +77,8 @@ public class IntakingAimAssistCommand extends CommandBase {
             LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
             LimelightRawAngles newRawAngles = visionSubsystem.getFrontMLAngles().get();
             if (MathUtils.equalsWithinError(lastSeenLLAngles.tx(), newRawAngles.tx(), 3)
-                    || timeSinceLastGoodVision.hasElapsed(0.2)
+                            && MathUtils.equalsWithinError(lastSeenLLAngles.ty(), newRawAngles.ty(), 3)
+                    || timeSinceLastGoodVision.hasElapsed(0.35)
                     || !sawCubeSoFar) {
                 lastSeenLLAngles = newRawAngles;
                 timeSinceLastGoodVision.reset();
@@ -91,7 +92,7 @@ public class IntakingAimAssistCommand extends CommandBase {
 
         double rotationAngle = Math.toRadians(lastSeenLLAngles.tx());
 
-        if (Math.abs(lastSeenLLAngles.tx()) < 6 && !visionSubsystem.hasFrontMLAngles() && sawCubeSoFar) {
+        if (Math.abs(lastSeenLLAngles.tx()) < 4 && timeSinceLastGoodVision.hasElapsed(0.3) && sawCubeSoFar) {
             hasCubeGottenTooClose = true;
         }
 

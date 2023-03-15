@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.robot.subsystems.ArmSubsystem;
+import frc.robot.subsystems.ArmSubsystem.ArmState;
 import frc.robot.subsystems.GripperSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.LightsSubsystem;
@@ -63,18 +64,22 @@ public class AutonomousManager {
                                 .ejectFromGripperCommand()
                                 .withTimeout(0.3)
                                 .asProxy())
-                        .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(0.6)));
+                        .andThen(armSubsystem.awaitingDeploymentCommand().asProxy())
+                        .asProxy());
         eventMap.put(
                 "placeHighCube",
-                armSubsystem
-                        .highManualCubeCommand()
-                        .andThen(waitSeconds(0.06))
-                        .andThen(container
-                                .getGripperSubsystem()
-                                .ejectFromGripperCommand()
-                                .withTimeout(0.3)
-                                .asProxy())
-                        .andThen(armSubsystem.awaitingDeploymentCommand().withTimeout(0.6)));
+                waitUntil(() -> armSubsystem.isArmAtGoal() && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
+                        .andThen(armSubsystem
+                                .highManualCubeCommand()
+                                .andThen(waitSeconds(0.06))
+                                .andThen(container
+                                        .getGripperSubsystem()
+                                        .ejectFromGripperCommand()
+                                        .withTimeout(0.3)
+                                        .asProxy())
+                                .andThen(
+                                        armSubsystem.awaitingDeploymentCommand().asProxy()))
+                        .asProxy().unless(() -> !gripperSubsystem.hasGamePiece()).asProxy());
         eventMap.put(
                 "intakePickup",
                 container
@@ -93,17 +98,20 @@ public class AutonomousManager {
                 "handoff",
                 armSubsystem
                         .handoffCommand()
+                        .deadlineWith(gripperSubsystem.dropFromGripperCommand())
                         .andThen(gripperSubsystem
                                 .openGripperCommand()
                                 .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand()))
-                                .withTimeout(0.8))
-                        .andThen(armSubsystem.undoHandoffCommand().asProxy()));
+                                .withTimeout(1.5))
+                        .andThen(armSubsystem.undoHandoffCommand())
+                        .asProxy()
+                        .unless(() -> !intakeSubsystem.isDeadOn()));
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
-                new PIDConstants(3.0, 0.0, 0.0),
-                new PIDConstants(1.2, 0.0, 0.001),
+                new PIDConstants(3.5, 0.0, 0.0),
+                new PIDConstants(1.3, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
                 true,
@@ -176,8 +184,9 @@ public class AutonomousManager {
     private enum AutonomousOption {
         OPEN_PLACE1ANDCLIMB(StartingLocation.OPEN, 1, true, "open_place1andclimb", new PathConstraints(5, 5)),
         // OPEN_PLACE2(StartingLocation.OPEN, 2, "open_place2", new PathConstraints(3.5, 3)),
-        OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, true, "open_place2andclimb", new PathConstraints(3.5, 3)),
-        OPEN_PLACE3(StartingLocation.OPEN, 3, false, "open_place3", new PathConstraints(3.5, 3)),
+        OPEN_PLACE2HANDOFF(StartingLocation.OPEN, 2, true, "open_place2handoff", new PathConstraints(4, 3)),
+        // OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, true, "open_place2andclimb", new PathConstraints(4, 3)),
+        OPEN_PLACE3(StartingLocation.OPEN, 3, false, "open_place3", new PathConstraints(4, 3)),
         // OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
         // OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
         STATION_PLACE1ANDCLIMB(

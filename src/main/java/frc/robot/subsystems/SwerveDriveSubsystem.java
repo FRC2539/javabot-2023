@@ -119,9 +119,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         // [0.055,0,0.01,10,0.55]\][]
         // new double[] {0.75 / 15, 0, .02, 8, 0.85}
 
-        levelMaxSpeedReceiver = Logger.tunable("/SwerveDriveSubsystem/levelMaxSpeed", 0.3);
-        angleThresholdReceiver = Logger.tunable("/SwerveDriveSubsystem/angleThreshold", 5.0);
-        angleRateThresholdReceiver = Logger.tunable("/SwerveDriveSubsystem/angleRateThreshold", 8.0);
+        levelMaxSpeedReceiver = Logger.tunable("/SwerveDriveSubsystem/levelMaxSpeed", 0.6);
+        angleThresholdReceiver = Logger.tunable("/SwerveDriveSubsystem/angleThreshold", 9);
+        angleRateThresholdReceiver = Logger.tunable("/SwerveDriveSubsystem/angleRateThreshold", 18.0);
     }
 
     public Command driveCommand(
@@ -182,15 +182,19 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 
                     Translation2d direction = new Translation2d(
-                            getNormalVector3d().getX(), getNormalVector3d().getY());
+                                    1,
+                                    new Rotation2d(
+                                            getNormalVector3d().getX(),
+                                            getNormalVector3d().getY()))
+                            .unaryMinus();
 
                     Translation2d finalDirection = direction.times(levelMaxSpeedReceiver.getDouble());
 
                     ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
 
-                    if (MathUtils.equalsWithinError(0, tilt, Units.degreesToRadians(angleThresholdReceiver.getDouble()))
-                            || Math.abs(getTiltRate())
-                                    >= Units.degreesToRadians(angleRateThresholdReceiver.getDouble())) lock();
+                    if (MathUtils.equalsWithinError(0, tilt, angleThresholdReceiver.getDouble())
+                            || Math.abs(getTiltRate()) >= Math.toDegrees(angleRateThresholdReceiver.getDouble()))
+                        lock();
                     else setVelocity(velocity, false);
                 })
                 .repeatedly();
@@ -226,7 +230,18 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 .repeatedly();
     }
 
+    private class AnyContainer<T> {
+        public T thing;
+
+        public AnyContainer(T thing) {
+            this.thing = thing;
+        }
+    }
+
     public Command levelChargeStationCommandDestiny() {
+        Timer myFavoriteTimer = new Timer();
+        AnyContainer<Double> sketchyBoi = new AnyContainer<Double>(0.5);
+        AnyContainer<Boolean> isGoingSlower = new AnyContainer<Boolean>(false);
         return run(() -> {
                     double tilt = getTiltAmountInDegrees();
 
@@ -243,17 +258,35 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                     double speed = tiltController.calculate(tilt, 0);
                     if (speed >= levelingMaxSpeed) speed = levelingMaxSpeed;
 
-                    Translation2d finalDirection = direction.times(tiltController.calculate(tilt, 0));
+                    speed *= (isGoingSlower.thing ? 0.5 : 1);
+
+                    Translation2d finalDirection = direction.times(speed);
 
                     ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
+                    // if (tiltController.atSetpoint()) myFavoriteTimer.restart();
 
-                    if (tiltController.atSetpoint()) {
+                    sketchyBoi.thing -= 0.02;
+
+                    if (tiltController.atSetpoint()
+                            || Math.abs(getTiltRate()) >= Math.toDegrees(angleRateThresholdReceiver.getDouble())) {
+                        sketchyBoi.thing = 0.5;
+                        isGoingSlower.thing = true;
+                    }
+
+                    if (sketchyBoi.thing > 0) {
+                        myFavoriteTimer.start();
                         lock();
                         LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1);
-                    } else setVelocity(velocity, false);
+                    } else {
+                        setVelocity(velocity, false);
+                        myFavoriteTimer.stop();
+                    }
                 })
                 .beforeStarting(() -> {
+                    isGoingSlower.thing = false;
+                    myFavoriteTimer.reset();
                     isLevelingAuto = true;
+                    sketchyBoi.thing = 0.0;
                     var values = pidValueReciever.getDoubleArray();
                     if (values.length < 5) return;
                     tiltController.setPID(values[0], values[1], values[2]);

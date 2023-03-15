@@ -26,16 +26,16 @@
     },
     {
       "anchorPoint": {
-        "x": 6.637384974187708,
-        "y": 4.5964959761069455
+        "x": 6.714671439759546,
+        "y": 4.427844893884233
       },
       "prevControl": {
-        "x": 4.351345971614797,
-        "y": 4.8282787186025615
+        "x": 4.428632437186635,
+        "y": 4.659627636379849
       },
       "nextControl": {
-        "x": 4.351345971614797,
-        "y": 4.8282787186025615
+        "x": 4.428632437186635,
+        "y": 4.659627636379849
       },
       "holonomicAngle": 0.0,
       "isReversal": true,
@@ -78,15 +78,18 @@
     },
     {
       "anchorPoint": {
-        "x": 6.495228419028266,
-        "y": 4.222849159984035
+        "x": 2.2156173270679878,
+        "y": 3.1716516471227387
       },
       "prevControl": {
-        "x": 5.653260560524033,
-        "y": 5.069889538432644
+        "x": 1.021416420834941,
+        "y": 3.188128085716753
       },
-      "nextControl": null,
-      "holonomicAngle": 123.11134196037206,
+      "nextControl": {
+        "x": 3.4344663255298733,
+        "y": 3.1548351377952755
+      },
+      "holonomicAngle": -0.34074786081518366,
       "isReversal": false,
       "velOverride": null,
       "isLocked": false,
@@ -94,6 +97,30 @@
       "stopEvent": {
         "names": [
           "stop"
+        ],
+        "executionBehavior": "parallel",
+        "waitBehavior": "none",
+        "waitTime": 0
+      }
+    },
+    {
+      "anchorPoint": {
+        "x": 3.8402660919905176,
+        "y": 3.1553570294640587
+      },
+      "prevControl": {
+        "x": 3.2062836903451593,
+        "y": 3.1514138479665843
+      },
+      "nextControl": null,
+      "holonomicAngle": 0,
+      "isReversal": false,
+      "velOverride": null,
+      "isLocked": false,
+      "isStopPoint": false,
+      "stopEvent": {
+        "names": [
+          "levelChargeStation"
         ],
         "executionBehavior": "parallel",
         "waitBehavior": "none",
@@ -109,7 +136,7 @@
       ]
     },
     {
-      "position": 1.285227272727274,
+      "position": 1.1472656249999977,
       "names": [
         "handoff"
       ]

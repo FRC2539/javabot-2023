@@ -245,7 +245,10 @@ public class RobotContainer {
                         .deadlineWith(gripperSubsystem.dropFromGripperCommand())
                         .andThen(gripperSubsystem
                                 .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
+                                .deadlineWith(intakeSubsystem
+                                        .slowReverseIntakeModeCommand()
+                                        .withTimeout(0.06)
+                                        .andThen(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand()))))
                         .until(operatorController.getLeftBumper().negate())
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
 
