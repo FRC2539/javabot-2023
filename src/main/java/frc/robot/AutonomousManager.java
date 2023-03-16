@@ -68,7 +68,8 @@ public class AutonomousManager {
                         .asProxy());
         eventMap.put(
                 "placeHighCube",
-                waitUntil(() -> armSubsystem.isArmAtGoal() && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
+                waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
+                                && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
                         .andThen(armSubsystem
                                 .highManualCubeCommand()
                                 .andThen(waitSeconds(0.06))
@@ -79,7 +80,9 @@ public class AutonomousManager {
                                         .asProxy())
                                 .andThen(
                                         armSubsystem.awaitingDeploymentCommand().asProxy()))
-                        .asProxy().unless(() -> !gripperSubsystem.hasGamePiece()).asProxy());
+                        .asProxy()
+                        .unless(() -> !gripperSubsystem.hasGamePiece())
+                        .asProxy());
         eventMap.put(
                 "intakePickup",
                 container
@@ -93,6 +96,20 @@ public class AutonomousManager {
                         .getIntakeSubsystem()
                         .reverseIntakeModeCommand()
                         .withTimeout(0.75)
+                        .asProxy());
+        eventMap.put(
+                "shootIntake",
+                waitSeconds(2).andThen(container
+                        .getIntakeSubsystem()
+                        .shootCommand()
+                        .withTimeout(0.75))
+                        .asProxy());
+        eventMap.put(
+                "shootHybrid",
+                waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
+                                && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
+                        .andThen(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID))
+                        .andThen(gripperSubsystem.gripperShootHighCommand())
                         .asProxy());
         eventMap.put(
                 "handoff",
@@ -186,7 +203,8 @@ public class AutonomousManager {
         // OPEN_PLACE2(StartingLocation.OPEN, 2, "open_place2", new PathConstraints(3.5, 3)),
         OPEN_PLACE2HANDOFF(StartingLocation.OPEN, 2, true, "open_place2handoff", new PathConstraints(4, 3)),
         // OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, true, "open_place2andclimb", new PathConstraints(4, 3)),
-        OPEN_PLACE3(StartingLocation.OPEN, 3, false, "open_place3", new PathConstraints(4, 3)),
+        OPEN_PLACE3HANDOFF(StartingLocation.OPEN, 3, false, "open_place3handoff", new PathConstraints(4, 3)),
+        // OPEN_PLACE3(StartingLocation.OPEN, 3, false, "open_place3", new PathConstraints(4, 3)),
         // OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
         // OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
         STATION_PLACE1ANDCLIMB(

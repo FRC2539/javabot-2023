@@ -55,7 +55,7 @@ public class GripperSubsystem extends SubsystemBase {
         gripperEjectSpeed = Logger.tunable("/Gripper/Eject Speed", -0.3);
         gripperShootHighSpeed = Logger.tunable("/Gripper/Shoot High Speed", -1.0);
         gripperShootMidSpeed = Logger.tunable("/Gripper/Shoot Mid Speed", -0.8);
-        gripperHoldSpeed = Logger.tunable("/Gripper/Hold Speed", 0.25);
+        gripperHoldSpeed = Logger.tunable("/Gripper/Hold Speed", 0.35);
 
         holdTimer.restart();
     }
@@ -118,7 +118,7 @@ public class GripperSubsystem extends SubsystemBase {
             case CLOSED:
                 gripperSolenoid.set(Value.kForward);
 
-                if (holdTimer.hasElapsed(1.5) && !hasGamePiece()) gripperMotor.stopMotor();
+                if (holdTimer.hasElapsed(2.5) && !hasGamePiece()) gripperMotor.stopMotor();
                 else gripperMotor.set(gripperHoldSpeed.getDouble());
 
                 break;
