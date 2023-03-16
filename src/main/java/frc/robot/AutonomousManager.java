@@ -98,13 +98,6 @@ public class AutonomousManager {
                         .withTimeout(0.75)
                         .asProxy());
         eventMap.put(
-                "shootIntake",
-                waitSeconds(2).andThen(container
-                        .getIntakeSubsystem()
-                        .shootCommand()
-                        .withTimeout(0.75))
-                        .asProxy());
-        eventMap.put(
                 "shootHybrid",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)

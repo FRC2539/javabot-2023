@@ -7,7 +7,6 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -30,8 +29,6 @@ public class GripperSubsystem extends SubsystemBase {
 
     private AnalogInput gamePieceSensor1 = new AnalogInput(0);
     private AnalogInput gamePieceSensor2 = new AnalogInput(1);
-
-    private Timer holdTimer = new Timer();
 
     public GripperSubsystem() {
         gripperSolenoid = new DoubleSolenoid(
@@ -56,8 +53,6 @@ public class GripperSubsystem extends SubsystemBase {
         gripperShootHighSpeed = Logger.tunable("/Gripper/Shoot High Speed", -1.0);
         gripperShootMidSpeed = Logger.tunable("/Gripper/Shoot Mid Speed", -0.8);
         gripperHoldSpeed = Logger.tunable("/Gripper/Hold Speed", 0.35);
-
-        holdTimer.restart();
     }
 
     public boolean isOpen() {
@@ -118,8 +113,8 @@ public class GripperSubsystem extends SubsystemBase {
             case CLOSED:
                 gripperSolenoid.set(Value.kForward);
 
-                if (holdTimer.hasElapsed(2.5) && !hasGamePiece()) gripperMotor.stopMotor();
-                else gripperMotor.set(gripperHoldSpeed.getDouble());
+                if (hasGamePiece()) gripperMotor.set(gripperHoldSpeed.getDouble());
+                else gripperMotor.stopMotor();
 
                 break;
             case EJECT:
@@ -144,8 +139,6 @@ public class GripperSubsystem extends SubsystemBase {
         if (this.gripperState == gripperState) return;
 
         this.gripperState = gripperState;
-
-        holdTimer.restart();
     }
 
     private enum GripperState {
