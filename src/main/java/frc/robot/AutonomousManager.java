@@ -120,24 +120,25 @@ public class AutonomousManager {
         eventMap.put(
                 "handoff",
                 Commands.either(
-                armSubsystem
-                        .handoffCommand()
-                        .deadlineWith(gripperSubsystem.dropFromGripperCommand())
-                        .andThen(gripperSubsystem
-                                .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
-                                .withTimeout(2.0))
-                        .andThen(armSubsystem.undoHandoffCommand()).asProxy(),
-                armSubsystem
-                        .handoffCommand()
-                        .deadlineWith(gripperSubsystem.dropFromGripperCommand())
-                        .andThen(gripperSubsystem
-                                .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
-                                .withTimeout(1.5))
-                        .andThen(armSubsystem.undoHandoffCommand()).asProxy(),
-                () -> intakeSubsystem.isDeadOn()
-                        ));
+                        armSubsystem
+                                .handoffCommand()
+                                .deadlineWith(gripperSubsystem.dropFromGripperCommand())
+                                .andThen(gripperSubsystem
+                                        .openGripperCommand()
+                                        .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
+                                        .withTimeout(2.0))
+                                .andThen(armSubsystem.undoHandoffCommand())
+                                .asProxy(),
+                        armSubsystem
+                                .handoffCommand()
+                                .deadlineWith(gripperSubsystem.dropFromGripperCommand())
+                                .andThen(gripperSubsystem
+                                        .openGripperCommand()
+                                        .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
+                                        .withTimeout(1.5))
+                                .andThen(armSubsystem.undoHandoffCommand())
+                                .asProxy(),
+                        () -> intakeSubsystem.isDeadOn()));
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
@@ -151,11 +152,11 @@ public class AutonomousManager {
     }
 
     public void update() {
-		// Initialize in the first loop
+        // Initialize in the first loop
         if (!hasInitialized) {
             initializeNetworkTables();
-			hasInitialized = true;
-			return;
+            hasInitialized = true;
+            return;
         }
 
         var newStartPosition = startPosition.getString();

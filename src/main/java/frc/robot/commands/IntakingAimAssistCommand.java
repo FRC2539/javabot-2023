@@ -77,7 +77,7 @@ public class IntakingAimAssistCommand extends CommandBase {
             LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
             LimelightRawAngles newRawAngles = visionSubsystem.getFrontMLAngles().get();
             if (MathUtils.equalsWithinError(lastSeenLLAngles.tx(), newRawAngles.tx(), 3)
-                            //&& MathUtils.equalsWithinError(lastSeenLLAngles.ty(), newRawAngles.ty(), 3)
+                    // && MathUtils.equalsWithinError(lastSeenLLAngles.ty(), newRawAngles.ty(), 3)
                     || timeSinceLastGoodVision.hasElapsed(0.35)
                     || !sawCubeSoFar) {
                 lastSeenLLAngles = newRawAngles;
