@@ -76,15 +76,11 @@ public class GripperSubsystem extends SubsystemBase {
     }
 
     public Command gripperShootHighCommand() {
-        return startEnd(() -> setState(GripperState.OPEN), () -> {})
-                .withTimeout(0.25)
-                .andThen(startEnd(() -> setState(GripperState.SHOOT_HIGH), () -> {}));
+        return startEnd(() -> setState(GripperState.SHOOT_HIGH), () -> {});
     }
 
     public Command gripperShootMidCommand() {
-        return startEnd(() -> setState(GripperState.OPEN), () -> {})
-                .withTimeout(0.25)
-                .andThen(startEnd(() -> setState(GripperState.SHOOT_MID), () -> {}));
+        return startEnd(() -> setState(GripperState.SHOOT_MID), () -> {});
     }
 
     public Command ejectFromGripperCommand() {
@@ -122,11 +118,11 @@ public class GripperSubsystem extends SubsystemBase {
                 gripperMotor.set(gripperEjectSpeed.getDouble());
                 break;
             case SHOOT_HIGH:
-                gripperSolenoid.set(Value.kReverse);
+                gripperSolenoid.set(Value.kForward);
                 gripperMotor.set(gripperShootHighSpeed.getDouble());
                 break;
             case SHOOT_MID:
-                gripperSolenoid.set(Value.kReverse);
+                gripperSolenoid.set(Value.kForward);
                 gripperMotor.set(gripperShootMidSpeed.getDouble());
                 break;
         }

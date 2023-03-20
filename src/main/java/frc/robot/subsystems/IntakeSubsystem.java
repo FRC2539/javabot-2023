@@ -68,7 +68,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public boolean hasGamePiece() {
-        return intakeSensor1.getValue() < 50 || intakeSensor2.getValue() < 50;
+        return intakeSensor1.getValue() < 50 || intakeSensor2.getValue() < 50 || hasCenterGamePiece();
     }
 
     public boolean isDeadOn() {

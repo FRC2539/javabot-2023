@@ -9,6 +9,7 @@ import com.pathplanner.lib.auto.PIDConstants;
 import com.pathplanner.lib.auto.SwerveAutoBuilder;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.robot.subsystems.ArmSubsystem;
@@ -41,14 +42,14 @@ public class AutonomousManager {
     SwerveDriveSubsystem swerveDriveSubsystem;
     LightsSubsystem lightsSubsystem;
 
+    private boolean hasInitialized = false;
+
     public AutonomousManager(RobotContainer container) {
         swerveDriveSubsystem = container.getSwerveDriveSubsystem();
         ArmSubsystem armSubsystem = container.getArmSubsystem();
         GripperSubsystem gripperSubsystem = container.getGripperSubsystem();
         IntakeSubsystem intakeSubsystem = container.getIntakeSubsystem();
         lightsSubsystem = container.getLightsSubsystem();
-
-        initializeNetworkTables();
 
         // Create an event map for use in all autos
         HashMap<String, Command> eventMap = new HashMap<>();
@@ -88,7 +89,7 @@ public class AutonomousManager {
                 container
                         .getIntakeSubsystem()
                         .intakeModeCommand()
-                        .withTimeout(1.4)
+                        .withTimeout(2.0)
                         .asProxy());
         eventMap.put(
                 "reverseIntake",
@@ -104,18 +105,39 @@ public class AutonomousManager {
                         .andThen(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID))
                         .andThen(gripperSubsystem.gripperShootHighCommand())
                         .asProxy());
+        // eventMap.put(
+        //         "handoff",
+        //         armSubsystem
+        //                 .handoffCommand()
+        //                 .deadlineWith(gripperSubsystem.dropFromGripperCommand())
+        //                 .andThen(gripperSubsystem
+        //                         .openGripperCommand()
+        //                         .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
+        //                         .withTimeout(2.0))
+        //                 .andThen(armSubsystem.undoHandoffCommand())
+        //                 .unless(() -> !intakeSubsystem.isDeadOn()).asProxy());
+
         eventMap.put(
                 "handoff",
+                Commands.either(
                 armSubsystem
                         .handoffCommand()
                         .deadlineWith(gripperSubsystem.dropFromGripperCommand())
                         .andThen(gripperSubsystem
                                 .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand()))
+                                .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
+                                .withTimeout(2.0))
+                        .andThen(armSubsystem.undoHandoffCommand()).asProxy(),
+                armSubsystem
+                        .handoffCommand()
+                        .deadlineWith(gripperSubsystem.dropFromGripperCommand())
+                        .andThen(gripperSubsystem
+                                .openGripperCommand()
+                                .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
                                 .withTimeout(1.5))
-                        .andThen(armSubsystem.undoHandoffCommand())
-                        .asProxy()
-                        .unless(() -> !intakeSubsystem.isDeadOn()));
+                        .andThen(armSubsystem.undoHandoffCommand()).asProxy(),
+                () -> intakeSubsystem.isDeadOn()
+                        ));
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
@@ -129,6 +151,13 @@ public class AutonomousManager {
     }
 
     public void update() {
+		// Initialize in the first loop
+        if (!hasInitialized) {
+            initializeNetworkTables();
+			hasInitialized = true;
+			return;
+        }
+
         var newStartPosition = startPosition.getString();
         var newGamePieces = gamePieces.getInteger();
         var newDoesClimb = shouldClimb.getBoolean();
@@ -196,8 +225,8 @@ public class AutonomousManager {
         // OPEN_PLACE2(StartingLocation.OPEN, 2, "open_place2", new PathConstraints(3.5, 3)),
         OPEN_PLACE2HANDOFF(StartingLocation.OPEN, 2, true, "open_place2handoff", new PathConstraints(4, 3)),
         // OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, true, "open_place2andclimb", new PathConstraints(4, 3)),
-        OPEN_PLACE3HANDOFF(StartingLocation.OPEN, 3, false, "open_place3handoff", new PathConstraints(4, 3)),
-        // OPEN_PLACE3(StartingLocation.OPEN, 3, false, "open_place3", new PathConstraints(4, 3)),
+        // OPEN_PLACE3HANDOFF(StartingLocation.OPEN, 3, false, "open_place3handoff", new PathConstraints(4, 3)),
+        OPEN_PLACE3(StartingLocation.OPEN, 3, false, "open_place3", new PathConstraints(4, 3)),
         // OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
         // OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
         STATION_PLACE1ANDCLIMB(

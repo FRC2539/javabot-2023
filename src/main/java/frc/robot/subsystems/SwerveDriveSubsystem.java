@@ -109,7 +109,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 getModulePositions(),
                 new Pose2d(),
                 VecBuilder.fill(0.01, 0.01, 0.01),
-                VecBuilder.fill(0.7, 0.7, 0.7)); // might need to bring these back up (was 0.5)
+                VecBuilder.fill(0.9, 0.9, 0.9)); // might need to bring these back up (was 0.5)
 
         // Allow us to toggle on second order kinematics
         isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);

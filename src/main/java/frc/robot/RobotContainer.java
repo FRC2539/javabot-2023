@@ -192,6 +192,7 @@ public class RobotContainer {
 
         operatorController.getA().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID));
         operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
+        // operatorController.getY().onTrue(intakeSubsystem.reverseIntakeModeCommand());
         operatorController.getX().onTrue(armSubsystem.slidePickupCommand());
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
         operatorController.nameA("Shoot Hybrid");
