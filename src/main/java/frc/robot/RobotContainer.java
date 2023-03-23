@@ -19,7 +19,8 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
-import frc.robot.commands.AssistedLLAimCommand;
+import frc.robot.commands.IndicateGridAimedCommand;
+import frc.robot.commands.IndicateSubstationAimedCommand;
 import frc.robot.commands.IntakingAimAssistCommand;
 import frc.robot.commands.MusicRevealCommand;
 import frc.robot.commands.TestCommand;
@@ -44,7 +45,7 @@ public class RobotContainer {
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
     private final GripperSubsystem gripperSubsystem = new GripperSubsystem();
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
-    private final VisionSubsystem visionSubsystem = new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate);
+    private final VisionSubsystem visionSubsystem = new VisionSubsystem(swerveDriveSubsystem);
     private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem);
 
     public AutonomousManager autonomousManager;
@@ -125,14 +126,15 @@ public class RobotContainer {
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
 
-        leftDriveController
-                .getRightThumb()
-                .whileTrue(new AssistedLLAimCommand(
-                        swerveDriveSubsystem,
-                        visionSubsystem,
-                        this::getDriveForwardAxis,
-                        this::getDriveStrafeAxis,
-                        this::getDriveRotationAxis));
+        // leftDriveController
+        //         .getRightThumb()
+        //         .whileTrue(new AssistedLLAimCommand(
+        //                 swerveDriveSubsystem,
+        //                 visionSubsystem,
+        //                 this::getDriveForwardAxis,
+        //                 this::getDriveStrafeAxis,
+        //                 this::getDriveRotationAxis));
+        leftDriveController.getRightThumb().whileTrue(new IndicateGridAimedCommand(visionSubsystem, lightsSubsystem));
         leftDriveController.nameRightThumb("Aim to Grid");
 
         leftDriveController
@@ -191,9 +193,10 @@ public class RobotContainer {
         var shiftButton = operatorController.getRightBumper();
 
         operatorController.getA().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID));
-        operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
-        // operatorController.getY().onTrue(intakeSubsystem.reverseIntakeModeCommand());
-        operatorController.getX().onTrue(armSubsystem.slidePickupCommand());
+        // operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
+        operatorController.getY().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
+        operatorController.getX().onTrue(armSubsystem.awaitingDeploymentCommand());
+        operatorController.getX().whileTrue(new IndicateSubstationAimedCommand(visionSubsystem, lightsSubsystem));
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
         operatorController.nameA("Shoot Hybrid");
         operatorController.nameY("Shoot High");

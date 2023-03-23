@@ -1,8 +1,11 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.*;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -12,23 +15,22 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.lib.math.MathUtils;
-import frc.lib.vision.TimestampedPose;
+import frc.lib.vision.LimelightRobotPose;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class VisionSubsystem extends SubsystemBase {
-    private PhotonCamera camera = new PhotonCamera(VisionConstants.photonCameraName);
-    private PhotonPoseEstimator photonPoseEstimator = new PhotonPoseEstimator(
-            FieldConstants.APRIL_TAG_FIELD_LAYOUT,
-            PoseStrategy.MULTI_TAG_PNP,
-            camera,
-            VisionConstants.photonRobotToCamera);
+    private final double translationStdDevCoefficient = 0.5;
+    private final double rotationStdDevCoefficient = 0.5;
+
+    private PhotonCamera camera;
+    private PhotonPoseEstimator photonPoseEstimator;
 
     private LimelightMode backLimelightMode = LimelightMode.APRILTAG;
     private LimelightMode frontLimelightMode = LimelightMode.APRILTAG;
@@ -40,6 +42,8 @@ public class VisionSubsystem extends SubsystemBase {
     private LoggedReceiver backLimelightApriltagIDReceiver = Logger.receive("/limelight/tid", -1);
     private LoggedReceiver backBotposeRedReceiver = Logger.receive("/limelight/botpose_wpired", new double[] {});
     private LoggedReceiver backBotposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
+    private LoggedReceiver backTargetPoseReceiver =
+            Logger.receive("/limelight/targetpose_cameraspace", new double[] {});
     private LoggedReceiver backLimelightPipelineReceiver = Logger.receive("/limelight/getpipe", 0);
 
     // Front limelight
@@ -49,21 +53,31 @@ public class VisionSubsystem extends SubsystemBase {
     private LoggedReceiver frontLimelightPipelineReceiver = Logger.receive("/limelight-ml/getpipe", 0);
 
     // Note: Front is intake side, Back is arm side
-    private Optional<TimestampedPose> BackApriltagEstimate = Optional.empty();
+    private Optional<LimelightRobotPose> BackApriltagEstimate = Optional.empty();
     private Optional<EstimatedRobotPose> FrontApriltagEstimate = Optional.empty();
     private Optional<LimelightRawAngles> BackRetroreflectiveAngles = Optional.empty();
     private Optional<LimelightRawAngles> FrontMLAngles = Optional.empty();
 
     private double lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
 
-    private BiConsumer<Pose2d, Double> addVisionMeasurement;
+    private SwerveDriveSubsystem swerveDriveSubsystem;
 
-    public VisionSubsystem(BiConsumer<Pose2d, Double> addVisionMeasurement) {
-        this.addVisionMeasurement = addVisionMeasurement;
+    public VisionSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
+        this.swerveDriveSubsystem = swerveDriveSubsystem;
 
         setBackLimelightMode(backLimelightMode);
 
         setDefaultCommand(defaultLimelightCommand());
+
+        // Initialize photonvision
+        camera = new PhotonCamera(VisionConstants.photonCameraName);
+        photonPoseEstimator = new PhotonPoseEstimator(
+                FieldConstants.APRIL_TAG_FIELD_LAYOUT,
+                PoseStrategy.MULTI_TAG_PNP,
+                camera,
+                VisionConstants.photonRobotToCamera);
+
+        photonPoseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
     }
 
     @Override
@@ -168,25 +182,57 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     private void addVisionPoseEstimate(EstimatedRobotPose estimate) {
-        addVisionMeasurement.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+        var estimatedPose = estimate.estimatedPose.toPose2d();
+
+        double averageDistance = 0;
+
+        for (PhotonTrackedTarget target : estimate.targetsUsed) {
+            averageDistance += target.getBestCameraToTarget().getTranslation().getNorm();
+        }
+
+        averageDistance /= estimate.targetsUsed.size();
+
+        swerveDriveSubsystem.addVisionPoseEstimate(
+                estimatedPose, estimate.timestampSeconds, calculateVisionStdDevs(averageDistance));
     }
 
-    private void addVisionPoseEstimate(TimestampedPose estimate) {
-        addVisionMeasurement.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds);
+    private void addVisionPoseEstimate(LimelightRobotPose estimate) {
+        var estimatedPose = estimate.estimatedPose.toPose2d();
+
+        // var distanceFromPrimaryTag = FieldConstants.APRIL_TAG_FIELD_LAYOUT
+        //         .getTagPose((int) backLimelightApriltagIDReceiver.getInteger())
+        //         .get()
+        //         .getTranslation()
+        //         .getDistance(estimate.estimatedPose.getTranslation());
+
+        double[] targetPose = backTargetPoseReceiver.getDoubleArray();
+
+        Translation3d translation = new Translation3d(targetPose[0], targetPose[1], targetPose[2]);
+
+        swerveDriveSubsystem.addVisionPoseEstimate(
+                estimatedPose, estimate.timestampSeconds, calculateVisionStdDevs(translation.getNorm()));
+    }
+
+    private Matrix<N3, N1> calculateVisionStdDevs(double distance) {
+        var translationStdDev = translationStdDevCoefficient * Math.pow(distance, 2);
+        var rotationStdDev = rotationStdDevCoefficient * Math.pow(distance, 2);
+
+        return VecBuilder.fill(translationStdDev, translationStdDev, rotationStdDev);
     }
 
     public Optional<EstimatedRobotPose> getFrontApriltagEstimate() {
         return FrontApriltagEstimate;
     }
 
-    public Optional<TimestampedPose> getBackApriltagEstimate() {
+    public Optional<LimelightRobotPose> getBackApriltagEstimate() {
         return BackApriltagEstimate;
     }
 
     private Optional<LimelightRawAngles> calculateBackRetroreflectiveAngles() {
         if (!backLimelightHasTarget()
                 || (backLimelightMode != LimelightMode.RETROREFLECTIVEMID
-                        && backLimelightMode != LimelightMode.RETROREFLECTIVEHIGH)) return Optional.empty();
+                        && backLimelightMode != LimelightMode.RETROREFLECTIVEHIGH
+                        && backLimelightMode != LimelightMode.CONE)) return Optional.empty();
 
         double limelightTX = backLimelightTXReceiver.getDouble();
         double limelightTY = backLimelightTYReceiver.getDouble();
@@ -229,7 +275,7 @@ public class VisionSubsystem extends SubsystemBase {
         return botpose;
     }
 
-    private Optional<TimestampedPose> calculateLLApriltagEstimate() {
+    private Optional<LimelightRobotPose> calculateLLApriltagEstimate() {
         if (getBackLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();
 
         // gets the botpose array from the limelight and a timestamp
@@ -253,7 +299,7 @@ public class VisionSubsystem extends SubsystemBase {
 
             if (!isValidPose(botPose)) return Optional.empty();
 
-            return Optional.of(new TimestampedPose(botPose, timestamp));
+            return Optional.of(new LimelightRobotPose(botPose, timestamp));
         } else {
             return Optional.empty();
         }
@@ -281,10 +327,14 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     public enum LimelightMode {
+        // Back limelight
         APRILTAG(0),
         RETROREFLECTIVEMID(1),
         RETROREFLECTIVEHIGH(2),
-        ML(0); // Only pipeline on front limelight
+        CONE(3),
+
+        // Front limelight
+        ML(0);
 
         public int pipelineNumber;
 

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class AutonomousManager {
-    private static final AutonomousOption defaultAuto = AutonomousOption.OPEN_PLACE1ANDCLIMB;
+    private static final AutonomousOption defaultAuto = AutonomousOption.OPEN_PLACE2HANDOFF;
 
     // Add tunables for all autonomous configuration options
     LoggedReceiver waitDuration;
@@ -222,19 +222,11 @@ public class AutonomousManager {
     }
 
     private enum AutonomousOption {
-        OPEN_PLACE1ANDCLIMB(StartingLocation.OPEN, 1, true, "open_place1andclimb", new PathConstraints(5, 5)),
-        // OPEN_PLACE2(StartingLocation.OPEN, 2, "open_place2", new PathConstraints(3.5, 3)),
         OPEN_PLACE2HANDOFF(StartingLocation.OPEN, 2, true, "open_place2handoff", new PathConstraints(4, 3)),
-        // OPEN_PLACE2ANDCLIMB(StartingLocation.OPEN, 2, true, "open_place2andclimb", new PathConstraints(4, 3)),
-        // OPEN_PLACE3HANDOFF(StartingLocation.OPEN, 3, false, "open_place3handoff", new PathConstraints(4, 3)),
-        OPEN_PLACE3(StartingLocation.OPEN, 3, false, "open_place3", new PathConstraints(4, 3)),
-        // OPEN_PLACE3ANDCLIMB(StartingLocation.OPEN, 3, "open_place3andclimb", new PathConstraints(6, 5)),
-        // OPEN_FIVEPIECE(StartingLocation.OPEN, 5, "open_fivepiece", new PathConstraints(5, 6)),
+        OPEN_PLACE3HANDOFF(StartingLocation.OPEN, 3, false, "open_place3handoff", new PathConstraints(4, 3)),
         STATION_PLACE1ANDCLIMB(
                 StartingLocation.STATION, 1, true, "station_place1andclimb_fancy", new PathConstraints(3, 2.25)),
-        CABLE_PLACE1ANDCLIMB(StartingLocation.CABLE, 1, true, "cable_place1andclimb", new PathConstraints(5, 5)),
-        CABLE_PLACE2(StartingLocation.CABLE, 2, false, "cable_place2", new PathConstraints(4, 3)),
-        CABLE_PLACE3(StartingLocation.CABLE, 3, false, "cable_place3", new PathConstraints(3.5, 3));
+        CABLE_PLACE2(StartingLocation.CABLE, 2, false, "cable_place2", new PathConstraints(4, 3));
 
         private List<PathPlannerTrajectory> path;
         private String pathName;
