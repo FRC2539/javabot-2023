@@ -19,9 +19,11 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
-import frc.robot.commands.AimAssistIntakeCommand;
-import frc.robot.commands.AssistedLLAimCommand;
+import frc.robot.commands.IndicateGridAimedCommand;
+import frc.robot.commands.IndicateSubstationAimedCommand;
+import frc.robot.commands.IntakingAimAssistCommand;
 import frc.robot.commands.MusicRevealCommand;
+import frc.robot.commands.TestCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
@@ -36,14 +38,14 @@ public class RobotContainer {
 
     public static Orchestra orchestra = new Orchestra();
 
-    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(35, -16, 0);
-    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(35, -16, 0);
+    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(35, -30, 0);
+    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(35, -30, 0);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
     private final GripperSubsystem gripperSubsystem = new GripperSubsystem();
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
-    private final VisionSubsystem visionSubsystem = new VisionSubsystem(swerveDriveSubsystem::addVisionPoseEstimate);
+    private final VisionSubsystem visionSubsystem = new VisionSubsystem(swerveDriveSubsystem);
     private final ArmSubsystem armSubsystem = new ArmSubsystem(swerveDriveSubsystem);
 
     public AutonomousManager autonomousManager;
@@ -77,7 +79,7 @@ public class RobotContainer {
                 .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
                         .withTimeout(1.5));
 
-        Trigger isDeadOn = new Trigger(() -> intakeSubsystem.isDeadOn()).debounce(0.05);
+        Trigger isDeadOn = new Trigger(() -> intakeSubsystem.isDeadOn()).debounce(0.25);
 
         new Trigger(() -> intakeSubsystem.hasGamePiece())
                 .debounce(0.05)
@@ -86,13 +88,16 @@ public class RobotContainer {
                         .withTimeout(1.5));
 
         // isDeadOn.onTrue(
-        //         run(() -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.blue, .3), lightsSubsystem)
+        //         run(() -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.blue, .3),
+        // lightsSubsystem)
         //                 .withTimeout(1.5));
 
-        isDeadOn.onTrue(
-                Commands.repeatingSequence(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
-                        .withTimeout(0.163), run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem)
-                        .withTimeout(0.163)).withTimeout(2));
+        isDeadOn.onTrue(Commands.repeatingSequence(
+                        run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.red), lightsSubsystem)
+                                .withTimeout(0.163),
+                        run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem)
+                                .withTimeout(0.163))
+                .withTimeout(2));
 
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
@@ -121,27 +126,27 @@ public class RobotContainer {
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
 
-        leftDriveController
-                .getRightThumb()
-                .whileTrue(new AssistedLLAimCommand(
-                        swerveDriveSubsystem,
-                        visionSubsystem,
-                        this::getDriveForwardAxis,
-                        this::getDriveStrafeAxis,
-                        this::getDriveRotationAxis));
+        // leftDriveController
+        //         .getRightThumb()
+        //         .whileTrue(new AssistedLLAimCommand(
+        //                 swerveDriveSubsystem,
+        //                 visionSubsystem,
+        //                 this::getDriveForwardAxis,
+        //                 this::getDriveStrafeAxis,
+        //                 this::getDriveRotationAxis));
+        leftDriveController.getRightThumb().whileTrue(new IndicateGridAimedCommand(visionSubsystem, lightsSubsystem));
         leftDriveController.nameRightThumb("Aim to Grid");
 
         leftDriveController
                 .getLeftThumb()
-                .whileTrue(new AimAssistIntakeCommand(
-                        visionSubsystem,
-                        swerveDriveSubsystem,
-                        lightsSubsystem,
-                        this::getDriveForwardAxis,
-                        this::getDriveStrafeAxis,
-                        this::getDriveRotationAxis).alongWith(
-                        intakeSubsystem.intakeModeCommand()
-                        ));
+                .whileTrue(new IntakingAimAssistCommand(
+                                visionSubsystem,
+                                swerveDriveSubsystem,
+                                lightsSubsystem,
+                                this::getDriveForwardAxis,
+                                this::getDriveStrafeAxis,
+                                this::getDriveRotationAxis)
+                        .alongWith(intakeSubsystem.intakeModeCommand()));
         leftDriveController.nameLeftThumb("ML Pickup");
 
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
@@ -155,12 +160,7 @@ public class RobotContainer {
 
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
-        rightDriveController
-                .getBottomThumb()
-                .whileTrue(either(
-                        gripperSubsystem.gripperShootMidCommand(),
-                        gripperSubsystem.gripperShootHighCommand(),
-                        leftDriveController.getPOVDown()::getAsBoolean));
+        rightDriveController.getBottomThumb().whileTrue(gripperSubsystem.gripperShootHighCommand());
         rightDriveController.getRightThumb().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
         rightDriveController.nameLeftThumb("Run Intake");
         rightDriveController.nameRightThumb("Reverse Intake");
@@ -169,29 +169,37 @@ public class RobotContainer {
         rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
         rightDriveController.nameRightTopLeft("Symphony");
 
+        rightDriveController.getRightTopRight().whileTrue(new TestCommand());
+
         // Cardinal drive commands (inverted since arm is back of robot)
-        // rightDriveController
-        //         .getPOVUp()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVRight()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVDown()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVLeft()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVUp()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVRight()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVDown()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVLeft()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
 
         /* Set operator controller bindings */
         var shiftButton = operatorController.getRightBumper();
 
-        operatorController.getX().onTrue(armSubsystem.slidePickupCommand());
+        operatorController.getA().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID));
+        // operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
+        operatorController.getY().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
+        operatorController.getX().onTrue(armSubsystem.awaitingDeploymentCommand());
+        operatorController.getX().whileTrue(new IndicateSubstationAimedCommand(visionSubsystem, lightsSubsystem));
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
+        operatorController.nameA("Shoot Hybrid");
+        operatorController.nameY("Shoot High");
         operatorController.nameX("Slide Pickup");
         operatorController.nameB("Substation Pickup");
 
@@ -207,22 +215,47 @@ public class RobotContainer {
 
         // Mid commands
         operatorController.getDPadRight().and(shiftButton.negate()).onTrue(armSubsystem.midManualConeCommand());
-        operatorController.getDPadRight().and(shiftButton).onTrue(armSubsystem.midManualConeCommand());
+        operatorController.getDPadRight().and(shiftButton).onTrue(armSubsystem.midManualCubeCommand());
 
         operatorController.nameDPadDown("Pickup");
         operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
         operatorController.nameDPadRight("Mid Manual");
 
+        // operatorController
+        //         .getLeftBumper()
+        //         .onTrue(armSubsystem
+        //                 .handoffCommand()
+        //                 .deadlineWith(gripperSubsystem.dropFromGripperCommand())
+        //                 .andThen(gripperSubsystem
+        //                         .openGripperCommand()
+        //                         .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
+        //                 .until(operatorController.getLeftBumper().negate())
+        //                 .andThen(armSubsystem
+        //                         .undoHandoffCommand()
+        //                         .asProxy()
+        //                         .alongWith(intakeSubsystem
+        //                                 .handoffCommand()
+        //                                 .asProxy()
+        //                                 .withTimeout(0.2)
+        //                                 .until(operatorController
+        //                                         .getLeftBumper()
+        //                                         .negate()))));
+
         operatorController
                 .getLeftBumper()
                 .onTrue(armSubsystem
                         .handoffCommand()
+                        .deadlineWith(gripperSubsystem.dropFromGripperCommand())
                         .andThen(gripperSubsystem
                                 .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
-                        .until(operatorController.getRightBumper().negate())
+                                .deadlineWith(intakeSubsystem
+                                        .slowReverseIntakeModeCommand()
+                                        .withTimeout(0.06)
+                                        .andThen(waitSeconds(0.05).andThen(intakeSubsystem.handoffCommand()))))
+                        .until(operatorController.getLeftBumper().negate())
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
+
         operatorController.nameLeftBumper("Handoff Button");
 
         operatorController
@@ -254,13 +287,13 @@ public class RobotContainer {
     }
 
     public double getDriveForwardAxis() {
-        return forwardRateLimiter.calculate(
-                -square(deadband(leftDriveController.getYAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
+        return -forwardRateLimiter.calculate(
+                square(deadband(leftDriveController.getYAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
     }
 
     public double getDriveStrafeAxis() {
-        return strafeRateLimiter.calculate(
-                -square(deadband(leftDriveController.getXAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
+        return -strafeRateLimiter.calculate(
+                square(deadband(leftDriveController.getXAxis().getRaw(), 0.05)) * Constants.SwerveConstants.maxSpeed);
     }
 
     public double getDriveRotationAxis() {

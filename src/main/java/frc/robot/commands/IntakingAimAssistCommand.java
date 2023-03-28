@@ -1,7 +1,9 @@
 package frc.robot.commands;
 
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.lib.math.MathUtils;
 import frc.robot.Constants.VisionConstants;
@@ -11,7 +13,7 @@ import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightRawAngles;
 import java.util.function.DoubleSupplier;
 
-public class AimAssistIntakeCommand extends CommandBase {
+public class IntakingAimAssistCommand extends CommandBase {
     private VisionSubsystem visionSubsystem;
     private SwerveDriveSubsystem swerveDriveSubsystem;
 
@@ -25,7 +27,7 @@ public class AimAssistIntakeCommand extends CommandBase {
 
     private static final double INTAKE_DOWN_DISTANCE = 1.2;
 
-    private static final double RELIABILITY_MINIMUM_ANGLE = -22;
+    private static final double RELIABILITY_MINIMUM_ANGLE = Math.toRadians(-22);
 
     private LimelightRawAngles lastSeenLLAngles = new LimelightRawAngles(0, 0);
 
@@ -35,11 +37,13 @@ public class AimAssistIntakeCommand extends CommandBase {
 
     private boolean hasCubeGottenTooClose;
 
-    private PIDController rotationControl = new PIDController(
-            6,
-            0,.1);
+    private TrapezoidProfile.Constraints rotationConstraints = new TrapezoidProfile.Constraints(maxAngularVelocity, 7);
 
-    public AimAssistIntakeCommand(
+    private ProfiledPIDController rotationControl = new ProfiledPIDController(6, 0, 0.4, rotationConstraints);
+
+    private Timer timeSinceLastGoodVision = new Timer();
+
+    public IntakingAimAssistCommand(
             VisionSubsystem visionSubsystem,
             SwerveDriveSubsystem swerveDriveSubsystem,
             LightsSubsystem lightsSubsystem,
@@ -55,8 +59,9 @@ public class AimAssistIntakeCommand extends CommandBase {
         this.strafe = strafe;
         this.rotate = rotate;
 
-        rotationControl.setSetpoint(0);
+        rotationControl.setGoal(0);
         rotationControl.setTolerance(Math.toRadians(4));
+        timeSinceLastGoodVision.restart();
     }
 
     @Override
@@ -70,20 +75,24 @@ public class AimAssistIntakeCommand extends CommandBase {
     public void execute() {
         if (visionSubsystem.hasFrontMLAngles() && visionSubsystem.isFrontLimelightAtPipeline()) {
             LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
-            if (sawCubeSoFar) {
-                LimelightRawAngles newRawAngles = visionSubsystem.getFrontMLAngles().get();
-                if (MathUtils.equalsWithinError(lastSeenLLAngles.tx(),  newRawAngles.tx(), 5)) {
-                    lastSeenLLAngles = newRawAngles;
-                }
-            } else {
-                lastSeenLLAngles = visionSubsystem.getFrontMLAngles().get();
+            LimelightRawAngles newRawAngles = visionSubsystem.getFrontMLAngles().get();
+            if (MathUtils.equalsWithinError(lastSeenLLAngles.tx(), newRawAngles.tx(), 3)
+                    // && MathUtils.equalsWithinError(lastSeenLLAngles.ty(), newRawAngles.ty(), 3)
+                    || timeSinceLastGoodVision.hasElapsed(0.35)
+                    || !sawCubeSoFar) {
+                lastSeenLLAngles = newRawAngles;
+                timeSinceLastGoodVision.reset();
+                sawCubeSoFar = true;
             }
-            sawCubeSoFar = true;
+        }
+
+        if (timeSinceLastGoodVision.hasElapsed(0.6) && !hasCubeGottenTooClose) {
+            sawCubeSoFar = false;
         }
 
         double rotationAngle = Math.toRadians(lastSeenLLAngles.tx());
 
-        if (Math.abs(lastSeenLLAngles.tx()) < 4 && !visionSubsystem.hasFrontMLAngles() && sawCubeSoFar) {
+        if (Math.abs(lastSeenLLAngles.tx()) < 4 && timeSinceLastGoodVision.hasElapsed(0.3) && sawCubeSoFar) {
             hasCubeGottenTooClose = true;
         }
 
@@ -91,12 +100,16 @@ public class AimAssistIntakeCommand extends CommandBase {
             rotationAngle = 0;
         }
 
-        if (/*isDriverGoingForCube() && */sawCubeSoFar) {
+        if (
+        /*isDriverGoingForCube() && */ sawCubeSoFar) {
             swerveDriveSubsystem.setVelocity(
                     new ChassisSpeeds(
                             -getDriverValueTowardsCube() * Math.cos(rotationAngle) * speedModifier,
                             -getDriverValueTowardsCube() * Math.sin(rotationAngle) * speedModifier,
-                            MathUtils.ensureRange(rotationControl.calculate(rotationAngle), -maxAngularVelocity, maxAngularVelocity)),
+                            MathUtils.ensureRange(
+                                    rotationControl.calculate(rotationAngle) + rotationControl.getSetpoint().velocity,
+                                    -maxAngularVelocity,
+                                    maxAngularVelocity)),
                     false,
                     true);
         } else {
@@ -124,7 +137,7 @@ public class AimAssistIntakeCommand extends CommandBase {
     private boolean isDriverGoingForCube() {
         // if (Math.abs(getDriverStrafeFromCube()) < 0.5) return false;
 
-        if (Math.abs(lastSeenLLAngles.tx()) < 30) {
+        if (Math.abs(Math.toRadians(lastSeenLLAngles.tx())) < Math.toRadians(30)) {
             return true;
         } else {
             return false;
@@ -132,22 +145,23 @@ public class AimAssistIntakeCommand extends CommandBase {
     }
 
     private double getDriverValueTowardsCube() {
-        double cubeAngle =
-                Math.toRadians(lastSeenLLAngles.tx()) + swerveDriveSubsystem.getRotation().getRadians();
+        double cubeAngle = Math.toRadians(lastSeenLLAngles.tx())
+                + swerveDriveSubsystem.getRotation().getRadians();
         double towardsCube = -forward.getAsDouble() * Math.cos(cubeAngle) + -strafe.getAsDouble() * Math.sin(cubeAngle);
         return towardsCube;
     }
 
     private double getDriverStrafeFromCube() {
-        double cubeAngle =
-                Math.toRadians(lastSeenLLAngles.tx()) + swerveDriveSubsystem.getRotation().getRadians();
+        double cubeAngle = Math.toRadians(lastSeenLLAngles.tx())
+                + swerveDriveSubsystem.getRotation().getRadians();
         double strafeCube = forward.getAsDouble() * Math.sin(cubeAngle) + -strafe.getAsDouble() * Math.cos(cubeAngle);
         return strafeCube;
     }
 
     private double getDistanceFromCube() {
         return (VisionConstants.limelightRobotToCamera.getY() - .12 /*height of mid of cube*/)
-                / Math.tan(Math.toRadians(lastSeenLLAngles.ty()) + -VisionConstants.limelightRobotToCamera.getRotation().getX() /*angle of camera*/);
+                / Math.tan(Math.toRadians(lastSeenLLAngles.ty())
+                        + -VisionConstants.limelightRobotToCamera.getRotation().getX() /*angle of camera*/);
     }
 
     private boolean shouldIntake() {

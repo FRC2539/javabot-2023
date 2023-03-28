@@ -296,7 +296,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command undoHandoffCommand() {
         return Commands.sequence(
-                armStateApproximateCommand(ArmState.COOL_HANDOFF_REVERSE), armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+                armStateApproximateCommand(ArmState.COOL_HANDOFF_REVERSE),
+                armStateCommand(ArmState.AWAITING_DEPLOYMENT));
     }
 
     public Command substationPickupCommand() {
@@ -856,12 +857,13 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public enum ArmState {
-        PICKUP(new Static(0.9, -0.1, Rotation2d.fromDegrees(-5))),
         AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
-        SHOOT_POSITION(new Static(0.9, 1.2, Rotation2d.fromDegrees(40))),
-        SLIDE_PICKUP(Static.fromWrist(0.21, 0.34, Rotation2d.fromDegrees(67))),
+        SHOOT_HYBRID(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(0))),
+        SHOOT_HIGH(new Static(0.88, 0.8, Rotation2d.fromDegrees(40))),
+        // SUBSTATION_PICKUP(Static.fromWrist(0.21, 0.34, Rotation2d.fromDegrees(67))),  // starting
+        SLIDE_PICKUP(Static.fromWrist(0.19, 0.32, Rotation2d.fromDegrees(52))),
         // SLIDE_PICKUP_COMP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
@@ -888,7 +890,7 @@ public class ArmSubsystem extends SubsystemBase {
                 FieldConstants.highX + 0.14, // gripper offset
                 FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior
                 Rotation2d.fromDegrees(-25))),
-        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(175))),
+        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(175))), // 179
         COOL_HANDOFF_REVERSE(Static.fromWrist(0.4, 0.4, Rotation2d.fromDegrees(170))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can

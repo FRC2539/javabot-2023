@@ -32,7 +32,8 @@ public class LightsSubsystem extends SubsystemBase {
     public static final Color white = new Color(255, 230, 220);
     public static final Color green = new Color(56, 209, 0);
     public static final Color blue = new Color(8, 32, 255);
-    public static final Color red = new Color(227, 26, 0);
+    // public static final Color red = new Color(227, 26, 0);
+    public static final Color red = new Color(255, 0, 0);
 
     public LightsSubsystem() {
         CANdleConfiguration candleConfiguration = new CANdleConfiguration();
@@ -59,8 +60,6 @@ public class LightsSubsystem extends SubsystemBase {
             LEDSegment.WristEncoderIndicator.fullClear();
 
             LEDSegment.MainStrip.setColor(orange);
-
-            // runDefaultMainStripAnimation();
         });
     }
 
@@ -71,55 +70,6 @@ public class LightsSubsystem extends SubsystemBase {
         });
     }
 
-    // public Command indicateConeCommand() {
-    //     return buildSideStripCommand(() -> {
-    //         LEDSegment.BackRightStrip.setColor(LightsSubsystem.yellow);
-    //         LEDSegment.BackLeftStrip.setColor(LightsSubsystem.yellow);
-    //         LEDSegment.FrontLeftStrip.setColor(LightsSubsystem.yellow);
-    //         LEDSegment.FrontRightStrip.setColor(LightsSubsystem.yellow);
-    //     });
-    // }
-
-    // public Command indicateCubeCommand() {
-    //     return buildSideStripCommand(() -> {
-    //         LEDSegment.BackRightStrip.setColor(LightsSubsystem.purple);
-    //         LEDSegment.BackLeftStrip.setColor(LightsSubsystem.purple);
-    //         LEDSegment.FrontLeftStrip.setColor(LightsSubsystem.purple);
-    //         LEDSegment.FrontRightStrip.setColor(LightsSubsystem.purple);
-    //     });
-    // }
-
-    // private Command buildSideStripCommand(Runnable runnable) {
-    //     return startEnd(runnable, LightsSubsystem::runDefaultSideAnimation);
-    //     // return run(runnable).finallyDo((interrupted) -> {
-    //     //     runDefaultSideAnimation();
-    //     // });
-    // }
-
-    // private Command buildTopStripCommand(Runnable runnable) {
-    //     return startEnd(runnable, LightsSubsystem::runDefaultTopAnimation);
-    //     // return run(runnable).finallyDo((interrupted) -> {
-    //     //     runDefaultTopAnimation();
-    //     // });
-    // }
-
-    // public static void runDefaultMainStripAnimation() {
-    //     runDefaultSideAnimation();
-    //     runDefaultTopAnimation();
-    // }
-
-    // public static void runDefaultSideAnimation() {
-    //     LEDSegment.BackRightStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
-    //     LEDSegment.BackLeftStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
-    //     LEDSegment.FrontLeftStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
-    //     LEDSegment.FrontRightStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
-    // }
-
-    // public static void runDefaultTopAnimation() {
-    //     LEDSegment.BackTopStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
-    //     LEDSegment.FrontTopStrip.setFadeAnimation(LightsSubsystem.orange, 0.5);
-    // }
-
     public static enum LEDSegment {
         BatteryIndicator(0, 2, 0),
         PressureIndicator(2, 2, 1),
@@ -127,12 +77,6 @@ public class LightsSubsystem extends SubsystemBase {
         BoomEncoderIndicator(5, 1, -1),
         WristEncoderIndicator(6, 1, -1),
         DriverStationIndicator(7, 1, -1),
-        // BackRightStrip(8, 54, 2), // Looking from back to front (arm faces back)
-        // BackTopStrip(62, 33, 3),
-        // BackLeftStrip(95, 54, 4),
-        // FrontLeftStrip(149, 54, 5),
-        // FrontTopStrip(203, 33, 6),
-        // FrontRightStrip(236, 60, 7);
         MainStrip(8, 296, 2);
 
         // 33 on top
