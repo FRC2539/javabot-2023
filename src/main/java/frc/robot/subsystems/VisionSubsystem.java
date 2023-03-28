@@ -4,7 +4,6 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.*;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -26,8 +25,8 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class VisionSubsystem extends SubsystemBase {
-    private final double translationStdDevCoefficient = 0.5;
-    private final double rotationStdDevCoefficient = 0.5;
+    private final double translationStdDevCoefficient = 0.3;
+    private final double rotationStdDevCoefficient = 0.9;
 
     private PhotonCamera camera;
     private PhotonPoseEstimator photonPoseEstimator;
@@ -39,11 +38,10 @@ public class VisionSubsystem extends SubsystemBase {
     private LoggedReceiver backLimelightHasTargetReceiver = Logger.receive("/limelight/tv", 0);
     private LoggedReceiver backLimelightTXReceiver = Logger.receive("/limelight/tx", 0.0);
     private LoggedReceiver backLimelightTYReceiver = Logger.receive("/limelight/ty", 0.0);
+    private LoggedReceiver backLimelightAreaReceiver = Logger.receive("/limelight/ta", 0.0);
     private LoggedReceiver backLimelightApriltagIDReceiver = Logger.receive("/limelight/tid", -1);
     private LoggedReceiver backBotposeRedReceiver = Logger.receive("/limelight/botpose_wpired", new double[] {});
     private LoggedReceiver backBotposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
-    private LoggedReceiver backTargetPoseReceiver =
-            Logger.receive("/limelight/targetpose_cameraspace", new double[] {});
     private LoggedReceiver backLimelightPipelineReceiver = Logger.receive("/limelight/getpipe", 0);
 
     // Front limelight
@@ -165,11 +163,11 @@ public class VisionSubsystem extends SubsystemBase {
         return frontLimelightPipelineReceiver.getInteger() == frontLimelightMode.pipelineNumber;
     }
 
-    private boolean backLimelightHasTarget() {
+    public boolean backLimelightHasTarget() {
         return backLimelightHasTargetReceiver.getInteger() == 1;
     }
 
-    private boolean frontLimelightHasTarget() {
+    public boolean frontLimelightHasTarget() {
         return frontLimelightHasTargetReceiver.getInteger() == 1;
     }
 
@@ -199,23 +197,25 @@ public class VisionSubsystem extends SubsystemBase {
     private void addVisionPoseEstimate(LimelightRobotPose estimate) {
         var estimatedPose = estimate.estimatedPose.toPose2d();
 
-        // var distanceFromPrimaryTag = FieldConstants.APRIL_TAG_FIELD_LAYOUT
-        //         .getTagPose((int) backLimelightApriltagIDReceiver.getInteger())
-        //         .get()
-        //         .getTranslation()
-        //         .getDistance(estimate.estimatedPose.getTranslation());
+        var aprilTagPose =
+                FieldConstants.APRIL_TAG_FIELD_LAYOUT.getTagPose((int) backLimelightApriltagIDReceiver.getInteger());
 
-        double[] targetPose = backTargetPoseReceiver.getDoubleArray();
+        if (aprilTagPose.isPresent()) {
+            var distanceFromPrimaryTag =
+                    aprilTagPose.get().getTranslation().getDistance(estimate.estimatedPose.getTranslation());
 
-        Translation3d translation = new Translation3d(targetPose[0], targetPose[1], targetPose[2]);
+            Logger.log("/VisionSubsystem/distanceFromTag", distanceFromPrimaryTag);
 
-        swerveDriveSubsystem.addVisionPoseEstimate(
-                estimatedPose, estimate.timestampSeconds, calculateVisionStdDevs(translation.getNorm()));
+            swerveDriveSubsystem.addVisionPoseEstimate(
+                    estimatedPose, estimate.timestampSeconds, calculateVisionStdDevs(distanceFromPrimaryTag));
+        }
     }
 
     private Matrix<N3, N1> calculateVisionStdDevs(double distance) {
         var translationStdDev = translationStdDevCoefficient * Math.pow(distance, 2);
         var rotationStdDev = rotationStdDevCoefficient * Math.pow(distance, 2);
+
+        Logger.log("/VisionSubsystem/StdDev", translationStdDev);
 
         return VecBuilder.fill(translationStdDev, translationStdDev, rotationStdDev);
     }
@@ -228,6 +228,32 @@ public class VisionSubsystem extends SubsystemBase {
         return BackApriltagEstimate;
     }
 
+    public Command resetPoseWithApriltag() {
+        return run(() -> {
+            if (getBackLimelightMode() != LimelightMode.APRILTAG) return;
+
+            // gets the botpose array from the limelight and a timestamp
+            double[] botposeArray = DriverStation.getAlliance() == Alliance.Red
+                    ? backBotposeRedReceiver.getDoubleArray()
+                    : backBotposeBlueReceiver.getDoubleArray(); // double[] {x, y, z, roll, pitch, yaw, latency}
+
+            // if botpose exists and the limelight has an april tag, it adds the pose to our kalman filter
+            if (hasBackApriltagEstimate() && botposeArray.length == 7) {
+                Pose3d botPose = new Pose3d(
+                                botposeArray[0],
+                                botposeArray[1],
+                                botposeArray[2],
+                                new Rotation3d(
+                                        Math.toRadians(botposeArray[3]),
+                                        Math.toRadians(botposeArray[4]),
+                                        Math.toRadians(botposeArray[5])))
+                        .transformBy(VisionConstants.limelightCameraToRobot);
+
+                swerveDriveSubsystem.setPose(botPose.toPose2d());
+            }
+        });
+    }
+
     private Optional<LimelightRawAngles> calculateBackRetroreflectiveAngles() {
         if (!backLimelightHasTarget()
                 || (backLimelightMode != LimelightMode.RETROREFLECTIVEMID
@@ -236,9 +262,10 @@ public class VisionSubsystem extends SubsystemBase {
 
         double limelightTX = backLimelightTXReceiver.getDouble();
         double limelightTY = backLimelightTYReceiver.getDouble();
+        double limelightTA = backLimelightAreaReceiver.getDouble();
 
         // Store raw limelight angles
-        return Optional.of(new LimelightRawAngles(limelightTX, limelightTY));
+        return Optional.of(new LimelightRawAngles(limelightTX, limelightTY, limelightTA));
     }
 
     private Optional<LimelightRawAngles> calculateFrontMLAngles() {
@@ -306,9 +333,19 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     private boolean isValidPose(Pose3d pose) {
-        return MathUtils.isInRange(pose.getY(), -5, FieldConstants.fieldWidth + 5)
+        boolean isWithinField = MathUtils.isInRange(pose.getY(), -5, FieldConstants.fieldWidth + 5)
                 && MathUtils.isInRange(pose.getX(), -5, FieldConstants.fieldLength + 5)
                 && MathUtils.isInRange(pose.getZ(), 0, 5);
+
+        boolean isNearRobot = swerveDriveSubsystem
+                        .getPose()
+                        .getTranslation()
+                        .getDistance(pose.getTranslation().toTranslation2d())
+                < 1.4;
+
+        Logger.log("/VisionSubsystem/isNearRobot", isNearRobot);
+
+        return isWithinField && isNearRobot;
     }
 
     public Command defaultLimelightCommand() {
@@ -343,5 +380,9 @@ public class VisionSubsystem extends SubsystemBase {
         }
     }
 
-    public record LimelightRawAngles(double tx, double ty) {}
+    public record LimelightRawAngles(double tx, double ty, double ta) {
+        public LimelightRawAngles(double tx, double ty) {
+            this(ty, tx, 0.0);
+        }
+    }
 }

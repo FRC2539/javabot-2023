@@ -11,7 +11,6 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.lib.controller.LogitechController;
 import frc.lib.controller.ThrustmasterJoystick;
@@ -22,8 +21,6 @@ import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.IndicateGridAimedCommand;
 import frc.robot.commands.IndicateSubstationAimedCommand;
 import frc.robot.commands.IntakingAimAssistCommand;
-import frc.robot.commands.MusicRevealCommand;
-import frc.robot.commands.TestCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
@@ -38,8 +35,8 @@ public class RobotContainer {
 
     public static Orchestra orchestra = new Orchestra();
 
-    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(35, -30, 0);
-    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(35, -30, 0);
+    public static SlewRateLimiter forwardRateLimiter = new SlewRateLimiter(35, -35, 0);
+    public static SlewRateLimiter strafeRateLimiter = new SlewRateLimiter(35, -35, 0);
 
     private final SwerveDriveSubsystem swerveDriveSubsystem = new SwerveDriveSubsystem();
     private final LightsSubsystem lightsSubsystem = new LightsSubsystem();
@@ -79,37 +76,18 @@ public class RobotContainer {
                 .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
                         .withTimeout(1.5));
 
-        Trigger isDeadOn = new Trigger(() -> intakeSubsystem.isDeadOn()).debounce(0.25);
-
         new Trigger(() -> intakeSubsystem.hasGamePiece())
                 .debounce(0.05)
                 .onTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.white), lightsSubsystem)
-                        .until(isDeadOn)
                         .withTimeout(1.5));
-
-        // isDeadOn.onTrue(
-        //         run(() -> LightsSubsystem.LEDSegment.MainStrip.setStrobeAnimation(LightsSubsystem.blue, .3),
-        // lightsSubsystem)
-        //                 .withTimeout(1.5));
-
-        isDeadOn.onTrue(Commands.repeatingSequence(
-                        run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.red), lightsSubsystem)
-                                .withTimeout(0.163),
-                        run(() -> LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green), lightsSubsystem)
-                                .withTimeout(0.163))
-                .withTimeout(2));
 
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
-        leftDriveController
-                .getLeftTopRight()
-                .onTrue(runOnce(() -> swerveDriveSubsystem.setPose(new Pose2d()), swerveDriveSubsystem));
+        leftDriveController.getLeftTopRight().whileTrue(visionSubsystem.resetPoseWithApriltag());
         leftDriveController.getLeftTopMiddle().onTrue(runOnce(swerveDriveSubsystem::switchToBackupGyro));
         leftDriveController.nameLeftTopLeft("Reset Gyro Angle");
-        leftDriveController.nameLeftTopRight("Reset Pose");
+        leftDriveController.nameLeftTopRight("Reset Pose w/ AprilTag");
         leftDriveController.nameLeftTopMiddle("Use NavX");
-
-        leftDriveController.getLeftBottomRight().whileTrue(new MusicRevealCommand(null, lightsSubsystem));
 
         leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
         rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
@@ -122,18 +100,14 @@ public class RobotContainer {
         new Trigger(() -> swerveDriveSubsystem.isLevelDestiny())
                 .whileTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem));
 
-        leftDriveController.getLeftBottomMiddle().whileTrue(run(swerveDriveSubsystem::lock, swerveDriveSubsystem));
+        leftDriveController
+                .getLeftBottomMiddle()
+                .toggleOnTrue(run(swerveDriveSubsystem::lock, swerveDriveSubsystem)
+                        .alongWith(run(
+                                () -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem)));
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
 
-        // leftDriveController
-        //         .getRightThumb()
-        //         .whileTrue(new AssistedLLAimCommand(
-        //                 swerveDriveSubsystem,
-        //                 visionSubsystem,
-        //                 this::getDriveForwardAxis,
-        //                 this::getDriveStrafeAxis,
-        //                 this::getDriveRotationAxis));
         leftDriveController.getRightThumb().whileTrue(new IndicateGridAimedCommand(visionSubsystem, lightsSubsystem));
         leftDriveController.nameRightThumb("Aim to Grid");
 
@@ -153,10 +127,12 @@ public class RobotContainer {
         leftDriveController.nameBottomThumb("Drop Game Piece");
 
         /* Set right joystick bindings */
-        rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
-        rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
-        rightDriveController.nameRightBottomMiddle("Characterize Forwards");
-        rightDriveController.nameRightBottomMiddle("Characterize Backwards");
+        if (!Constants.competitionMode) {
+            rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
+            rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
+            rightDriveController.nameRightBottomMiddle("Characterize Forwards");
+            rightDriveController.nameRightBottomMiddle("Characterize Backwards");
+        }
 
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
@@ -165,11 +141,6 @@ public class RobotContainer {
         rightDriveController.nameLeftThumb("Run Intake");
         rightDriveController.nameRightThumb("Reverse Intake");
         rightDriveController.nameBottomThumb("Shoot");
-
-        rightDriveController.getRightTopLeft().whileTrue(swerveDriveSubsystem.orchestraCommand());
-        rightDriveController.nameRightTopLeft("Symphony");
-
-        rightDriveController.getRightTopRight().whileTrue(new TestCommand());
 
         // Cardinal drive commands (inverted since arm is back of robot)
         rightDriveController
@@ -193,9 +164,8 @@ public class RobotContainer {
         var shiftButton = operatorController.getRightBumper();
 
         operatorController.getA().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID));
-        // operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
-        operatorController.getY().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
-        operatorController.getX().onTrue(armSubsystem.awaitingDeploymentCommand());
+        operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
+        operatorController.getX().onTrue(armSubsystem.slidePickupCommand());
         operatorController.getX().whileTrue(new IndicateSubstationAimedCommand(visionSubsystem, lightsSubsystem));
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
         operatorController.nameA("Shoot Hybrid");
@@ -221,26 +191,6 @@ public class RobotContainer {
         operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
         operatorController.nameDPadRight("Mid Manual");
-
-        // operatorController
-        //         .getLeftBumper()
-        //         .onTrue(armSubsystem
-        //                 .handoffCommand()
-        //                 .deadlineWith(gripperSubsystem.dropFromGripperCommand())
-        //                 .andThen(gripperSubsystem
-        //                         .openGripperCommand()
-        //                         .deadlineWith(waitSeconds(0.2).andThen(intakeSubsystem.handoffCommand())))
-        //                 .until(operatorController.getLeftBumper().negate())
-        //                 .andThen(armSubsystem
-        //                         .undoHandoffCommand()
-        //                         .asProxy()
-        //                         .alongWith(intakeSubsystem
-        //                                 .handoffCommand()
-        //                                 .asProxy()
-        //                                 .withTimeout(0.2)
-        //                                 .until(operatorController
-        //                                         .getLeftBumper()
-        //                                         .negate()))));
 
         operatorController
                 .getLeftBumper()
@@ -275,6 +225,9 @@ public class RobotContainer {
                 .getStart()
                 .toggleOnTrue(run(() -> LightsSubsystem.LEDSegment.MainStrip.setRainbowAnimation(1), lightsSubsystem));
         operatorController.nameStart("Rainbow Mode");
+
+        operatorController.getBack().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
+        operatorController.nameBack("Reverse Intake");
 
         // Send all button names to network tables
         rightDriveController.sendButtonNamesToNT();
