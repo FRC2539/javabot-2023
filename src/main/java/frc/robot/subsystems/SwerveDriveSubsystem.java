@@ -16,7 +16,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.*;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -144,15 +143,15 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     public Command cardinalCommand(Rotation2d targetAngle, DoubleSupplier forward, DoubleSupplier strafe) {
-        omegaController.setTolerance(Units.degreesToRadians(1));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         return run(() -> {
                     var rotationCorrection =
                             omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
-                    var rotationVelocity = omegaController.getSetpoint().velocity + rotationCorrection;
+                    // var rotationVelocity = omegaController.getSetpoint().velocity + rotationCorrection;
 
-                    setVelocity(new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationVelocity), true);
+                    setVelocity(
+                            new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationCorrection), true);
                 })
                 .beforeStarting(() -> {
                     omegaController.reset(pose.getRotation().getRadians());

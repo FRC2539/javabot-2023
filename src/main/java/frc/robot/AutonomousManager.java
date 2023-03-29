@@ -157,6 +157,20 @@ public class AutonomousManager {
                                 .withTimeout(1.6))
                         .andThen(armSubsystem.undoHandoffCommand())
                         .asProxy());
+        eventMap.put(
+                "handoffThenShoot",
+                armSubsystem
+                        .handoffCommand()
+                        .deadlineWith(gripperSubsystem.dropFromGripperCommand())
+                        .andThen(gripperSubsystem
+                                .openGripperCommand()
+                                .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
+                                .withTimeout(1.6))
+                        .andThen(armSubsystem.undoHandoffCommand())
+                        .andThen(armSubsystem.armHandoffStateCommand(ArmState.SHOOT_MID))
+                        .andThen(gripperSubsystem.gripperShootHighCommand())
+                        .withTimeout(2)
+                        .asProxy());
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
@@ -242,8 +256,12 @@ public class AutonomousManager {
     private enum AutonomousOption {
         OPEN_PLACE2HANDOFF(StartingLocation.OPEN, 2, true, "open_place2handoff", new PathConstraints(4, 3.6)),
         OPEN_PLACE3HANDOFF(StartingLocation.OPEN, 3, false, "open_place3handoff", new PathConstraints(4, 3.6)),
+        STATION_PLACE1ANDCLIMBSHORT(
+                StartingLocation.STATION, 0, true, "station_place1andclimb_short", new PathConstraints(2, 1.5)),
         STATION_PLACE1ANDCLIMB(
-                StartingLocation.STATION, 1, true, "station_place1andclimb_fancy", new PathConstraints(3, 2.25)),
+                StartingLocation.STATION, 1, true, "station_place1andclimb_pickup", new PathConstraints(2, 1.5)),
+        STATION_PLACE1ANDCLIMBSHOOT(
+                StartingLocation.STATION, 2, true, "station_place1andclimb_shoot", new PathConstraints(2, 1.5)),
         CABLE_PLACE2(StartingLocation.CABLE, 2, false, "cable_place2", new PathConstraints(3.5, 3.5));
 
         private List<PathPlannerTrajectory> path;
