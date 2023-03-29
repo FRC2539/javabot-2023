@@ -732,7 +732,7 @@ public class ArmSubsystem extends SubsystemBase {
         Logger.log("/ArmSubsystem/arm1VoltageCorrection", arm1VoltageCorrection);
         Logger.log("/ArmSubsystem/arm2VoltageCorrection", arm2VoltageCorrection);
         Logger.log("/ArmSubsystem/gripperVoltageCorrection", wristVoltageCorrection);
-        
+
         // Logger.log("/ArmSubsystem/arm1SpeedSetpoint", motor1Controller.getSetpoint().velocity);
         // Logger.log("/ArmSubsystem/arm2SpeedSetpoint", motor2Controller.getSetpoint().velocity);
         // Logger.log("/ArmSubsystem/gripperSpeedSetpoint", gripperMotorController.getSetpoint().velocity);
