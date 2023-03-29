@@ -87,6 +87,10 @@ public class ArmSubsystem extends SubsystemBase {
 
     LoggedReceiver desiredNetworkTablesArmPosition;
 
+    LoggedReceiver arm1PIDReciever = Logger.tunable("/ArmSubsystem/Arm1PID", new double[] {6.4, 0, 0.15});
+    LoggedReceiver arm2PIDReciever = Logger.tunable("/ArmSubsystem/Arm2PID", new double[] {5.2, 0, 0.15});
+    LoggedReceiver wristPIDReciever = Logger.tunable("/ArmSubsystem/WristPID", new double[] {4, 0, 0.1});
+
     private WPI_TalonFX joint1Motor;
     private WPI_TalonFX joint2Motor;
     private WPI_TalonSRX gripperMotor;
@@ -344,6 +348,15 @@ public class ArmSubsystem extends SubsystemBase {
         gripperMotorController.reset(gripperAngle.getRadians());
     }
 
+    private void tunePIDControllers() {
+        double[] motor1Vals = arm1PIDReciever.getDoubleArray();
+        motor1Controller.setPID(motor1Vals[0], motor1Vals[1], motor1Vals[2]);
+        double[] motor2Vals = arm2PIDReciever.getDoubleArray();
+        motor2Controller.setPID(motor2Vals[0], motor2Vals[1], motor2Vals[2]);
+        double[] wristVals = wristPIDReciever.getDoubleArray();
+        gripperMotorController.setPID(wristVals[0], wristVals[1], wristVals[2]);
+    }
+
     private Matrix<N3, N1> inverseKinematics(Translation2d gripperEndEffector, Rotation2d gripperAngle) {
         Translation2d endEffector = gripperEndEffector.minus(new Translation2d(gripper.getLength(), gripperAngle));
         try {
@@ -584,6 +597,8 @@ public class ArmSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         var startTimeMS = Timer.getFPGATimestamp() * 1000;
+
+        tunePIDControllers();
 
         // Update internal model with real motor values
         if (Robot.isReal()) {
