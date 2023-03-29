@@ -26,16 +26,16 @@
     },
     {
       "anchorPoint": {
-        "x": 6.797183850777958,
-        "y": 4.5905055912675925
+        "x": 6.869789241314594,
+        "y": 4.570959187057263
       },
       "prevControl": {
-        "x": 4.5111448482050465,
-        "y": 4.8222883337632085
+        "x": 4.583750238741683,
+        "y": 4.802741929552879
       },
       "nextControl": {
-        "x": 4.5111448482050465,
-        "y": 4.8222883337632085
+        "x": 4.583750238741683,
+        "y": 4.802741929552879
       },
       "holonomicAngle": 0.0,
       "isReversal": true,
@@ -51,16 +51,16 @@
     },
     {
       "anchorPoint": {
-        "x": 1.8030329689131601,
-        "y": 4.408128986396862
+        "x": 1.92,
+        "y": 4.353330361174611
       },
       "prevControl": {
-        "x": 2.4326200490573497,
-        "y": 4.957530127560955
+        "x": 2.5495870801441844,
+        "y": 4.902731502338704
       },
       "nextControl": {
-        "x": 2.4326200490573497,
-        "y": 4.957530127560955
+        "x": 2.5495870801441844,
+        "y": 4.902731502338704
       },
       "holonomicAngle": 0.0,
       "isReversal": true,
@@ -69,7 +69,7 @@
       "isStopPoint": true,
       "stopEvent": {
         "names": [
-          "placeHighCube"
+          "shootHighCube"
         ],
         "executionBehavior": "sequential",
         "waitBehavior": "none",
@@ -105,18 +105,18 @@
     },
     {
       "anchorPoint": {
-        "x": 6.785764682640477,
-        "y": 3.357235432419583
+        "x": 6.960482415756498,
+        "y": 3.4642009214573983
       },
       "prevControl": {
-        "x": 5.019799251404059,
-        "y": 3.2740583901306692
+        "x": 6.356305827194987,
+        "y": 3.993318782577735
       },
       "nextControl": {
-        "x": 5.019799251404059,
-        "y": 3.2740583901306692
+        "x": 6.356305827194987,
+        "y": 3.993318782577735
       },
-      "holonomicAngle": 0,
+      "holonomicAngle": -37.698240338429294,
       "isReversal": true,
       "velOverride": null,
       "isLocked": false,
@@ -155,12 +155,12 @@
     },
     {
       "anchorPoint": {
-        "x": 1.8483795561341123,
-        "y": 4.376293594601078
+        "x": 1.9,
+        "y": 4.32
       },
       "prevControl": {
-        "x": 2.4374792742640965,
-        "y": 4.401460370629074
+        "x": 2.4890997181299754,
+        "y": 4.345166776027996
       },
       "nextControl": null,
       "holonomicAngle": 0,
@@ -169,13 +169,18 @@
       "isLocked": false,
       "isStopPoint": false,
       "stopEvent": {
-        "names": [],
-        "executionBehavior": "parallel",
+        "names": [
+          "shootMid"
+        ],
+        "executionBehavior": "sequential",
         "waitBehavior": "none",
         "waitTime": 0
       }
     }
   ],
+  "maxVelocity": null,
+  "maxAcceleration": 4.0,
+  "isReversed": null,
   "markers": [
     {
       "position": 0.4909090909090912,
@@ -184,19 +189,19 @@
       ]
     },
     {
-      "position": 1.0708806818181826,
+      "position": 1.05,
       "names": [
         "handoff"
       ]
     },
     {
-      "position": 3.1894886363636274,
+      "position": 3.024928977272719,
       "names": [
         "intakePickup"
       ]
     },
     {
-      "position": 4.266690340909088,
+      "position": 4.15,
       "names": [
         "handoff"
       ]

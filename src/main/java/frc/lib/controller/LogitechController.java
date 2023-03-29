@@ -9,6 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Supports the Logitech F310 controller, specifically in D mode, not X mode.
+ */
 public class LogitechController {
     private int port;
 

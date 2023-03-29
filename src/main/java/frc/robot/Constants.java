@@ -357,8 +357,10 @@ public final class Constants {
 
         // Includes 3d transform from camera(s) to robot origin
         public static final Transform3d photonCameraToRobot = new Transform3d(
-                new Translation3d(Units.inchesToMeters(7.82), 0, Units.inchesToMeters(-31.2897)),
-                new Rotation3d(0, 0, 0));
+                new Translation3d(Units.inchesToMeters(0), 0, Units.inchesToMeters(-31.2897)), new Rotation3d(0, 0, 0));
+        // public static final Transform3d photonCameraToRobot = new Transform3d(
+        //         new Translation3d(Units.inchesToMeters(7.82), 0, Units.inchesToMeters(-31.2897)),
+        //         new Rotation3d(0, 0, 0));
 
         public static final Transform3d photonRobotToCamera = photonCameraToRobot.inverse();
 
@@ -369,9 +371,13 @@ public final class Constants {
 
         public static final double retroreflectiveAngleThreshold = 10;
 
-        // Pretty sure 6 needs to negative
+        // Currently working, not sure
+        // public static final Transform3d limelightRobotToCamera = new Transform3d(
+        //         new Translation3d(Units.inchesToMeters(0), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
+        //         new Rotation3d(0, Math.toRadians(15), Math.PI));
+
         public static final Transform3d limelightRobotToCamera = new Transform3d(
-                new Translation3d(Units.inchesToMeters(6), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
+                new Translation3d(Units.inchesToMeters(0), Units.inchesToMeters(0), Units.inchesToMeters(34.25)),
                 new Rotation3d(0, Math.toRadians(15), Math.PI));
 
         public static final Transform3d limelightCameraToRobot = limelightRobotToCamera.inverse();

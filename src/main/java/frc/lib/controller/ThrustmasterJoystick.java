@@ -9,6 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Supports Thrustmaster flight sticks, specifically where both are in the right-handed control mode.
+ */
 public class ThrustmasterJoystick {
     private int port;
 

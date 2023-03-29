@@ -733,7 +733,6 @@ public class ArmSubsystem extends SubsystemBase {
         Logger.log("/ArmSubsystem/arm2VoltageCorrection", arm2VoltageCorrection);
         Logger.log("/ArmSubsystem/gripperVoltageCorrection", wristVoltageCorrection);
         
-
         // Logger.log("/ArmSubsystem/arm1SpeedSetpoint", motor1Controller.getSetpoint().velocity);
         // Logger.log("/ArmSubsystem/arm2SpeedSetpoint", motor2Controller.getSetpoint().velocity);
         // Logger.log("/ArmSubsystem/gripperSpeedSetpoint", gripperMotorController.getSetpoint().velocity);
@@ -872,15 +871,16 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public enum ArmState {
-        AWAITING_PIECE(new Static(0.24, 0.27, new Rotation2d())),
         AWAITING_DEPLOYMENT_1(Static.fromWrist(0.2, 0.3, Rotation2d.fromDegrees(20))),
         AWAITING_DEPLOYMENT(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(53))),
         SHOOT_HYBRID(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(0))),
+        SHOOT_MID(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(40))),
         SHOOT_HIGH(new Static(0.88, 0.8, Rotation2d.fromDegrees(40))),
         // SUBSTATION_PICKUP(Static.fromWrist(0.21, 0.34, Rotation2d.fromDegrees(67))),  // starting
         SLIDE_PICKUP(Static.fromWrist(0.19, 0.32, Rotation2d.fromDegrees(52))),
         // SLIDE_PICKUP_COMP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
+        // HYBRID_MANUAL(new Static(0.8, -0.08, Rotation2d.fromDegrees(-10))), // experimental
         TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
         // MID_MANUAL(Static.fromBumper(
         //         FieldConstants.midX,
@@ -964,6 +964,7 @@ public class ArmSubsystem extends SubsystemBase {
             return angle;
         }
 
+        @SuppressWarnings("unused")
         public Translation2d getWrist() {
             return new Translation2d(
                     endEffector.getX() - angle.getCos() * GripperConstants.length,

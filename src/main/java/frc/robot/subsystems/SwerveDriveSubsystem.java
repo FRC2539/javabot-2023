@@ -16,8 +16,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.*;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -27,7 +25,6 @@ import frc.lib.gyro.PigeonGyro;
 import frc.lib.interpolation.MovingAverageVelocity;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
-import frc.lib.math.MathUtils;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
@@ -65,8 +62,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private PIDController tiltController = new PIDController(0.75 / 12, 0, 0.02);
 
     /* New leveling values */
-    private LoggedReceiver levelMaxSpeedReceiver;
-    private LoggedReceiver angleThresholdReceiver;
     private LoggedReceiver angleRateThresholdReceiver;
 
     private SwerveModule[] modules;
@@ -79,7 +74,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     // PID controller used for cardinal command
     private ProfiledPIDController omegaController =
-            new ProfiledPIDController(1.0, 0, 0, new TrapezoidProfile.Constraints(5, 5));
+            new ProfiledPIDController(2.0, 0, 0, new TrapezoidProfile.Constraints(5, 5));
 
     private DoubleSupplier maxSpeedSupplier = () -> Constants.SwerveConstants.maxSpeed;
 
@@ -121,8 +116,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         // [0.055,0,0.01,10,0.55]\][]
         // new double[] {0.75 / 15, 0, .02, 8, 0.85}
 
-        levelMaxSpeedReceiver = Logger.tunable("/SwerveDriveSubsystem/levelMaxSpeed", 0.6);
-        angleThresholdReceiver = Logger.tunable("/SwerveDriveSubsystem/angleThreshold", 9);
         angleRateThresholdReceiver = Logger.tunable("/SwerveDriveSubsystem/angleRateThreshold", 18.0);
     }
 
@@ -150,16 +143,19 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     public Command cardinalCommand(Rotation2d targetAngle, DoubleSupplier forward, DoubleSupplier strafe) {
-        omegaController.setTolerance(Units.degreesToRadians(1));
         omegaController.enableContinuousInput(-Math.PI, Math.PI);
 
         return run(() -> {
-            var rotationCorrection =
-                    omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
-            var rotationVelocity = omegaController.getSetpoint().velocity + rotationCorrection;
+                    var rotationCorrection =
+                            omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
+                    // var rotationVelocity = omegaController.getSetpoint().velocity + rotationCorrection;
 
-            setVelocity(new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationVelocity), true);
-        });
+                    setVelocity(
+                            new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationCorrection), true);
+                })
+                .beforeStarting(() -> {
+                    omegaController.reset(pose.getRotation().getRadians());
+                });
     }
 
     public Command orchestraCommand() {
@@ -173,63 +169,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                             RobotContainer.orchestra.stop();
                         })
                 .withName("Orchestra");
-    }
-
-    public Command levelChargeStationCommandTurtle() {
-        return run(() -> {
-                    double tilt = getTiltAmountInDegrees();
-
-                    Logger.log("/SwerveDriveSubsystem/Tilt Rate", getTiltRate());
-
-                    // Negative pitch -> drive forward, Positive pitch -> drive backward
-
-                    Translation2d direction = new Translation2d(
-                                    1,
-                                    new Rotation2d(
-                                            getNormalVector3d().getX(),
-                                            getNormalVector3d().getY()))
-                            .unaryMinus();
-
-                    Translation2d finalDirection = direction.times(levelMaxSpeedReceiver.getDouble());
-
-                    ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
-
-                    if (MathUtils.equalsWithinError(0, tilt, angleThresholdReceiver.getDouble())
-                            || Math.abs(getTiltRate()) >= Math.toDegrees(angleRateThresholdReceiver.getDouble()))
-                        lock();
-                    else setVelocity(velocity, false);
-                })
-                .repeatedly();
-    }
-
-    public Command levelChargeStationCommandArlene() {
-        var constraints = new TrapezoidProfile.Constraints(0.4, 0.8);
-        var tiltController = new ProfiledPIDController(0.27, 0, 0.01, constraints);
-
-        // End with no pitch and stationary
-        State goal = new State(0, 0);
-
-        // Four degrees of tolerance
-        tiltController.setTolerance(4, 0.1);
-
-        return run(() -> {
-                    double tilt = getTiltAmountInDegrees();
-
-                    Logger.log("/SwerveDriveSubsystem/Tilt Rate", getTiltRate());
-
-                    // Negative pitch -> drive forward, Positive pitch -> drive backward
-
-                    Translation2d direction = new Translation2d(
-                            getNormalVector3d().getX(), getNormalVector3d().getY());
-
-                    Translation2d finalDirection = direction.times(tiltController.calculate(tilt, goal));
-
-                    ChassisSpeeds velocity = new ChassisSpeeds(finalDirection.getX(), finalDirection.getY(), 0);
-
-                    if (MathUtils.equalsWithinError(0, tilt, 8) || getTiltAmount() < -0.2) lock();
-                    else setVelocity(velocity, false);
-                })
-                .repeatedly();
     }
 
     private class AnyContainer<T> {
@@ -246,8 +185,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         AnyContainer<Boolean> isGoingSlower = new AnyContainer<Boolean>(false);
         return run(() -> {
                     double tilt = getTiltAmountInDegrees();
-
-                    // TODO: stop when angle changes
 
                     // Negative pitch -> drive forward, Positive pitch -> drive backward
 

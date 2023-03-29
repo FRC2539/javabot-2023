@@ -5,7 +5,6 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.AnalogInput;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -39,7 +38,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
     AnalogInput intakeSensor1 = new AnalogInput(2);
     AnalogInput intakeSensor2 = new AnalogInput(3);
-    DigitalInput intakeSensorCenter = new DigitalInput(3);
 
     public IntakeSubsystem() {
         intakeMotor.setNeutralMode(NeutralMode.Brake);
@@ -51,7 +49,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
         intakeMotor.configSupplyCurrentLimit(supplyLimit);
 
-        intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.85);
+        intakeSpeedReceiver = Logger.tunable("/IntakeSubsystem/IntakeSpeed", 0.75);
         slowReverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/SlowReverseSpeed", -0.1);
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.4);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
@@ -63,16 +61,8 @@ public class IntakeSubsystem extends SubsystemBase {
         holdDelayTimer.restart();
     }
 
-    public boolean hasCenterGamePiece() {
-        return !intakeSensorCenter.get();
-    }
-
     public boolean hasGamePiece() {
-        return intakeSensor1.getValue() < 50 || intakeSensor2.getValue() < 50 || hasCenterGamePiece();
-    }
-
-    public boolean isDeadOn() {
-        return hasCenterGamePiece();
+        return intakeSensor1.getValue() < 50 || intakeSensor2.getValue() < 50;
     }
 
     public Command handoffCommand() {
@@ -175,7 +165,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
         Logger.log("/IntakeSubsystem/IntakeSensor1", intakeSensor1.getValue() < 50);
         Logger.log("/IntakeSubsystem/IntakeSensor2", intakeSensor2.getValue() < 50);
-        Logger.log("/IntakeSubsystem/IntakeSensorCenter", hasCenterGamePiece());
     }
 
     public enum IntakeMode {
