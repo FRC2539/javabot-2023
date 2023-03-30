@@ -18,7 +18,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.Timer;
@@ -143,11 +142,11 @@ public class ArmSubsystem extends SubsystemBase {
                 "Ghost Gripper", GripperConstants.length, GripperConstants.startingAngle.getDegrees()));
 
         ghostProfileArm1 = root.append(new MechanismLigament2d(
-                    "Arm 1 Profile", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
+                "Arm 1 Profile", ArmConstants.arm1Length, ArmConstants.arm1StartingAngle.getDegrees()));
         ghostProfileArm2 = ghostProfileArm1.append(new MechanismLigament2d(
-                    "Arm 2 Profile", ArmConstants.arm2Length, ArmConstants.arm2StartingAngle.getDegrees()));
+                "Arm 2 Profile", ArmConstants.arm2Length, ArmConstants.arm2StartingAngle.getDegrees()));
         ghostProfileGripper = ghostProfileArm2.append(new MechanismLigament2d(
-                    "Gripper Profile", GripperConstants.length, GripperConstants.startingAngle.getDegrees()));
+                "Gripper Profile", GripperConstants.length, GripperConstants.startingAngle.getDegrees()));
 
         ghostArm1.setLineWeight(5);
         ghostArm1.setColor(new Color8Bit(Color.kGray));
@@ -350,11 +349,11 @@ public class ArmSubsystem extends SubsystemBase {
 
     private void tunePIDControllers() {
         double[] motor1Vals = arm1PIDReciever.getDoubleArray();
-        motor1Controller.setPID(motor1Vals[0], motor1Vals[1], motor1Vals[2]);
+        if (motor1Vals.length >= 3) motor1Controller.setPID(motor1Vals[0], motor1Vals[1], motor1Vals[2]);
         double[] motor2Vals = arm2PIDReciever.getDoubleArray();
-        motor2Controller.setPID(motor2Vals[0], motor2Vals[1], motor2Vals[2]);
+        if (motor2Vals.length >= 3) motor2Controller.setPID(motor2Vals[0], motor2Vals[1], motor2Vals[2]);
         double[] wristVals = wristPIDReciever.getDoubleArray();
-        gripperMotorController.setPID(wristVals[0], wristVals[1], wristVals[2]);
+        if (wristVals.length >= 3) gripperMotorController.setPID(wristVals[0], wristVals[1], wristVals[2]);
     }
 
     private Matrix<N3, N1> inverseKinematics(Translation2d gripperEndEffector, Rotation2d gripperAngle) {
@@ -736,6 +735,17 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/arm1SpeedSetpoint", motor1Controller.getSetpoint().velocity);
         // Logger.log("/ArmSubsystem/arm2SpeedSetpoint", motor2Controller.getSetpoint().velocity);
         // Logger.log("/ArmSubsystem/gripperSpeedSetpoint", gripperMotorController.getSetpoint().velocity);
+    }
+
+    public double[] feedforwardPassthrough(
+            double arm1Angle,
+            double arm2Angle,
+            double arm1Speed,
+            double arm2Speed,
+            double arm1Acceleration,
+            double arm2Acceleration) {
+        return feedforward.calculateFeedforwardVoltages(
+                arm1Angle, arm2Angle, arm1Speed, arm2Speed, arm1Acceleration, arm2Acceleration);
     }
 
     private static double applyKs(double volts, double kS, double kSDeadband) {
