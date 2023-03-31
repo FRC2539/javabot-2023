@@ -149,17 +149,40 @@ public class TwoJointedFourBarArmFeedforward {
         return new double[] {voltages.get(0, 0), voltages.get(1, 0)};
     }
 
+    public double[] calculateFeedforwardTorques(
+            double joint1Angle,
+            double joint2Angle,
+            double joint1Speed,
+            double joint2Speed,
+            double joint1Acceleration,
+            double joint2Acceleration) {
+        Matrix<N2, N1> voltages = calculateFeedforwardTorqueMatrix(
+                VecBuilder.fill(joint1Acceleration, joint2Acceleration),
+                VecBuilder.fill(joint1Speed, joint2Speed),
+                VecBuilder.fill(joint1Angle, joint2Angle));
+        return new double[] {voltages.get(0, 0), voltages.get(1, 0)};
+    }
+
     public Matrix<N2, N1> calculateFeedforwardVoltageMatrix(
             Matrix<N2, N1> motorAccelerations, Matrix<N2, N1> motorSpeeds, Matrix<N2, N1> motorAngles) {
         return motorTorqueInvMatrix.times(
                 // calculateArmInertiaMatrix(motorAngles).times(motorAccelerations)
                 // .plus(calculateCoriolisMatrix(motorSpeeds, motorAngles).times(motorSpeeds))
-                transposeJacobianInverseMatrix
-                        .times(calculateGravityMatrix(motorAngles)
-                                .plus(calculateCoriolisMatrix(motorSpeeds, motorAngles)
-                                        .times(motorSpeeds)))
-                        .plus(calculateArmInertiaMatrix(motorAngles).times(motorAccelerations))
+                // transposeJacobianInverseMatrix
+                calculateFeedforwardTorqueMatrix(motorAccelerations, motorSpeeds, motorAngles)
                         .plus(backEmfMatrix.times(jacobianMatrix.times(motorSpeeds))));
+    }
+
+    public Matrix<N2, N1> calculateFeedforwardTorqueMatrix(
+            Matrix<N2, N1> motorAccelerations, Matrix<N2, N1> motorSpeeds, Matrix<N2, N1> motorAngles) {
+        return
+        // calculateArmInertiaMatrix(motorAngles).times(motorAccelerations)
+        // .plus(calculateCoriolisMatrix(motorSpeeds, motorAngles).times(motorSpeeds))
+        // transposeJacobianInverseMatrix
+        //        .times(
+        calculateGravityMatrix(motorAngles)
+                .plus(calculateCoriolisMatrix(motorSpeeds, motorAngles).times(motorSpeeds))
+                .plus(calculateArmInertiaMatrix(motorAngles).times(motorAccelerations));
     }
 
     public Matrix<N2, N1> calculateGravityMatrix(Matrix<N2, N1> motorAngles) {
