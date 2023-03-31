@@ -21,7 +21,6 @@ import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.IndicateGridAimedCommand;
 import frc.robot.commands.IndicateSubstationAimedCommand;
 import frc.robot.commands.IntakingAimAssistCommand;
-import frc.robot.commands.TestCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
@@ -90,9 +89,9 @@ public class RobotContainer {
         leftDriveController.nameLeftTopRight("Reset Pose w/ AprilTag");
         leftDriveController.nameLeftTopMiddle("Use NavX");
 
-        leftDriveController.getLeftBottomLeft().onTrue(new TestCommand(armSubsystem));
-        leftDriveController.nameLeftBottomLeft("Test Command");
-        //this is button 10 on controller 0
+        //leftDriveController.getLeftBottomLeft().onTrue(new TestCommand(armSubsystem));
+        //leftDriveController.nameLeftBottomLeft("Test Command");
+        // this is button 10 on controller 0
 
         leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
         rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
