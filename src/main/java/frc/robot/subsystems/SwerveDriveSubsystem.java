@@ -25,6 +25,7 @@ import frc.lib.gyro.PigeonGyro;
 import frc.lib.interpolation.MovingAverageVelocity;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
+import frc.lib.math.MathUtils;
 import frc.lib.swerve.SwerveDriveSignal;
 import frc.lib.swerve.SwerveModule;
 import frc.robot.Constants;
@@ -75,6 +76,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     // PID controller used for cardinal command
     private ProfiledPIDController omegaController =
             new ProfiledPIDController(2.0, 0, 0, new TrapezoidProfile.Constraints(5, 5));
+    // private PIDController omegaController = new PIDController(2.0, 0, 0);
 
     private DoubleSupplier maxSpeedSupplier = () -> Constants.SwerveConstants.maxSpeed;
 
@@ -151,7 +153,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                     // var rotationVelocity = omegaController.getSetpoint().velocity + rotationCorrection;
 
                     setVelocity(
-                            new ChassisSpeeds(forward.getAsDouble(), strafe.getAsDouble(), rotationCorrection), true);
+                            new ChassisSpeeds(
+                                    forward.getAsDouble(),
+                                    strafe.getAsDouble(),
+                                    MathUtils.ensureRange(rotationCorrection, -2.0, 2.0)),
+                            true);
                 })
                 .beforeStarting(() -> {
                     omegaController.reset(pose.getRotation().getRadians());
@@ -508,6 +514,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         //     modules[2].getPosition().angle.getDegrees(),
         //     modules[3].getPosition().angle.getDegrees()
         // });
+
+        Logger.log("/SwerveDriveSubsystem/Wheel Amps", new double[] {
+            modules[0].getDriveCurrent(),
+            modules[1].getDriveCurrent(),
+            modules[2].getDriveCurrent(),
+            modules[3].getDriveCurrent()
+        });
 
         Logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
         // Logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());

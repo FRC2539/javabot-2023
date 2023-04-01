@@ -26,16 +26,16 @@
     },
     {
       "anchorPoint": {
-        "x": 6.943665906429035,
-        "y": 4.565160390737448
+        "x": 6.869789241314594,
+        "y": 4.570959187057263
       },
       "prevControl": {
-        "x": 4.657626903856124,
-        "y": 4.796943133233064
+        "x": 4.583750238741683,
+        "y": 4.802741929552879
       },
       "nextControl": {
-        "x": 4.657626903856124,
-        "y": 4.796943133233064
+        "x": 4.583750238741683,
+        "y": 4.802741929552879
       },
       "holonomicAngle": 0.0,
       "isReversal": true,
@@ -169,9 +169,7 @@
       "isLocked": false,
       "isStopPoint": false,
       "stopEvent": {
-        "names": [
-          "shootMid"
-        ],
+        "names": [],
         "executionBehavior": "sequential",
         "waitBehavior": "none",
         "waitTime": 0
@@ -183,7 +181,7 @@
   "isReversed": null,
   "markers": [
     {
-      "position": 0.441690340909091,
+      "position": 0.4909090909090912,
       "names": [
         "intakePickup"
       ]

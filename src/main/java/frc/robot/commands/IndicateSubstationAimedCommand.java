@@ -16,7 +16,7 @@ public class IndicateSubstationAimedCommand extends CommandBase {
     private boolean hasVisionMeasurement = false;
 
     private final double angleThreshold = 6.0;
-    private final double areaThreshold = 1.0;
+    private final double areaThreshold = 0.05;
 
     public IndicateSubstationAimedCommand(VisionSubsystem visionSubsystem, LightsSubsystem lightsSubsystem) {
         this.visionSubsystem = visionSubsystem;

@@ -72,11 +72,10 @@ public class AutonomousManager {
                                 && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
                         .andThen(armSubsystem
                                 .highManualCubeCommand()
-                                .andThen(waitSeconds(0.06))
                                 .andThen(container
                                         .getGripperSubsystem()
-                                        .ejectFromGripperCommand()
-                                        .withTimeout(0.3)
+                                        .ejectFastFromGripperCommand()
+                                        .withTimeout(0.2)
                                         .asProxy())
                                 .andThen(
                                         armSubsystem.awaitingDeploymentCommand().asProxy()))
@@ -121,7 +120,7 @@ public class AutonomousManager {
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
                         .andThen(armSubsystem.armHandoffStateCommand(ArmState.SHOOT_MID))
-                        .andThen(gripperSubsystem.gripperShootHighCommand())
+                        .andThen(gripperSubsystem.gripperShootMidCommand())
                         .withTimeout(2)
                         .asProxy());
         eventMap.put(
@@ -167,16 +166,16 @@ public class AutonomousManager {
                                 .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
                                 .withTimeout(1.6))
                         .andThen(armSubsystem.undoHandoffCommand())
-                        .andThen(armSubsystem.armHandoffStateCommand(ArmState.SHOOT_MID))
+                        .andThen(armSubsystem.armHandoffStateCommand(ArmState.SHOOT_MID)
                         .andThen(gripperSubsystem.gripperShootHighCommand())
-                        .withTimeout(2)
+                        .withTimeout(2))
                         .asProxy());
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
-                new PIDConstants(4.2, 0.0, 0.001),
-                new PIDConstants(1.7, 0.0, 0.001),
+                new PIDConstants(5.5, 0.0, 0.001),
+                new PIDConstants(3.5, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
                 true,
@@ -256,13 +255,19 @@ public class AutonomousManager {
     private enum AutonomousOption {
         OPEN_PLACE2HANDOFF(StartingLocation.OPEN, 2, true, "open_place2handoff", new PathConstraints(4, 3.6)),
         OPEN_PLACE3HANDOFF(StartingLocation.OPEN, 3, false, "open_place3handoff", new PathConstraints(4, 3.6)),
+        OPEN_PLACE25HANDOFF(StartingLocation.OPEN, 2, false, "open_place25", new PathConstraints(4, 3.6)),
         STATION_PLACE1ANDCLIMBSHORT(
-                StartingLocation.STATION, 0, true, "station_place1andclimb_short", new PathConstraints(2, 1.5)),
+                StartingLocation.STATIONOPEN, 0, true, "station_place1andclimb_short", new PathConstraints(2, 1.5)),
         STATION_PLACE1ANDCLIMB(
-                StartingLocation.STATION, 1, true, "station_place1andclimb_pickup", new PathConstraints(2, 1.5)),
+                StartingLocation.STATIONOPEN, 1, true, "station_place1andclimb_pickup", new PathConstraints(2, 1.5)),
         STATION_PLACE1ANDCLIMBSHOOT(
-                StartingLocation.STATION, 2, true, "station_place1andclimb_shoot", new PathConstraints(2, 1.5)),
-        CABLE_PLACE2(StartingLocation.CABLE, 2, false, "cable_place2", new PathConstraints(3.5, 3.5));
+                StartingLocation.STATIONOPEN, 2, true, "station_place1andclimb_shoot", new PathConstraints(2, 1.5)),
+        STATIONCABLE_PLACE1ANDCLIMB(
+                StartingLocation.STATIONCABLE, 1, true, "stationcable_place1andclimb_pickup", new PathConstraints(2, 1.5)),
+        STATIONCABLE_PLACE1ANDCLIMBSHOOT(
+                StartingLocation.STATIONCABLE, 2, true, "stationcable_place1andclimb_shoot", new PathConstraints(2, 1.5)),
+        CABLE_PLACE2(StartingLocation.CABLE, 2, false, "cable_place2", new PathConstraints(3.5, 3.5)),
+        CABLE_PLACE3(StartingLocation.CABLE, 3, false, "cable_place3", new PathConstraints(4, 3.6));
 
         private List<PathPlannerTrajectory> path;
         private String pathName;
@@ -297,7 +302,8 @@ public class AutonomousManager {
 
     private enum StartingLocation {
         OPEN,
-        STATION,
+        STATIONOPEN,
+        STATIONCABLE,
         CABLE
     }
 

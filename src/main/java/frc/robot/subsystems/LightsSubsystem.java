@@ -76,7 +76,7 @@ public class LightsSubsystem extends SubsystemBase {
         BoomEncoderIndicator(5, 1, -1),
         WristEncoderIndicator(6, 1, -1),
         DriverStationIndicator(7, 1, -1),
-        MainStrip(8, 296, 2);
+        MainStrip(8, 300, 2);
 
         public final int startIndex;
         public final int segmentSize;

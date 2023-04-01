@@ -99,6 +99,7 @@ public class ArmSubsystem extends SubsystemBase {
     private ProfiledPIDController gripperMotorController;
 
     private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(5, 20);
+    // private static final TrapezoidProfile.Constraints motor1Constraints = new TrapezoidProfile.Constraints(5, 12);
     private static final TrapezoidProfile.Constraints motor2Constraints = new TrapezoidProfile.Constraints(9, 20);
     private static final TrapezoidProfile.Constraints gripperProfileConstraints =
             new TrapezoidProfile.Constraints(6, 15);
@@ -625,8 +626,8 @@ public class ArmSubsystem extends SubsystemBase {
             }
         }
 
-        Logger.log("/ArmSubsystem/arm1Percent", joint1Motor.get());
-        Logger.log("/ArmSubsystem/arm2Percent", joint2Motor.get());
+        // Logger.log("/ArmSubsystem/arm1Percent", joint1Motor.get());
+        // Logger.log("/ArmSubsystem/arm2Percent", joint2Motor.get());
 
         Logger.log("/ArmSubsystem/arm1Angle", arm1Angle.getRadians());
         Logger.log("/ArmSubsystem/arm2Angle", arm2Angle.getRadians());
@@ -634,15 +635,15 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/arm2Speed", arm2Speed);
         Logger.log("/ArmSubsystem/gripperAngle", gripperAngle.getRadians());
         // Logger.log("/ArmSubsystem/gripperSpeed", gripperSpeed);
-        Logger.log("/ArmSubsystem/arm1DesiredPosition", joint1DesiredMotorPosition);
-        Logger.log("/ArmSubsystem/arm2DesiredPosition", joint2DesiredMotorPosition);
-        Logger.log("/ArmSubsystem/gripperDesiredPosition", gripperDesiredMotorPosition);
+        // Logger.log("/ArmSubsystem/arm1DesiredPosition", joint1DesiredMotorPosition);
+        // Logger.log("/ArmSubsystem/arm2DesiredPosition", joint2DesiredMotorPosition);
+        // Logger.log("/ArmSubsystem/gripperDesiredPosition", gripperDesiredMotorPosition);
         // Logger.log("/ArmSubsystem/arm1EncoderPosition", getJoint1EncoderAngle().getRadians());
         // Logger.log("/ArmSubsystem/arm2EncoderPosition", getJoint2EncoderAngle().getRadians());
         // Logger.log("/ArmSubsystem/isBraking", brakingActivated);
         // Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
-        Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
-        Logger.log("/ArmSubsystem/isArmAtHandoffPosition", isArmAtHandoffGoal());
+        // Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
+        // Logger.log("/ArmSubsystem/isArmAtHandoffPosition", isArmAtHandoffGoal());
 
         Logger.log("/ArmSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
@@ -855,13 +856,15 @@ public class ArmSubsystem extends SubsystemBase {
         MID_MANUAL_CUBE(Static.fromBumper(
                 FieldConstants.midX + 0.10, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
         HIGH_MANUAL_1(new Static(0.9, 1.2, Rotation2d.fromDegrees(60))),
+        // HIGH_MANUAL_1(new Static(0.9, 1.24, Rotation2d.fromDegrees(70))),
+        // HIGH_MANUAL_1(new Static(0.9, 1.32, Rotation2d.fromDegrees(65))),
         HIGH_MANUAL_CONE(Static.fromBumper(
                 FieldConstants.highX + 0.1, // 0.14, // gripper offset
                 FieldConstants.highConeZ
                         + ArmConstants.placementHeightOffset
                         + 0.3
                         - 0.18, // because of poor pid behavior
-                Rotation2d.fromDegrees(24))),
+                Rotation2d.fromDegrees(24))), //18
         HIGH_MANUAL_CUBE(Static.fromBumper(
                 FieldConstants.highX + 0.14, // gripper offset
                 FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior

@@ -25,6 +25,7 @@ public class GripperSubsystem extends SubsystemBase {
     private LoggedReceiver gripperEjectSpeed;
     private LoggedReceiver gripperShootHighSpeed;
     private LoggedReceiver gripperShootMidSpeed;
+    private LoggedReceiver gripperEjectFastSpeed;
     private LoggedReceiver gripperHoldSpeed;
 
     private AnalogInput gamePieceSensor1 = new AnalogInput(0);
@@ -51,7 +52,8 @@ public class GripperSubsystem extends SubsystemBase {
         gripperIntakeSpeed = Logger.tunable("/Gripper/Intake Speed", 1.0);
         gripperEjectSpeed = Logger.tunable("/Gripper/Eject Speed", -0.3);
         gripperShootHighSpeed = Logger.tunable("/Gripper/Shoot High Speed", -1.0);
-        gripperShootMidSpeed = Logger.tunable("/Gripper/Shoot Mid Speed", -0.8);
+        gripperShootMidSpeed = Logger.tunable("/Gripper/Shoot Mid Speed", -0.75);
+        gripperEjectFastSpeed = Logger.tunable("/Gripper/Eject Fast Speed", -0.5);
         gripperHoldSpeed = Logger.tunable("/Gripper/Hold Speed", 0.35);
     }
 
@@ -85,6 +87,10 @@ public class GripperSubsystem extends SubsystemBase {
 
     public Command ejectFromGripperCommand() {
         return startEnd(() -> setState(GripperState.EJECT), () -> {});
+    }
+
+    public Command ejectFastFromGripperCommand() {
+        return startEnd(() -> setState(GripperState.EJECT_FAST), () -> {});
     }
 
     public Command dropFromGripperCommand() {
@@ -125,6 +131,10 @@ public class GripperSubsystem extends SubsystemBase {
                 gripperSolenoid.set(Value.kForward);
                 gripperMotor.set(gripperShootMidSpeed.getDouble());
                 break;
+            case EJECT_FAST:
+                gripperSolenoid.set(Value.kForward);
+                gripperMotor.set(gripperEjectFastSpeed.getDouble());
+                break;
         }
 
         Logger.log("/Gripper/GripperSensor1", gamePieceSensor1.getValue() < 50);
@@ -143,6 +153,7 @@ public class GripperSubsystem extends SubsystemBase {
         CLOSED, // Closed and spin motor until supply limit
         EJECT, // Reverse motors and then open
         SHOOT_HIGH,
-        SHOOT_MID
+        SHOOT_MID,
+        EJECT_FAST
     }
 }
