@@ -871,9 +871,9 @@ public class ArmSubsystem extends SubsystemBase {
                 Rotation2d.fromDegrees(-25))),
         COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(175))), // 179
         COOL_HANDOFF_REVERSE(Static.fromWrist(0.4, 0.4, Rotation2d.fromDegrees(170))),
-        HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())), // this is my
-        MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())), // subsystem, i can
-        HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())), // name my variables
+        HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())),
+        MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())),
+        HIGH(new Dynamic(sussier -> sussier.getDynamicArmPosition(), new Rotation2d())),
         NETWORK_TABLES_AIM(new NetworkTablesAim()),
         PASSTHROUGH(new PassthroughAim()),
         COAST(new Coast()),

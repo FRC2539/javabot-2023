@@ -142,23 +142,23 @@ public class RobotContainer {
         rightDriveController.nameRightThumb("Reverse Intake");
         rightDriveController.nameBottomThumb("Shoot");
 
-        // Cardinal drive commands (inverted since arm is back of robot)
-        // rightDriveController
-        //         .getPOVUp()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVRight()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVDown()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
-        // rightDriveController
-        //         .getPOVLeft()
-        //         .whileTrue(swerveDriveSubsystem.cardinalCommand(
-        //                 Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        // Cardinal drive commands (inverted since the arm is on the back of the robot)
+        rightDriveController
+                .getPOVUp()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(180), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVRight()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVDown()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(0), this::getDriveForwardAxis, this::getDriveStrafeAxis));
+        rightDriveController
+                .getPOVLeft()
+                .whileTrue(swerveDriveSubsystem.cardinalCommand(
+                        Rotation2d.fromDegrees(-90), this::getDriveForwardAxis, this::getDriveStrafeAxis));
 
         /* Set operator controller bindings */
         var shiftButton = operatorController.getRightBumper();

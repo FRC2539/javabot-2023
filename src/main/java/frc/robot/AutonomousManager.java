@@ -175,7 +175,7 @@ public class AutonomousManager {
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
                 new PIDConstants(5.5, 0.0, 0.001),
-                new PIDConstants(3.5, 0.0, 0.001),
+                new PIDConstants(4.0, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
                 true,

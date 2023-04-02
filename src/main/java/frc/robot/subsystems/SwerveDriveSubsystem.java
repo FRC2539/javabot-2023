@@ -3,19 +3,13 @@ package frc.robot.subsystems;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.*;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -73,10 +67,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     private LoggedReceiver isSecondOrder;
 
-    // PID controller used for cardinal command
-    private ProfiledPIDController omegaController =
-            new ProfiledPIDController(2.0, 0, 0, new TrapezoidProfile.Constraints(5, 5));
-    // private PIDController omegaController = new PIDController(2.0, 0, 0);
+    // Cardinal command
+    private PIDController omegaController = new PIDController(5.0, 0, 0.05);
+    private final double maxCardinalVelocity = 4.5;
 
     private DoubleSupplier maxSpeedSupplier = () -> Constants.SwerveConstants.maxSpeed;
 
@@ -150,17 +143,16 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         return run(() -> {
                     var rotationCorrection =
                             omegaController.calculate(pose.getRotation().getRadians(), targetAngle.getRadians());
-                    // var rotationVelocity = omegaController.getSetpoint().velocity + rotationCorrection;
 
                     setVelocity(
                             new ChassisSpeeds(
                                     forward.getAsDouble(),
                                     strafe.getAsDouble(),
-                                    MathUtils.ensureRange(rotationCorrection, -2.0, 2.0)),
+                                    MathUtils.ensureRange(rotationCorrection, -maxCardinalVelocity, maxCardinalVelocity)),
                             true);
                 })
                 .beforeStarting(() -> {
-                    omegaController.reset(pose.getRotation().getRadians());
+                    omegaController.reset();
                 });
     }
 
@@ -515,12 +507,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         //     modules[3].getPosition().angle.getDegrees()
         // });
 
-        Logger.log("/SwerveDriveSubsystem/Wheel Amps", new double[] {
-            modules[0].getDriveCurrent(),
-            modules[1].getDriveCurrent(),
-            modules[2].getDriveCurrent(),
-            modules[3].getDriveCurrent()
-        });
+        // Logger.log("/SwerveDriveSubsystem/Wheel Amps", new double[] {
+        //     modules[0].getDriveCurrent(),
+        //     modules[1].getDriveCurrent(),
+        //     modules[2].getDriveCurrent(),
+        //     modules[3].getDriveCurrent()
+        // });
 
         Logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
         // Logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());

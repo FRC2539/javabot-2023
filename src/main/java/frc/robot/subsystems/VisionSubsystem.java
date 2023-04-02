@@ -204,8 +204,6 @@ public class VisionSubsystem extends SubsystemBase {
             var distanceFromPrimaryTag =
                     aprilTagPose.get().getTranslation().getDistance(estimate.estimatedPose.getTranslation());
 
-            Logger.log("/VisionSubsystem/distanceFromTag", distanceFromPrimaryTag);
-
             swerveDriveSubsystem.addVisionPoseEstimate(
                     estimatedPose, estimate.timestampSeconds, calculateVisionStdDevs(distanceFromPrimaryTag));
         }
@@ -214,8 +212,6 @@ public class VisionSubsystem extends SubsystemBase {
     private Matrix<N3, N1> calculateVisionStdDevs(double distance) {
         var translationStdDev = translationStdDevCoefficient * Math.pow(distance, 2);
         var rotationStdDev = rotationStdDevCoefficient * Math.pow(distance, 2);
-
-        Logger.log("/VisionSubsystem/StdDev", translationStdDev);
 
         return VecBuilder.fill(translationStdDev, translationStdDev, rotationStdDev);
     }
@@ -342,8 +338,6 @@ public class VisionSubsystem extends SubsystemBase {
                         .getTranslation()
                         .getDistance(pose.getTranslation().toTranslation2d())
                 < 1.4;
-
-        Logger.log("/VisionSubsystem/isNearRobot", isNearRobot);
 
         return isWithinField && isNearRobot;
     }

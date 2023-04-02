@@ -54,7 +54,7 @@ public class IntakeSubsystem extends SubsystemBase {
         reverseSpeedReceiver = Logger.tunable("/IntakeSubsystem/ReverseSpeed", -0.4);
         shootingSpeedReceiver = Logger.tunable("/IntakeSubsystem/ShootingSpeed", -1.0);
         handoffSpeedReceiver = Logger.tunable("/IntakeSubsystem/HandoffSpeed", 0.99);
-        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.06);
+        holdingSpeedReciever = Logger.tunable("/IntakeSubsystem/HoldingSpeed", 0.1);
 
         setDefaultCommand(stopIntakeCommand());
 
@@ -157,7 +157,6 @@ public class IntakeSubsystem extends SubsystemBase {
                 intakeMotor.set(ControlMode.PercentOutput, slowReverseSpeedReceiver.getDouble());
                 break;
             case SHOOT:
-                // Shooting should be extended, and position should be retracted.
                 positionSolenoid.set(Value.kReverse);
                 intakeMotor.set(ControlMode.PercentOutput, shootingSpeedReceiver.getDouble());
                 break;
