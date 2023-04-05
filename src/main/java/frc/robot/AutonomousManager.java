@@ -9,6 +9,7 @@ import com.pathplanner.lib.auto.PIDConstants;
 import com.pathplanner.lib.auto.SwerveAutoBuilder;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ScheduleCommand;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.robot.subsystems.ArmSubsystem;
@@ -58,29 +59,57 @@ public class AutonomousManager {
                 "placeHigh",
                 armSubsystem
                         .highManualConeCommand()
-                        .andThen(container
-                                .getGripperSubsystem()
-                                .ejectFromGripperCommand()
-                                .withTimeout(0.3)
-                                .asProxy())
-                        .andThen(armSubsystem.awaitingDeploymentCommand().asProxy())
+                        .andThen(new ScheduleCommand(
+                                        container.getGripperSubsystem()
+                                        .ejectFromGripperCommand()
+                                        .withTimeout(1)
+                                        .asProxy()
+                                .andThen(
+                                        armSubsystem.awaitingDeploymentCommand().asProxy())))
                         .asProxy());
+        // eventMap.put(
+        //         "placeHigh",
+        //         armSubsystem
+        //                 .highManualConeCommand()
+        //                 .andThen(container
+        //                         .getGripperSubsystem()
+        //                         .ejectFromGripperCommand()
+        //                         .withTimeout(0.3)
+        //                         .asProxy())
+        //                 .andThen(armSubsystem.awaitingDeploymentCommand().asProxy())
+        //                 .asProxy());
         eventMap.put(
                 "placeHighCube",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
                         .andThen(armSubsystem
                                 .highManualCubeCommand()
-                                .andThen(container
-                                        .getGripperSubsystem()
+                                .andThen(new ScheduleCommand(
+                                        container.getGripperSubsystem()
                                         .ejectFromGripperCommand()
-                                        .withTimeout(0.35)
-                                        .asProxy())
+                                        .withTimeout(1)
+                                        .asProxy()
                                 .andThen(
-                                        armSubsystem.awaitingDeploymentCommand().asProxy()))
+                                        armSubsystem.awaitingDeploymentCommand().asProxy()))))
                         .asProxy()
                         .unless(() -> !gripperSubsystem.hasGamePiece())
                         .asProxy());
+        // eventMap.put(
+        //         "placeHighCube",
+        //         waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
+        //                         && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
+        //                 .andThen(armSubsystem
+        //                         .highManualCubeCommand()
+        //                         .andThen(container
+        //                                 .getGripperSubsystem()
+        //                                 .ejectFromGripperCommand()
+        //                                 .withTimeout(0.35)
+        //                                 .asProxy())
+        //                         .andThen(
+        //                                 armSubsystem.awaitingDeploymentCommand().asProxy()))
+        //                 .asProxy()
+        //                 .unless(() -> !gripperSubsystem.hasGamePiece())
+        //                 .asProxy());
         eventMap.put(
                 "placeMidCube",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
