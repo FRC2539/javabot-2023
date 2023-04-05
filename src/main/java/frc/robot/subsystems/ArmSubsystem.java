@@ -301,10 +301,21 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Command awaitingDeploymentCommand() {
-        return Commands.sequence(
-                armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
-                armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+        return Commands.either(
+                Commands.sequence(
+                        armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
+                        armStateCommand(ArmState.AWAITING_DEPLOYMENT)),
+                Commands.sequence(
+                        armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
+                        armStateCommand(ArmState.AWAITING_DEPLOYMENT)),
+                () -> armState == ArmState.HIGH_MANUAL_CONE || armState == ArmState.HIGH_MANUAL_CUBE);
     }
+
+    // public Command awaitingDeploymentCommand() {
+    //     return Commands.sequence(
+    //             armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
+    //             armStateCommand(ArmState.AWAITING_DEPLOYMENT));
+    // }
 
     public Command midManualConeCommand() {
         return armStateCommand(ArmState.MID_MANUAL_CONE);
@@ -843,7 +854,7 @@ public class ArmSubsystem extends SubsystemBase {
         // SLIDE_PICKUP_COMP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         // HYBRID_MANUAL(new Static(0.8, -0.08, Rotation2d.fromDegrees(-10))), // experimental
-        TIPPED_CONE_MANUAL(new Static(0.8, -0.17, Rotation2d.fromDegrees(-100))),
+        TIPPED_CONE_MANUAL(new Static(0.8, -0.19, Rotation2d.fromDegrees(-100))),
         // MID_MANUAL(Static.fromBumper(
         //         FieldConstants.midX,
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
@@ -855,16 +866,16 @@ public class ArmSubsystem extends SubsystemBase {
         MID_MANUAL_CUBE_1(new Static(0.66, 0.70, Rotation2d.fromDegrees(55))),
         MID_MANUAL_CUBE(Static.fromBumper(
                 FieldConstants.midX + 0.10, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
-        HIGH_MANUAL_1(new Static(0.9, 1.2, Rotation2d.fromDegrees(60))),
+        HIGH_MANUAL_1(new Static(0.9, 1.2, Rotation2d.fromDegrees(65))),
         // HIGH_MANUAL_1(new Static(0.9, 1.24, Rotation2d.fromDegrees(70))),
         // HIGH_MANUAL_1(new Static(0.9, 1.32, Rotation2d.fromDegrees(65))),
         HIGH_MANUAL_CONE(Static.fromBumper(
-                FieldConstants.highX + 0.1, // 0.14, // gripper offset
+                FieldConstants.highX + 0.035, // + 0.1, // gripper offset
                 FieldConstants.highConeZ
                         + ArmConstants.placementHeightOffset
                         + 0.3
-                        - 0.18, // because of poor pid behavior
-                Rotation2d.fromDegrees(24))), //18
+                        - 0.33, // because of poor pid behavior
+                Rotation2d.fromDegrees(24))), // 18
         HIGH_MANUAL_CUBE(Static.fromBumper(
                 FieldConstants.highX + 0.14, // gripper offset
                 FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior

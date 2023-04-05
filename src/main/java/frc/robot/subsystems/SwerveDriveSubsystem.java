@@ -148,7 +148,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                             new ChassisSpeeds(
                                     forward.getAsDouble(),
                                     strafe.getAsDouble(),
-                                    MathUtils.ensureRange(rotationCorrection, -maxCardinalVelocity, maxCardinalVelocity)),
+                                    MathUtils.ensureRange(
+                                            rotationCorrection, -maxCardinalVelocity, maxCardinalVelocity)),
                             true);
                 })
                 .beforeStarting(() -> {

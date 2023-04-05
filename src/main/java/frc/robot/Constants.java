@@ -302,7 +302,7 @@ public final class Constants {
         // - Orient gripper fully inside of boom arm (180 degrees relative to boom arm)
         //
         // When measuring values, replace the 0 in the offset with the value measured
-        public static final double mastEncoderOffset = -2.108 + Math.PI / 2;
+        public static final double mastEncoderOffset = -2.2432 + (Math.PI / 2);
         public static final double boomEncoderOffset = -(-1.865) + -Math.PI;
         public static final double gripperEncoderOffset = -(0.907) + Math.PI;
 
