@@ -59,13 +59,14 @@ public class AutonomousManager {
                 "placeHigh",
                 armSubsystem
                         .highManualConeCommand()
-                        .andThen(new ScheduleCommand(
-                                        container.getGripperSubsystem()
+                        .andThen(new ScheduleCommand(container
+                                        .getGripperSubsystem()
                                         .ejectFromGripperCommand()
                                         .withTimeout(1)
-                                        .asProxy()
+                                        .asProxy())
+                                .andThen(waitSeconds(0.3))
                                 .andThen(
-                                        armSubsystem.awaitingDeploymentCommand().asProxy())))
+                                        armSubsystem.awaitingDeploymentCommand().asProxy()))
                         .asProxy());
         // eventMap.put(
         //         "placeHigh",
@@ -84,13 +85,15 @@ public class AutonomousManager {
                                 && armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT)
                         .andThen(armSubsystem
                                 .highManualCubeCommand()
-                                .andThen(new ScheduleCommand(
-                                        container.getGripperSubsystem()
-                                        .ejectFromGripperCommand()
-                                        .withTimeout(1)
-                                        .asProxy()
-                                .andThen(
-                                        armSubsystem.awaitingDeploymentCommand().asProxy()))))
+                                .andThen(new ScheduleCommand(container
+                                                .getGripperSubsystem()
+                                                .ejectFromGripperCommand()
+                                                .withTimeout(1)
+                                                .asProxy())
+                                        .andThen(waitSeconds(0.3))
+                                        .andThen(armSubsystem
+                                                .awaitingDeploymentCommand()
+                                                .asProxy())))
                         .asProxy()
                         .unless(() -> !gripperSubsystem.hasGamePiece())
                         .asProxy());
