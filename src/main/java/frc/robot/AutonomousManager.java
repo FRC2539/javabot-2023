@@ -206,8 +206,8 @@ public class AutonomousManager {
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
                 swerveDriveSubsystem::setPose,
-                new PIDConstants(5.5, 0.0, 0.001),
-                new PIDConstants(4.0, 0.0, 0.001),
+                new PIDConstants(5.6, 0.0, 0.001),
+                new PIDConstants(4.3, 0.0, 0.001),
                 (ChassisSpeeds velocity) -> swerveDriveSubsystem.setVelocity(velocity, false, false),
                 eventMap,
                 true,
@@ -288,24 +288,30 @@ public class AutonomousManager {
         OPEN_PLACE2HANDOFF(StartingLocation.OPEN, 2, true, "open_place2handoff", new PathConstraints(4, 3.6)),
         OPEN_PLACE3HANDOFF(StartingLocation.OPEN, 3, false, "open_place3handoff", new PathConstraints(4, 3.6)),
         OPEN_PLACE25HANDOFF(StartingLocation.OPEN, 25, false, "open_place25", new PathConstraints(4, 3.6)),
-        STATION_PLACE1ANDCLIMBSHORT(
-                StartingLocation.STATIONOPEN, 0, true, "station_place1andclimb_short", new PathConstraints(2, 1.5)),
+        // STATION_PLACE1ANDCLIMBSHORT(
+        //         StartingLocation.STATIONOPEN, 0, true, "station_place1andclimb_short", new PathConstraints(2, 1.5)),
         STATION_PLACE1ANDCLIMB(
-                StartingLocation.STATIONOPEN, 1, true, "station_place1andclimb_pickup", new PathConstraints(2, 1.5)),
-        STATION_PLACE1ANDCLIMBSHOOT(
-                StartingLocation.STATIONOPEN, 2, true, "station_place1andclimb_shoot", new PathConstraints(2, 1.5)),
+                StartingLocation.STATIONOPEN, 1, true, "station_place1andclimb_pickup", new PathConstraints(2.5, 2.0)),
+        // STATION_PLACE1ANDCLIMBSHOOT(
+        //         StartingLocation.STATIONOPEN, 2, true, "station_place1andclimb_shoot", new PathConstraints(2, 1.5)),
         STATIONCABLE_PLACE1ANDCLIMB(
                 StartingLocation.STATIONCABLE,
                 1,
                 true,
                 "stationcable_place1andclimb_pickup",
-                new PathConstraints(2, 1.5)),
-        STATIONCABLE_PLACE1ANDCLIMBSHOOT(
+                new PathConstraints(2.5, 2.0)),
+        STATIONCABLE_PLACE1ANDSHOOT(
                 StartingLocation.STATIONCABLE,
                 2,
                 true,
                 "stationcable_place1andclimb_shoot",
-                new PathConstraints(2, 1.5)),
+                new PathConstraints(2.5, 2.0)),
+        // STATIONCABLE_PLACE1ANDCLIMBSHOOT(
+        //         StartingLocation.STATIONCABLE,
+        //         2,
+        //         true,
+        //         "stationcable_place1andclimb_shoot",
+        //         new PathConstraints(2, 1.5)),
         CABLE_PLACE2(StartingLocation.CABLE, 2, false, "cable_place2", new PathConstraints(4, 3.3)),
         CABLE_PLACE3(StartingLocation.CABLE, 3, false, "cable_place3", new PathConstraints(4, 3)),
         CABLE_PLACE15(StartingLocation.CABLE, 15, true, "cable_place15", new PathConstraints(4, 3.3));

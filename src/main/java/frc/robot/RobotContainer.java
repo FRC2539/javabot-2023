@@ -163,10 +163,14 @@ public class RobotContainer {
         /* Set operator controller bindings */
         var shiftButton = operatorController.getRightBumper();
 
+        var substationAimedCommand = new IndicateSubstationAimedCommand(visionSubsystem, lightsSubsystem);
+
         operatorController.getA().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID));
-        operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
-        operatorController.getX().onTrue(armSubsystem.slidePickupCommand());
-        operatorController.getX().whileTrue(new IndicateSubstationAimedCommand(visionSubsystem, lightsSubsystem));
+        // operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
+        operatorController.getY().onTrue(armSubsystem.slidePickupCommand());
+        operatorController.getY().whileTrue(substationAimedCommand);
+        operatorController.getX().onTrue(armSubsystem.awaitingDeploymentCommand());
+        operatorController.getX().whileTrue(substationAimedCommand);
         operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
         operatorController.nameA("Shoot Hybrid");
         operatorController.nameY("Shoot High");
