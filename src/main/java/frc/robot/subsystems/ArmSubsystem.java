@@ -281,6 +281,10 @@ public class ArmSubsystem extends SubsystemBase {
                 armStateCommand(ArmState.AWAITING_DEPLOYMENT));
     }
 
+    public Command partialUndoHandoffCommand() {
+        return armStateApproximateCommand(ArmState.COOL_HANDOFF_REVERSE);
+    }
+
     public Command substationPickupCommand() {
         return armStateCommand(ArmState.SUBSTATION_PICKUP);
     }

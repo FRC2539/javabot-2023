@@ -179,7 +179,7 @@
     }
   ],
   "maxVelocity": null,
-  "maxAcceleration": 4.0,
+  "maxAcceleration": 3.6,
   "isReversed": null,
   "markers": [
     {
@@ -191,7 +191,7 @@
     {
       "position": 1.05,
       "names": [
-        "handoff"
+        "handoffForPlacement"
       ]
     },
     {
@@ -201,21 +201,21 @@
       ]
     },
     {
-      "position": 4.36,
-      "names": [
-        "handoff"
-      ]
-    },
-    {
-      "position": 1.1,
+      "position": 1.5349431818181853,
       "names": [
         "liftToHighCube"
       ]
     },
     {
-      "position": 4.5,
+      "position": 5.121732954545451,
       "names": [
         "liftToMidCube"
+      ]
+    },
+    {
+      "position": 4.248153409090897,
+      "names": [
+        "handoffForPlacement"
       ]
     }
   ]

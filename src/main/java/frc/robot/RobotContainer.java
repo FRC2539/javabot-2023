@@ -184,8 +184,25 @@ public class RobotContainer {
         operatorController.getDPadLeft().onTrue(armSubsystem.awaitingDeploymentCommand());
 
         // High commands
-        operatorController.getDPadUp().and(shiftButton.negate()).onTrue(armSubsystem.highManualConeCommand());
-        operatorController.getDPadUp().and(shiftButton).onTrue(armSubsystem.highManualCubeCommand());
+        // operatorController.getDPadUp().and(shiftButton.negate()).onTrue(armSubsystem.highManualConeCommand());
+        operatorController
+                .getDPadUp()
+                .and(shiftButton.negate())
+                .onTrue(armSubsystem
+                        .armStateCommand(ArmState.HIGH_MANUAL_1)
+                        .until(operatorController.getDPadUp().negate())
+                        .andThen(waitUntil(operatorController.getDPadUp().negate())
+                                .andThen(armSubsystem.armStateCommand(ArmState.HIGH_MANUAL_CONE))));
+
+        // operatorController.getDPadUp().and(shiftButton).onTrue(armSubsystem.highManualCubeCommand());
+        operatorController
+                .getDPadUp()
+                .and(shiftButton)
+                .onTrue(armSubsystem
+                        .armStateCommand(ArmState.HIGH_MANUAL_1)
+                        .until(operatorController.getDPadUp().negate())
+                        .andThen(waitUntil(operatorController.getDPadUp().negate())
+                                .andThen(armSubsystem.armStateCommand(ArmState.HIGH_MANUAL_CUBE))));
 
         // Mid commands
         operatorController.getDPadRight().and(shiftButton.negate()).onTrue(armSubsystem.midManualConeCommand());
