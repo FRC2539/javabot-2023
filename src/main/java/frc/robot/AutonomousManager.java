@@ -59,6 +59,7 @@ public class AutonomousManager {
                 "placeHigh",
                 armSubsystem
                         .highManualConeCommand()
+                        .andThen(waitSeconds(0.08))
                         .andThen(new ScheduleCommand(container
                                         .getGripperSubsystem()
                                         .ejectFromGripperCommand()

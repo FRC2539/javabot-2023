@@ -74,9 +74,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private DoubleSupplier maxSpeedSupplier = () -> Constants.SwerveConstants.maxSpeed;
 
     public SwerveDriveSubsystem() {
-        if (SwerveConstants.hasPigeon)
-            gyro = new PigeonGyro(SwerveConstants.PIGEON_PORT, GlobalConstants.CANIVORE_NAME);
-        else gyro = new NavXGyro();
+        gyro = new PigeonGyro(SwerveConstants.PIGEON_PORT, GlobalConstants.CANIVORE_NAME);
 
         modules = new SwerveModule[] {
             new SwerveModule(0, Constants.SwerveConstants.Mod0.constants),
@@ -282,10 +280,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                         velocitySupplier)
                 .beforeStarting(() -> isCharacterizing = true)
                 .finallyDo((boolean interrupted) -> isCharacterizing = false);
-    }
-
-    public void switchToBackupGyro() {
-        gyro = new NavXGyro();
     }
 
     public void calibrateIntegratedEncoders() {

@@ -260,7 +260,7 @@ public final class Constants {
         public static final double arm1MaximumAngle = Math.toRadians(90);
 
         public static final double arm2MinimumAngle = Math.toRadians(-174);
-        public static final double arm2MaximumAngle = Math.toRadians(-56.24);
+        public static final double arm2MaximumAngle = Math.toRadians(-40.24); // -56.24
 
         public static final double stallTorque = 4.69;
         public static final double stallCurrent = 257;
@@ -317,6 +317,11 @@ public final class Constants {
         public static final boolean invertWristMotor = true;
 
         public static final double placementHeightOffset = 0.1;
+
+        // L1: distance from pivot of mast to the point where the gas shock is mounted
+        // L2: distance from pivot to point where gas shock is mounted on the arm
+        public static final double l1 = Units.inchesToMeters(12.5);
+        public static final double l2 = Units.inchesToMeters(20.5);
     }
 
     public static final class GripperConstants {
