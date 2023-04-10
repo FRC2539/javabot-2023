@@ -345,7 +345,7 @@ public class AutonomousManager {
         //         "stationcable_place1andclimb_shoot",
         //         new PathConstraints(2, 1.5)),
         CABLE_PLACE2(StartingLocation.CABLE, 2, false, "cable_place2", new PathConstraints(4, 3.3)),
-        CABLE_PLACE3(StartingLocation.CABLE, 3, false, "cable_place3", new PathConstraints(4, 3)),
+        CABLE_PLACE3(StartingLocation.CABLE, 3, false, "cable_place3speedy", new PathConstraints(4, 3)),
         CABLE_PLACE15(StartingLocation.CABLE, 15, true, "cable_place15", new PathConstraints(4, 3.3));
 
         private List<PathPlannerTrajectory> path;
