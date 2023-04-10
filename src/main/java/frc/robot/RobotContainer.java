@@ -84,10 +84,8 @@ public class RobotContainer {
         /* Set left joystick bindings */
         leftDriveController.getLeftTopLeft().onTrue(runOnce(swerveDriveSubsystem::zeroRotation, swerveDriveSubsystem));
         leftDriveController.getLeftTopRight().whileTrue(visionSubsystem.resetPoseWithApriltag());
-        leftDriveController.getLeftTopMiddle().onTrue(runOnce(swerveDriveSubsystem::switchToBackupGyro));
         leftDriveController.nameLeftTopLeft("Reset Gyro Angle");
         leftDriveController.nameLeftTopRight("Reset Pose w/ AprilTag");
-        leftDriveController.nameLeftTopMiddle("Use NavX");
 
         leftDriveController.getTrigger().whileTrue(gripperSubsystem.openGripperCommand());
         rightDriveController.getTrigger().whileTrue(gripperSubsystem.ejectFromGripperCommand());
@@ -167,15 +165,15 @@ public class RobotContainer {
 
         operatorController.getA().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID));
         // operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
-        operatorController.getY().onTrue(armSubsystem.slidePickupCommand());
-        operatorController.getY().whileTrue(substationAimedCommand);
+        operatorController.getB().onTrue(armSubsystem.slidePickupCommand());
+        operatorController.getB().whileTrue(substationAimedCommand);
         operatorController.getX().onTrue(armSubsystem.awaitingDeploymentCommand());
         operatorController.getX().whileTrue(substationAimedCommand);
-        operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
+        operatorController.getY().onTrue(armSubsystem.hoverCommand());
         operatorController.nameA("Shoot Hybrid");
-        operatorController.nameY("Shoot High");
+        operatorController.nameY("Hover on High");
         operatorController.nameX("Slide Pickup");
-        operatorController.nameB("Substation Pickup");
+        operatorController.nameB("Other Slide Pickup");
 
         // Pickup commands
         operatorController.getDPadDown().and(shiftButton.negate()).onTrue(armSubsystem.pickupCommand());
