@@ -170,7 +170,7 @@
       "isStopPoint": false,
       "stopEvent": {
         "names": [
-          "shootMid"
+          "ejectHybrid"
         ],
         "executionBehavior": "sequential",
         "waitBehavior": "none",
@@ -191,7 +191,7 @@
     {
       "position": 1.05,
       "names": [
-        "handoff"
+        "handoffForPlacement"
       ]
     },
     {
@@ -201,7 +201,7 @@
       ]
     },
     {
-      "position": 4.363636363636375,
+      "position": 4.166548295454548,
       "names": [
         "handoff"
       ]

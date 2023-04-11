@@ -28,8 +28,8 @@ public class VisionSubsystem extends SubsystemBase {
     private final double translationStdDevCoefficient = 0.3;
     private final double rotationStdDevCoefficient = 0.9;
 
-    private PhotonCamera camera;
-    private PhotonPoseEstimator photonPoseEstimator;
+    // private PhotonCamera camera;
+    // private PhotonPoseEstimator photonPoseEstimator;
 
     private LimelightMode backLimelightMode = LimelightMode.APRILTAG;
     private LimelightMode frontLimelightMode = LimelightMode.APRILTAG;
@@ -68,14 +68,14 @@ public class VisionSubsystem extends SubsystemBase {
         setDefaultCommand(defaultLimelightCommand());
 
         // Initialize photonvision
-        camera = new PhotonCamera(VisionConstants.photonCameraName);
-        photonPoseEstimator = new PhotonPoseEstimator(
-                FieldConstants.APRIL_TAG_FIELD_LAYOUT,
-                PoseStrategy.MULTI_TAG_PNP,
-                camera,
-                VisionConstants.photonRobotToCamera);
+        // camera = new PhotonCamera(VisionConstants.photonCameraName);
+        // photonPoseEstimator = new PhotonPoseEstimator(
+        //         FieldConstants.APRIL_TAG_FIELD_LAYOUT,
+        //         PoseStrategy.MULTI_TAG_PNP,
+        //         camera,
+        //         VisionConstants.photonRobotToCamera);
 
-        photonPoseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+        // photonPoseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
     }
 
     @Override
@@ -96,17 +96,17 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         /* Use photonvision apriltag estimate to update robot pose estimator */
-        FrontApriltagEstimate = calculatePhotonVisionEstimate();
+        // FrontApriltagEstimate = calculatePhotonVisionEstimate();
 
-        if (FrontApriltagEstimate.isPresent()) {
-            addVisionPoseEstimate(FrontApriltagEstimate.get());
+        // if (FrontApriltagEstimate.isPresent()) {
+        //     addVisionPoseEstimate(FrontApriltagEstimate.get());
 
-            Logger.log(
-                    "/VisionSubsystem/FrontApriltagPose",
-                    FrontApriltagEstimate.get().estimatedPose.toPose2d());
+        //     Logger.log(
+        //             "/VisionSubsystem/FrontApriltagPose",
+        //             FrontApriltagEstimate.get().estimatedPose.toPose2d());
 
-            lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
-        }
+        //     lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
+        // }
 
         /* Estimate the location of the retroreflective target */
         BackRetroreflectiveAngles = calculateBackRetroreflectiveAngles();
@@ -290,13 +290,13 @@ public class VisionSubsystem extends SubsystemBase {
         return FrontMLAngles.isPresent();
     }
 
-    private Optional<EstimatedRobotPose> calculatePhotonVisionEstimate() {
-        var botpose = photonPoseEstimator.update();
+    // private Optional<EstimatedRobotPose> calculatePhotonVisionEstimate() {
+    //     var botpose = photonPoseEstimator.update();
 
-        if (botpose.isEmpty() || !isValidPose(botpose.get().estimatedPose)) return Optional.empty();
+    //     if (botpose.isEmpty() || !isValidPose(botpose.get().estimatedPose)) return Optional.empty();
 
-        return botpose;
-    }
+    //     return botpose;
+    // }
 
     private Optional<LimelightRobotPose> calculateLLApriltagEstimate() {
         if (getBackLimelightMode() != LimelightMode.APRILTAG) return Optional.empty();

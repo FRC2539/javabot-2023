@@ -165,11 +165,11 @@ public class RobotContainer {
 
         operatorController.getA().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HYBRID));
         // operatorController.getY().onTrue(armSubsystem.armStateCommand(ArmState.SHOOT_HIGH));
-        operatorController.getB().onTrue(armSubsystem.slidePickupCommand());
-        operatorController.getB().whileTrue(substationAimedCommand);
+        operatorController.getB().onTrue(armSubsystem.substationPickupCommand());
+        // operatorController.getB().whileTrue(substationAimedCommand);
         operatorController.getX().onTrue(armSubsystem.awaitingDeploymentCommand());
         operatorController.getX().whileTrue(substationAimedCommand);
-        operatorController.getY().onTrue(armSubsystem.hoverCommand());
+        // operatorController.getY().onTrue(armSubsystem.hoverCommand());
         operatorController.nameA("Shoot Hybrid");
         operatorController.nameY("Hover on High");
         operatorController.nameX("Slide Pickup");
@@ -189,7 +189,7 @@ public class RobotContainer {
                 .onTrue(armSubsystem
                         .armStateCommand(ArmState.HIGH_MANUAL_1)
                         .until(operatorController.getDPadUp().negate())
-                        .andThen(waitUntil(operatorController.getDPadUp().negate())
+                        .andThen(waitUntil(operatorController.getDPadUp().negate().and(armSubsystem::isArmApproximatelyAtGoal))
                                 .andThen(armSubsystem.armStateCommand(ArmState.HIGH_MANUAL_CONE))));
 
         // operatorController.getDPadUp().and(shiftButton).onTrue(armSubsystem.highManualCubeCommand());
@@ -198,7 +198,7 @@ public class RobotContainer {
                 .and(shiftButton)
                 .onTrue(armSubsystem
                         .armStateCommand(ArmState.HIGH_MANUAL_1)
-                        .until(operatorController.getDPadUp().negate())
+                        .until(operatorController.getDPadUp().negate().and(armSubsystem::isArmApproximatelyAtGoal))
                         .andThen(waitUntil(operatorController.getDPadUp().negate())
                                 .andThen(armSubsystem.armStateCommand(ArmState.HIGH_MANUAL_CUBE))));
 

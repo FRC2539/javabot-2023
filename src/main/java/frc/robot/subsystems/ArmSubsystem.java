@@ -694,8 +694,8 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/arm2EncoderPosition", getJoint2EncoderAngle().getRadians());
         // Logger.log("/ArmSubsystem/isBraking", brakingActivated);
         // Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
-        // Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
-        // Logger.log("/ArmSubsystem/isArmAtHandoffPosition", isArmAtHandoffGoal());
+        Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
+        Logger.log("/ArmSubsystem/isArmAtHandoffPosition", isArmAtHandoffGoal());
 
         Logger.log("/ArmSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
