@@ -189,7 +189,10 @@ public class RobotContainer {
                 .onTrue(armSubsystem
                         .armStateCommand(ArmState.HIGH_MANUAL_1)
                         .until(operatorController.getDPadUp().negate())
-                        .andThen(waitUntil(operatorController.getDPadUp().negate().and(armSubsystem::isArmApproximatelyAtGoal))
+                        .andThen(waitUntil(operatorController
+                                        .getDPadUp()
+                                        .negate()
+                                        .and(armSubsystem::isArmApproximatelyAtGoal))
                                 .andThen(armSubsystem.armStateCommand(ArmState.HIGH_MANUAL_CONE))));
 
         // operatorController.getDPadUp().and(shiftButton).onTrue(armSubsystem.highManualCubeCommand());

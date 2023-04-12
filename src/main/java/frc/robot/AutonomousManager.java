@@ -94,9 +94,8 @@ public class AutonomousManager {
                 "placeHighCubeA",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT
-                                || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
-                        .andThen(armSubsystem
-                                .highManualCubeCommand())
+                                        || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
+                        .andThen(armSubsystem.highManualCubeCommand())
                         .asProxy()
                         .unless(() -> !gripperSubsystem.hasGamePiece())
                         .asProxy());
@@ -104,9 +103,11 @@ public class AutonomousManager {
                 "placeHighCubeB",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT
-                                || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
-                        .andThen(Commands.either(armSubsystem.armStateCommand(ArmState.HIGH_MANUAL_CUBE), armSubsystem
-                        .highManualCubeCommand(), () -> armSubsystem.getState() == ArmState.HIGH_MANUAL_CUBE) 
+                                        || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
+                        .andThen(Commands.either(
+                                        armSubsystem.armStateCommand(ArmState.HIGH_MANUAL_CUBE),
+                                        armSubsystem.highManualCubeCommand(),
+                                        () -> armSubsystem.getState() == ArmState.HIGH_MANUAL_CUBE)
                                 .andThen(new ScheduleCommand(container
                                                 .getGripperSubsystem()
                                                 .ejectFromGripperCommand()
@@ -123,9 +124,8 @@ public class AutonomousManager {
                 "placeMidCubeA",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT
-                                || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
-                        .andThen(armSubsystem
-                                .midManualCubeCommand())
+                                        || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
+                        .andThen(armSubsystem.midManualCubeCommand())
                         .asProxy()
                         .unless(() -> !gripperSubsystem.hasGamePiece())
                         .asProxy());
@@ -133,9 +133,11 @@ public class AutonomousManager {
                 "placeMidCubeB",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT
-                                || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
-                        .andThen(Commands.either(armSubsystem.armStateCommand(ArmState.MID_MANUAL_CUBE), armSubsystem
-                        .midManualCubeCommand(), () -> armSubsystem.getState() == ArmState.MID_MANUAL_CUBE) 
+                                        || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
+                        .andThen(Commands.either(
+                                        armSubsystem.armStateCommand(ArmState.MID_MANUAL_CUBE),
+                                        armSubsystem.midManualCubeCommand(),
+                                        () -> armSubsystem.getState() == ArmState.MID_MANUAL_CUBE)
                                 .andThen(new ScheduleCommand(container
                                                 .getGripperSubsystem()
                                                 .ejectFromGripperCommand()
@@ -155,7 +157,8 @@ public class AutonomousManager {
                                         || armSubsystem.getState() == ArmState.MID_MANUAL_CUBE))
                         .andThen(new ScheduleCommand(container
                                         .getGripperSubsystem()
-                                        .ejectFromGripperCommand().asProxy()
+                                        .ejectFromGripperCommand()
+                                        .asProxy()
                                         .withTimeout(1))
                                 .andThen(waitSeconds(0.3))
                                 .andThen(new ScheduleCommand(
@@ -164,7 +167,7 @@ public class AutonomousManager {
                 "placeHighCube",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT
-                                || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
+                                        || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
                         .andThen(armSubsystem
                                 .highManualCubeCommand()
                                 .andThen(new ScheduleCommand(container
@@ -207,7 +210,7 @@ public class AutonomousManager {
                 "placeMidCube",
                 waitUntil(() -> armSubsystem.isArmAtHandoffGoal()
                                 && (armSubsystem.getState() == ArmState.AWAITING_DEPLOYMENT
-                                || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
+                                        || armSubsystem.getState() == ArmState.COOL_HANDOFF_REVERSE))
                         .andThen(armSubsystem
                                 .midManualCubeCommand()
                                 .andThen(waitSeconds(0.06))
@@ -276,9 +279,7 @@ public class AutonomousManager {
                         .asProxy());
         eventMap.put(
                 "immediateEjectHybrid",
-                gripperSubsystem.ejectFromGripperCommand()
-                        .withTimeout(0.5)
-                        .asProxy());
+                gripperSubsystem.ejectFromGripperCommand().withTimeout(0.5).asProxy());
         eventMap.put(
                 "handoff",
                 armSubsystem

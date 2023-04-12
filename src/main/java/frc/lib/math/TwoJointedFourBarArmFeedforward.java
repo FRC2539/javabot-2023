@@ -29,12 +29,12 @@ public class TwoJointedFourBarArmFeedforward {
 
     double g;
 
-    Matrix<N2, N2> transposeJacobianInverseMatrix = new MatBuilder<N2, N2>(Nat.N2(), Nat.N2()).fill(1, -1, 0, 1);
+    Matrix<N2, N2> transposeJacobianInverseMatrix = new MatBuilder<N2, N2>(Nat.N2(), Nat.N2()).fill(1, 0, 0, 1);
 
     Matrix<N2, N2> jacobianMatrix = new MatBuilder<N2, N2>(Nat.N2(), Nat.N2())
             .fill(
                     1, 0,
-                    1, 1);
+                    0, 1);
 
     /**
      * Initializes a feedforward for voltage calculation of a two jointed arm given the proper input values.

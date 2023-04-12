@@ -19,13 +19,10 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
-import org.photonvision.PhotonCamera;
-import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class VisionSubsystem extends SubsystemBase {
-    private final double translationStdDevCoefficient = 0.3;
+    public double translationStdDevCoefficient = 0.3;
     private final double rotationStdDevCoefficient = 0.9;
 
     // private PhotonCamera camera;

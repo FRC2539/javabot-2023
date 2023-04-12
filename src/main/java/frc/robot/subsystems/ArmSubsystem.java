@@ -35,8 +35,7 @@ import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.lib.math.Conversions;
 import frc.lib.math.MathUtils;
-// import frc.lib.math.TwoJointedFourBarArmFeedforward;
-import frc.lib.math.TwoJointedFourBarArmFeedforwardCopy;
+import frc.lib.math.TwoJointedFourBarArmFeedforward;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
@@ -111,15 +110,12 @@ public class ArmSubsystem extends SubsystemBase {
 
     private ArmState armState = ArmState.AWAITING_DEPLOYMENT;
 
-    private TwoJointedFourBarArmFeedforwardCopy simFeedforward;
-    private TwoJointedFourBarArmFeedforwardCopy feedforward;
+    private TwoJointedFourBarArmFeedforward simFeedforward;
+    private TwoJointedFourBarArmFeedforward feedforward;
     private ArmFeedforward gripperJointFeedforward;
 
     private SwerveDriveSubsystem swerveDriveSubsystem;
 
-    // private LoggedReceiver springConstant;
-    private LoggedReceiver voltageOffset;
-    private LoggedReceiver arm1PValueReceiver;
     private double springConstant = 175;
     private double arm1PValue;
 
@@ -216,7 +212,7 @@ public class ArmSubsystem extends SubsystemBase {
 
         SmartDashboard.putData("Arm Mechanism", mechanism);
 
-        simFeedforward = new TwoJointedFourBarArmFeedforwardCopy(
+        simFeedforward = new TwoJointedFourBarArmFeedforward(
                 ArmConstants.arm1Length,
                 ArmConstants.arm2Length,
                 ArmConstants.arm1CenterOfMass,
@@ -236,7 +232,7 @@ public class ArmSubsystem extends SubsystemBase {
                 12);
 
         // for testing
-        feedforward = new TwoJointedFourBarArmFeedforwardCopy(
+        feedforward = new TwoJointedFourBarArmFeedforward(
                 ArmConstants.arm1Length,
                 ArmConstants.arm2Length,
                 ArmConstants.arm1CenterOfMass,
@@ -332,7 +328,9 @@ public class ArmSubsystem extends SubsystemBase {
                 Commands.sequence(
                         armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
                         armStateCommand(ArmState.AWAITING_DEPLOYMENT)),
-                () -> armState == ArmState.HIGH_MANUAL_CONE || armState == ArmState.HIGH_MANUAL_CUBE || armState == ArmState.HOVER_MANUAL);
+                () -> armState == ArmState.HIGH_MANUAL_CONE
+                        || armState == ArmState.HIGH_MANUAL_CUBE
+                        || armState == ArmState.HOVER_MANUAL);
     }
 
     // public Command awaitingDeploymentCommand() {
@@ -642,19 +640,6 @@ public class ArmSubsystem extends SubsystemBase {
             startMotors();
         }
 
-        // make p tunable
-        // first, jeff measures at single substation
-        // high place
-        // hover thingy
-
-        // Update the arm p if the value was changed in network tables
-        // double newArm1PValue = arm1PValueReceiver.getDouble();
-        // if (newArm1PValue != arm1PValue) {
-        //     motor1Controller.setP(newArm1PValue);
-        //     arm1PValue = newArm1PValue;
-        // }
-
-
         // Run the PIDF system unless we are in one of the "special" modes
         if (armState != ArmState.COAST && armState != ArmState.BRAKE && armState != ArmState.PASSTHROUGH) {
             executePIDFeedforward();
@@ -723,8 +708,9 @@ public class ArmSubsystem extends SubsystemBase {
         double arm1VoltageOutput = calculateShockFeedforwardArm1Voltage(arm1VoltageCorrection, ffVoltages);
 
         double arm2VoltageOutput = MathUtils.ensureRange(
-                applyKs(arm2VoltageCorrection, ArmConstants.arm2kS, ArmConstants.arm2kSDeadband) + ffVoltages[1]
-                + (armState == ArmState.HOVER_MANUAL ? .1 : 0),
+                applyKs(arm2VoltageCorrection, ArmConstants.arm2kS, ArmConstants.arm2kSDeadband)
+                        + ffVoltages[1]
+                        + (armState == ArmState.HOVER_MANUAL ? .1 : 0),
                 -ArmConstants.maxVoltage,
                 ArmConstants.maxVoltage);
         double gripperVoltageOutput = MathUtils.ensureRange(
@@ -751,24 +737,9 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/gripperSpeedSetpoint", gripperMotorController.getSetpoint().velocity);
     }
 
-    private double calculateOriginalArm1Voltage(double arm1VoltageCorrection, double[] ffVoltages) {
-        double arm1VoltageOutput = MathUtils.ensureRange(
-                applyKs(arm1VoltageCorrection, ArmConstants.arm1kS, ArmConstants.arm1kSDeadband) + ffVoltages[0],
-                -ArmConstants.maxVoltage,
-                ArmConstants.maxVoltage);
-        return arm1VoltageOutput;
-    }
-
-    private double calculateAddVoltageArm1Voltage(double arm1VoltageCorrection, double[] ffVoltages) {
-        double arm1VoltageOutput = MathUtils.ensureRange(
-                arm1VoltageCorrection + ffVoltages[0] + voltageOffset.getDouble(),
-                -ArmConstants.maxVoltage,
-                ArmConstants.maxVoltage);
-        return arm1VoltageOutput;
-    }
-
     private double shockFeedforward(Rotation2d armAngle) {
-        double torque = springConstant * (ArmConstants.l1 * ArmConstants.l2 * armAngle.getSin())
+        double torque = springConstant
+                * (ArmConstants.l1 * ArmConstants.l2 * armAngle.getSin())
                 / Math.sqrt(Math.pow(ArmConstants.l1, 2)
                         + Math.pow(ArmConstants.l2, 2)
                         - 2 * ArmConstants.l1 * ArmConstants.l2 * armAngle.getCos());
