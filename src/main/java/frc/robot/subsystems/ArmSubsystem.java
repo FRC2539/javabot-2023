@@ -410,6 +410,11 @@ public class ArmSubsystem extends SubsystemBase {
         } else {
             startMotors();
         }
+        if (state == ArmState.SUBSTATION_PICKUP) {
+            motor2Controller.setPID(5, 0, 0.3);
+        } else {
+            motor2Controller.setPID(6, 0, 0.15);
+        }
         updateArmDesiredPosition();
     }
 
@@ -710,7 +715,8 @@ public class ArmSubsystem extends SubsystemBase {
         double arm2VoltageOutput = MathUtils.ensureRange(
                 applyKs(arm2VoltageCorrection, ArmConstants.arm2kS, ArmConstants.arm2kSDeadband)
                         + ffVoltages[1]
-                        + (armState == ArmState.HOVER_MANUAL ? .1 : 0),
+                        + (armState == ArmState.HOVER_MANUAL ? .1 : 0)
+                        + (armState == ArmState.SUBSTATION_PICKUP ? .4 : 0),
                 -ArmConstants.maxVoltage,
                 ArmConstants.maxVoltage);
         double gripperVoltageOutput = MathUtils.ensureRange(
@@ -911,8 +917,8 @@ public class ArmSubsystem extends SubsystemBase {
         //         FieldConstants.midX,
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
         //         Rotation2d.fromDegrees(20))),
-        SUBSTATION_PICKUP(
-                Static.fromBumper(FieldConstants.midX, FieldConstants.highConeZ - 0.07, Rotation2d.fromDegrees(-10))),
+        SUBSTATION_PICKUP(Static.fromBumper(
+                FieldConstants.midX, FieldConstants.highConeZ - 0.07 + 0.0, Rotation2d.fromDegrees(0))), // -10
         MID_MANUAL_CONE(Static.fromBumper(
                 FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.09, Rotation2d.fromDegrees(60))),
         MID_MANUAL_CUBE_1(new Static(0.66, 0.70, Rotation2d.fromDegrees(55))),
@@ -946,7 +952,7 @@ public class ArmSubsystem extends SubsystemBase {
                 FieldConstants.highX + 0.14, // gripper offset
                 FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior
                 Rotation2d.fromDegrees(-25))),
-        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(162))), // 179
+        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(156))), // 179
         COOL_HANDOFF_REVERSE(Static.fromWrist(0.4, 0.4, Rotation2d.fromDegrees(170))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())),
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())),

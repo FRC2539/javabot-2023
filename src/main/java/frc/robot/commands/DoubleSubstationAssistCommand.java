@@ -30,7 +30,7 @@ public class DoubleSubstationAssistCommand extends CommandBase {
 
     private final double FORK_SIZE = Units.feetToMeters(1.9);
     private final double ROBOT_DISTANCE_TO_APRILTAG =
-            Units.inchesToMeters(10 + 1.5 + 13); // this and the above are polaceholders
+            Units.inchesToMeters(10 + 1.5 + 13 + 8); // this and the above are polaceholders
 
     public DoubleSubstationAssistCommand(SwerveDriveSubsystem swerveDriveSubsystem, VisionSubsystem visionSubsystem) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
@@ -57,7 +57,7 @@ public class DoubleSubstationAssistCommand extends CommandBase {
         var goalPosition = positionApriltag
                 .getTranslation()
                 .plus(new Translation2d(
-                        -ROBOT_DISTANCE_TO_APRILTAG,
+                        ROBOT_DISTANCE_TO_APRILTAG * (DriverStation.getAlliance() == Alliance.Red ? -1 : 1), 
                         robotPosition.getY() > positionApriltag.getY() ? FORK_SIZE : -FORK_SIZE));
 
         var targetPositionRobotRelative = goalPosition.minus(robotPosition.getTranslation());

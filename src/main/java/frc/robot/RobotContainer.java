@@ -18,9 +18,9 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
+import frc.robot.commands.DoubleSubstationAssistCommand;
 import frc.robot.commands.IndicateGridAimedCommand;
 import frc.robot.commands.IndicateSubstationAimedCommand;
-import frc.robot.commands.IntakingAimAssistCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
 import java.util.function.Supplier;
@@ -109,17 +109,20 @@ public class RobotContainer {
         leftDriveController.getRightThumb().whileTrue(new IndicateGridAimedCommand(visionSubsystem, lightsSubsystem));
         leftDriveController.nameRightThumb("Aim to Grid");
 
+        // leftDriveController
+        //         .getLeftThumb()
+        //         .whileTrue(new IntakingAimAssistCommand(
+        //                         visionSubsystem,
+        //                         swerveDriveSubsystem,
+        //                         lightsSubsystem,
+        //                         this::getDriveForwardAxis,
+        //                         this::getDriveStrafeAxis,
+        //                         this::getDriveRotationAxis)
+        //                 .alongWith(intakeSubsystem.intakeModeCommand()));
         leftDriveController
                 .getLeftThumb()
-                .whileTrue(new IntakingAimAssistCommand(
-                                visionSubsystem,
-                                swerveDriveSubsystem,
-                                lightsSubsystem,
-                                this::getDriveForwardAxis,
-                                this::getDriveStrafeAxis,
-                                this::getDriveRotationAxis)
-                        .alongWith(intakeSubsystem.intakeModeCommand()));
-        leftDriveController.nameLeftThumb("ML Pickup");
+                .whileTrue(new DoubleSubstationAssistCommand(swerveDriveSubsystem, visionSubsystem));
+        leftDriveController.nameLeftThumb("Substation");
 
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
         leftDriveController.nameBottomThumb("Drop Game Piece");
