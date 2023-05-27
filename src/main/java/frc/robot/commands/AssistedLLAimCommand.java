@@ -11,6 +11,7 @@ import frc.lib.math.MathUtils;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightMode;
+import frc.robot.subsystems.VisionSubsystem.LimelightRawAngles;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -21,6 +22,9 @@ public class AssistedLLAimCommand extends CommandBase {
 
     private SwerveDriveSubsystem swerveDriveSubsystem;
     private VisionSubsystem visionSubsystem;
+
+    private boolean hasSeenGoal = false;
+    private double strafeingValue = 0;
 
     private LinearFilter txRollingAverage = LinearFilter.movingAverage(5);
 
@@ -61,29 +65,36 @@ public class AssistedLLAimCommand extends CommandBase {
 
     @Override
     public void execute() {
-        double strafeingValue;
-        double rollingAverage = 0;
+        // var allVisionAngles = visionSubsystem.getBackAllRetroreflectiveAngles();
 
-        if (visionSubsystem.hasBackRetroreflectiveAngles() && visionSubsystem.isBackLimelightAtPipeline()) {
-            double lastTx = visionSubsystem.getBackRetroreflectiveAngles().get().tx();
+        if (visionSubsystem.backLimelightHasTarget() && visionSubsystem.isBackLimelightAtPipeline() && angleController.atGoal()) {
+            
+            LimelightRawAngles bestCurrentTarget = visionSubsystem.getBackRetroreflectiveAngles().get();//allVisionAngles.get(0);
+            // for (LimelightRawAngles i : allVisionAngles) {
+            //     if (Math.abs(i.tx()) < Math.abs(bestCurrentTarget.tx())) {
+            //         bestCurrentTarget = i;
+            //     }
+            // }
+
+            Logger.log("/LLAimCommand/tx", bestCurrentTarget.tx());
 
             strafeingValue = -MathUtils.ensureRange(
-                    strafeController.calculate(rollingAverage = txRollingAverage.calculate(lastTx)),
+                    strafeController.calculate(bestCurrentTarget.tx()),
                     -maxStrafeVelocity,
                     maxStrafeVelocity);
 
             if (strafeController.atSetpoint()) strafeingValue = 0;
-        } else {
+
+            hasSeenGoal = true;
+        } else if (!hasSeenGoal) {
             strafeingValue = strafe.getAsDouble();
         }
 
         double angularCorrection = angleController.calculate(
                 swerveDriveSubsystem.getPose().getRotation().getRadians());
-        double angularSpeed = 0; // angleController.getSetpoint().velocity + angularCorrection;
+        double angularSpeed = angleController.getSetpoint().velocity + angularCorrection;
 
         swerveDriveSubsystem.setVelocity(
                 new ChassisSpeeds(forward.getAsDouble(), strafeingValue, angularSpeed), true, true);
-
-        Logger.log("/LLAimCommand/tx", rollingAverage);
     }
 }

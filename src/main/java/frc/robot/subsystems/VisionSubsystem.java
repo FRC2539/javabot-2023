@@ -283,25 +283,25 @@ public class VisionSubsystem extends SubsystemBase {
                 || !(backLimelightMode == LimelightMode.RETROREFLECTIVEMID
                         || backLimelightMode == LimelightMode.RETROREFLECTIVEHIGH)) return new ArrayList<LimelightRawAngles>();
 
-        var my_output_array = new ArrayList<LimelightRawAngles>();
+        var outputArray = new ArrayList<LimelightRawAngles>();
 
         int MY_THRESHOLD = 1; //in percent (0-100)
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            my_output_array.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+            outputArray.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
         }
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            my_output_array.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+            outputArray.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
         }
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            my_output_array.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+            outputArray.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
         }
 
 
         // Store raw limelight angles
-        return my_output_array;
+        return outputArray;
     }
 
     private Optional<LimelightRawAngles> calculateFrontMLAngles() {
