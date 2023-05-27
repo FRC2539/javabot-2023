@@ -17,7 +17,6 @@ import frc.lib.math.MathUtils;
 import frc.lib.vision.LimelightRobotPose;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
-
 import java.util.ArrayList;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
@@ -281,24 +280,27 @@ public class VisionSubsystem extends SubsystemBase {
     private ArrayList<LimelightRawAngles> calculateAllBackRetroreflectiveAngles() {
         if (!backLimelightHasTarget()
                 || !(backLimelightMode == LimelightMode.RETROREFLECTIVEMID
-                        || backLimelightMode == LimelightMode.RETROREFLECTIVEHIGH)) return new ArrayList<LimelightRawAngles>();
+                        || backLimelightMode == LimelightMode.RETROREFLECTIVEHIGH))
+            return new ArrayList<LimelightRawAngles>();
 
         var outputArray = new ArrayList<LimelightRawAngles>();
 
-        int MY_THRESHOLD = 1; //in percent (0-100)
+        int MY_THRESHOLD = 1; // in percent (0-100)
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+            outputArray.add(
+                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
         }
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+            outputArray.add(
+                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
         }
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+            outputArray.add(
+                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
         }
-
 
         // Store raw limelight angles
         return outputArray;

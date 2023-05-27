@@ -12,7 +12,6 @@ import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightMode;
 import frc.robot.subsystems.VisionSubsystem.LimelightRawAngles;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
@@ -67,9 +66,12 @@ public class AssistedLLAimCommand extends CommandBase {
     public void execute() {
         // var allVisionAngles = visionSubsystem.getBackAllRetroreflectiveAngles();
 
-        if (visionSubsystem.backLimelightHasTarget() && visionSubsystem.isBackLimelightAtPipeline() && angleController.atGoal()) {
-            
-            LimelightRawAngles bestCurrentTarget = visionSubsystem.getBackRetroreflectiveAngles().get();//allVisionAngles.get(0);
+        if (visionSubsystem.backLimelightHasTarget()
+                && visionSubsystem.isBackLimelightAtPipeline()
+                && angleController.atGoal()) {
+
+            LimelightRawAngles bestCurrentTarget =
+                    visionSubsystem.getBackRetroreflectiveAngles().get(); // allVisionAngles.get(0);
             // for (LimelightRawAngles i : allVisionAngles) {
             //     if (Math.abs(i.tx()) < Math.abs(bestCurrentTarget.tx())) {
             //         bestCurrentTarget = i;
@@ -79,9 +81,7 @@ public class AssistedLLAimCommand extends CommandBase {
             Logger.log("/LLAimCommand/tx", bestCurrentTarget.tx());
 
             strafeingValue = -MathUtils.ensureRange(
-                    strafeController.calculate(bestCurrentTarget.tx()),
-                    -maxStrafeVelocity,
-                    maxStrafeVelocity);
+                    strafeController.calculate(bestCurrentTarget.tx()), -maxStrafeVelocity, maxStrafeVelocity);
 
             if (strafeController.atSetpoint()) strafeingValue = 0;
 
