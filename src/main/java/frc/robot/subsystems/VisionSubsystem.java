@@ -287,19 +287,22 @@ public class VisionSubsystem extends SubsystemBase {
 
         int MY_THRESHOLD = 1; // in percent (0-100)
 
+        double FOVX = 63.3;
+        double FOVY = 49.7;
+
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
             outputArray.add(
-                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble() * FOVX / 2, backLimelightTx1Receiver.getDouble() * FOVY / 2));
         }
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
             outputArray.add(
-                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble() * FOVX / 2, backLimelightTx1Receiver.getDouble() * FOVY / 2));
         }
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
             outputArray.add(
-                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble() * FOVX / 2, backLimelightTx1Receiver.getDouble() * FOVY / 2));
         }
 
         // Store raw limelight angles
