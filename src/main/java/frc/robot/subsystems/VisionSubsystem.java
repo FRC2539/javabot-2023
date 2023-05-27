@@ -17,6 +17,8 @@ import frc.lib.math.MathUtils;
 import frc.lib.vision.LimelightRobotPose;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
+
+import java.util.ArrayList;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -41,6 +43,18 @@ public class VisionSubsystem extends SubsystemBase {
     private LoggedReceiver backBotposeBlueReceiver = Logger.receive("/limelight/botpose_wpiblue", new double[] {});
     private LoggedReceiver backLimelightPipelineReceiver = Logger.receive("/limelight/getpipe", 0);
 
+    private LoggedReceiver backLimelightTx0Receiver = Logger.receive("/limelight/tx0", 0.0);
+    private LoggedReceiver backLimelightTy0Receiver = Logger.receive("/limelight/ty0", 0.0);
+    private LoggedReceiver backLimelightTa0Receiver = Logger.receive("/limelight/ta0", 0.0);
+
+    private LoggedReceiver backLimelightTx1Receiver = Logger.receive("/limelight/tx1", 0.0);
+    private LoggedReceiver backLimelightTy1Receiver = Logger.receive("/limelight/ty1", 0.0);
+    private LoggedReceiver backLimelightTa1Receiver = Logger.receive("/limelight/ta1", 0.0);
+
+    private LoggedReceiver backLimelightTx2Receiver = Logger.receive("/limelight/tx2", 0.0);
+    private LoggedReceiver backLimelightTy2Receiver = Logger.receive("/limelight/ty2", 0.0);
+    private LoggedReceiver backLimelightTa2Receiver = Logger.receive("/limelight/ta2", 0.0);
+
     // Front limelight
     private LoggedReceiver frontLimelightHasTargetReceiver = Logger.receive("/limelight-ml/tv", 0);
     private LoggedReceiver frontLimelightTXReceiver = Logger.receive("/limelight-ml/tx", 0.0);
@@ -51,6 +65,7 @@ public class VisionSubsystem extends SubsystemBase {
     private Optional<LimelightRobotPose> BackApriltagEstimate = Optional.empty();
     private Optional<EstimatedRobotPose> FrontApriltagEstimate = Optional.empty();
     private Optional<LimelightRawAngles> BackRetroreflectiveAngles = Optional.empty();
+    private ArrayList<LimelightRawAngles> AllBackRetroreflectiveAngles = new ArrayList<LimelightRawAngles>();
     private Optional<LimelightRawAngles> FrontMLAngles = Optional.empty();
 
     private double lastApriltagUpdateTimestamp = Timer.getFPGATimestamp();
@@ -107,6 +122,8 @@ public class VisionSubsystem extends SubsystemBase {
 
         /* Estimate the location of the retroreflective target */
         BackRetroreflectiveAngles = calculateBackRetroreflectiveAngles();
+
+        AllBackRetroreflectiveAngles = calculateAllBackRetroreflectiveAngles();
 
         /* Estimate the location of a game piece detected by ML */
         FrontMLAngles = calculateFrontMLAngles();
@@ -261,6 +278,32 @@ public class VisionSubsystem extends SubsystemBase {
         return Optional.of(new LimelightRawAngles(limelightTX, limelightTY, limelightTA));
     }
 
+    private ArrayList<LimelightRawAngles> calculateAllBackRetroreflectiveAngles() {
+        if (!backLimelightHasTarget()
+                || !(backLimelightMode == LimelightMode.RETROREFLECTIVEMID
+                        || backLimelightMode == LimelightMode.RETROREFLECTIVEHIGH)) return new ArrayList<LimelightRawAngles>();
+
+        var my_output_array = new ArrayList<LimelightRawAngles>();
+
+        int MY_THRESHOLD = 1; //in percent (0-100)
+
+        if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
+            my_output_array.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+        }
+
+        if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
+            my_output_array.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+        }
+
+        if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
+            my_output_array.add(new LimelightRawAngles(backLimelightTx0Receiver.getDouble(), backLimelightTx1Receiver.getDouble()));
+        }
+
+
+        // Store raw limelight angles
+        return my_output_array;
+    }
+
     private Optional<LimelightRawAngles> calculateFrontMLAngles() {
         if (!frontLimelightHasTarget() || frontLimelightMode != LimelightMode.ML) return Optional.empty();
 
@@ -273,6 +316,10 @@ public class VisionSubsystem extends SubsystemBase {
 
     public Optional<LimelightRawAngles> getBackRetroreflectiveAngles() {
         return BackRetroreflectiveAngles;
+    }
+
+    public ArrayList<LimelightRawAngles> getBackAllRetroreflectiveAngles() {
+        return AllBackRetroreflectiveAngles;
     }
 
     public Optional<LimelightRawAngles> getFrontMLAngles() {

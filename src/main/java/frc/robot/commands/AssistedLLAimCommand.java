@@ -11,6 +11,8 @@ import frc.lib.math.MathUtils;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightMode;
+
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 public class AssistedLLAimCommand extends CommandBase {
@@ -33,7 +35,8 @@ public class AssistedLLAimCommand extends CommandBase {
             VisionSubsystem visionSubsystem,
             DoubleSupplier forward,
             DoubleSupplier strafe,
-            DoubleSupplier rotate) {
+            DoubleSupplier rotate,
+            BooleanSupplier isLeftTarget) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.visionSubsystem = visionSubsystem;
 
