@@ -8,10 +8,10 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.lib.logging.Logger;
 import frc.lib.math.MathUtils;
+import frc.lib.vision.LimelightRawAngles;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.subsystems.VisionSubsystem.LimelightMode;
-import frc.robot.subsystems.VisionSubsystem.LimelightRawAngles;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 

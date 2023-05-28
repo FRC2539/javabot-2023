@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.lib.math.MathUtils;
+import frc.lib.vision.LimelightRawAngles;
 import frc.lib.vision.LimelightRobotPose;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.VisionConstants;
@@ -30,7 +31,7 @@ public class VisionSubsystem extends SubsystemBase {
     // private PhotonPoseEstimator photonPoseEstimator;
 
     private LimelightMode backLimelightMode = LimelightMode.APRILTAG;
-    private LimelightMode frontLimelightMode = LimelightMode.APRILTAG;
+    private LimelightMode frontLimelightMode = LimelightMode.ML;
 
     // Back limelight
     private LoggedReceiver backLimelightHasTargetReceiver = Logger.receive("/limelight/tv", 0);
@@ -291,18 +292,18 @@ public class VisionSubsystem extends SubsystemBase {
         double FOVY = 49.7;
 
         if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(
-                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble() * FOVX / 2, backLimelightTx1Receiver.getDouble() * FOVY / 2));
+            outputArray.add(new LimelightRawAngles(
+                    backLimelightTx0Receiver.getDouble() * FOVX / 2, backLimelightTy0Receiver.getDouble() * FOVY / 2));
         }
 
-        if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(
-                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble() * FOVX / 2, backLimelightTx1Receiver.getDouble() * FOVY / 2));
+        if (backLimelightTa1Receiver.getDouble() >= MY_THRESHOLD) {
+            outputArray.add(new LimelightRawAngles(
+                    backLimelightTx1Receiver.getDouble() * FOVX / 2, backLimelightTy1Receiver.getDouble() * FOVY / 2));
         }
 
-        if (backLimelightTa0Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(
-                    new LimelightRawAngles(backLimelightTx0Receiver.getDouble() * FOVX / 2, backLimelightTx1Receiver.getDouble() * FOVY / 2));
+        if (backLimelightTa2Receiver.getDouble() >= MY_THRESHOLD) {
+            outputArray.add(new LimelightRawAngles(
+                    backLimelightTx2Receiver.getDouble() * FOVX / 2, backLimelightTy2Receiver.getDouble() * FOVY / 2));
         }
 
         // Store raw limelight angles
@@ -420,12 +421,6 @@ public class VisionSubsystem extends SubsystemBase {
 
         private LimelightMode(int pipelineNumber) {
             this.pipelineNumber = pipelineNumber;
-        }
-    }
-
-    public record LimelightRawAngles(double tx, double ty, double ta) {
-        public LimelightRawAngles(double tx, double ty) {
-            this(ty, tx, 0.0);
         }
     }
 }

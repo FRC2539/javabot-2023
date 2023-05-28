@@ -6,11 +6,11 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.lib.math.MathUtils;
+import frc.lib.vision.LimelightRawAngles;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.VisionSubsystem.LimelightRawAngles;
 import java.util.function.DoubleSupplier;
 
 public class IntakingAimAssistCommand extends CommandBase {
