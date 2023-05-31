@@ -25,8 +25,6 @@ public class AssistedLLAimCommand extends CommandBase {
     private boolean hasSeenGoal = false;
     private double strafeingValue = 0;
 
-    private LinearFilter txRollingAverage = LinearFilter.movingAverage(5);
-
     private static final TrapezoidProfile.Constraints angleConstraints = new TrapezoidProfile.Constraints(4, 4);
     private static final double maxStrafeVelocity = 2;
 
