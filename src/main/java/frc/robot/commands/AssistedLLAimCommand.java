@@ -5,6 +5,7 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
 import frc.lib.math.MathUtils;
 import frc.lib.vision.BackLimelight;
@@ -33,6 +34,9 @@ public class AssistedLLAimCommand extends CommandBase {
 
     private BackLimelight camera;
 
+    private LoggedReceiver pidValueReciever;
+    private boolean isUsingNetPID;
+
     public AssistedLLAimCommand(
             SwerveDriveSubsystem swerveDriveSubsystem,
             VisionSubsystem visionSubsystem,
@@ -40,7 +44,8 @@ public class AssistedLLAimCommand extends CommandBase {
             DoubleSupplier forward,
             DoubleSupplier strafe,
             DoubleSupplier rotate,
-            BooleanSupplier isLeftTarget) {
+            BooleanSupplier isLeftTarget,
+            boolean isUsingNetPID) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.visionSubsystem = visionSubsystem;
 
@@ -56,10 +61,24 @@ public class AssistedLLAimCommand extends CommandBase {
         strafeController.setTolerance(1.3);
 
         camera = visionSubsystem.getBackLimelight();
+    
+        //this order is {kP rot, kI rot, kD rot, kP horiz, kI horiz, kD horiz, speed rot, accel rot}
+        pidValueReciever = Logger.tunable("/LLAimCommand/pid_values", new double[]{1.5,0.0,0.0,0.05,0.0,0.0,4.0,4.0});
+        this.isUsingNetPID = isUsingNetPID;
     }
 
     @Override
     public void initialize() {
+        if (isUsingNetPID) {
+            double[] someValues = pidValueReciever.getDoubleArray();
+
+            if (someValues.length != 8) someValues = new double[]{1.5,0.0,0.0,0.05,0.0,0.0,4.0,4.0};
+
+            angleController = new ProfiledPIDController(someValues[0],someValues[1],someValues[2], new TrapezoidProfile.Constraints(someValues[6], someValues[7]));
+
+            strafeController.setPID(someValues[3], someValues[4], someValues[5]);
+        }
+
         camera.setMode(BackLimelight.Mode.RETROREFLECTIVEHIGH);
 
         angleController.reset(swerveDriveSubsystem.getRotation().getRadians());
