@@ -15,8 +15,8 @@ import frc.lib.vision.CameraInterfaces.*;
 import frc.robot.Constants.VisionConstants;
 
 public class BackLimelight implements ApriltagEstimator, Retroreflective, RetroreflectiveArray {
-    private final double FOVX = 63.3;
-    private final double FOVY = 49.7;
+    private final double FOVX = 29.8 * 2;
+    private final double FOVY = 24.85 * 2;
     
     private LoggedReceiver hasTargetReceiver = Logger.receive("/limelight/tv", 0);
     private LoggedReceiver TXReceiver = Logger.receive("/limelight/tx", 0.0);
@@ -93,7 +93,7 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
 
             double timestamp = Timer.getFPGATimestamp() - botposeArray[6] / 1000.0;
 
-            return Optional.of(new LimelightRobotPose(botPose, timestamp));
+            return Optional.of(new LimelightRobotPose(botPose, timestamp, (int) apriltagIDReceiver.getInteger()));
         } else {
             return Optional.empty();
         }
@@ -169,5 +169,9 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
                 .setNumber(limelightMode.pipelineNumber);
 
         this.limelightMode = limelightMode;
+    }
+
+    public Mode getMode() {
+        return limelightMode;
     }
 }

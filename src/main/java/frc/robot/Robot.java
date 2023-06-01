@@ -10,11 +10,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.lib.logging.Logger;
 import frc.lib.swerve.CTREConfigs;
+import frc.lib.vision.BackLimelight;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.GlobalConstants;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.LightsSubsystem.LEDSegment;
-import frc.robot.subsystems.VisionSubsystem.LimelightMode;
 
 public class Robot extends TimedRobot {
     public static CTREConfigs ctreConfigs = new CTREConfigs();
@@ -95,7 +95,7 @@ public class Robot extends TimedRobot {
     @Override
     public void disabledPeriodic() {
         // Set correct limelight mode (run while disabled for consistency)
-        robotContainer.getVisionSubsystem().setBackLimelightMode(LimelightMode.APRILTAG);
+        robotContainer.getVisionSubsystem().getBackLimelight().setMode(BackLimelight.Mode.APRILTAG);
 
         // Update the autonomous command with driver station configuration
         robotContainer.autonomousManager.update();

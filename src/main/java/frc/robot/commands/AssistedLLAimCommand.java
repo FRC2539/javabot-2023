@@ -2,16 +2,16 @@ package frc.robot.commands;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.lib.logging.Logger;
 import frc.lib.math.MathUtils;
+import frc.lib.vision.BackLimelight;
 import frc.lib.vision.LimelightRawAngles;
+import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.VisionSubsystem.LimelightMode;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
@@ -31,9 +31,12 @@ public class AssistedLLAimCommand extends CommandBase {
     private ProfiledPIDController angleController = new ProfiledPIDController(1.5, 0.0, 0.0, angleConstraints);
     private PIDController strafeController = new PIDController(0.05, 0.0, 0.1);
 
+    private BackLimelight camera;
+
     public AssistedLLAimCommand(
             SwerveDriveSubsystem swerveDriveSubsystem,
             VisionSubsystem visionSubsystem,
+            LightsSubsystem lightsSubsystem,
             DoubleSupplier forward,
             DoubleSupplier strafe,
             DoubleSupplier rotate,
@@ -51,11 +54,13 @@ public class AssistedLLAimCommand extends CommandBase {
 
         strafeController.setSetpoint(0);
         strafeController.setTolerance(1.3);
+
+        camera = visionSubsystem.getBackLimelight();
     }
 
     @Override
     public void initialize() {
-        visionSubsystem.setBackLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
+        camera.setMode(BackLimelight.Mode.RETROREFLECTIVEHIGH);
 
         angleController.reset(swerveDriveSubsystem.getRotation().getRadians());
     }
@@ -64,12 +69,11 @@ public class AssistedLLAimCommand extends CommandBase {
     public void execute() {
         // var allVisionAngles = visionSubsystem.getBackAllRetroreflectiveAngles();
 
-        if (visionSubsystem.backLimelightHasTarget()
-                && visionSubsystem.isBackLimelightAtPipeline()
+        if (camera.hasLimelightRawAngles()
                 && angleController.atGoal()) {
 
             LimelightRawAngles bestCurrentTarget =
-                    visionSubsystem.getBackRetroreflectiveAngles().get(); // allVisionAngles.get(0);
+                    camera.getLimelightRawAngles().get(); // allVisionAngles.get(0);
             // for (LimelightRawAngles i : allVisionAngles) {
             //     if (Math.abs(i.tx()) < Math.abs(bestCurrentTarget.tx())) {
             //         bestCurrentTarget = i;
@@ -81,7 +85,12 @@ public class AssistedLLAimCommand extends CommandBase {
             strafeingValue = -MathUtils.ensureRange(
                     strafeController.calculate(bestCurrentTarget.tx()), -maxStrafeVelocity, maxStrafeVelocity);
 
-            if (strafeController.atSetpoint()) strafeingValue = 0;
+            if (strafeController.atSetpoint()) {
+                strafeingValue = 0;
+                LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
+            } else {
+                LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.yellow);
+            }
 
             hasSeenGoal = true;
         } else if (!hasSeenGoal) {
@@ -91,6 +100,9 @@ public class AssistedLLAimCommand extends CommandBase {
         double angularCorrection = angleController.calculate(
                 swerveDriveSubsystem.getPose().getRotation().getRadians());
         double angularSpeed = angleController.getSetpoint().velocity + angularCorrection;
+        if (angleController.atGoal()) {
+            angularSpeed = 0;
+        }
 
         swerveDriveSubsystem.setVelocity(
                 new ChassisSpeeds(forward.getAsDouble(), strafeingValue, angularSpeed), true, true);

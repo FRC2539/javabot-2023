@@ -12,7 +12,7 @@ public class CameraInterfaces {
         Optional<LimelightRawAngles> getLimelightRawAngles();
 
         default boolean hasLimelightRawAngles() {
-            return getLimelightRawAngles().isEmpty();
+            return getLimelightRawAngles().isPresent();
         }
     }
 
@@ -22,7 +22,7 @@ public class CameraInterfaces {
         Optional<LimelightRawAngles> getMLRawAngles();
 
         default boolean hasMLRawAngles() {
-            return getMLRawAngles().isEmpty();
+            return getMLRawAngles().isPresent();
         }
     }
 
@@ -30,7 +30,7 @@ public class CameraInterfaces {
         ArrayList<LimelightRawAngles> getLimelightRawAnglesArray();
 
         default boolean hasLimelightRawAnglesArray() {
-            return getLimelightRawAnglesArray().isEmpty();
+            return !getLimelightRawAnglesArray().isEmpty();
         }
     }
 
@@ -38,7 +38,7 @@ public class CameraInterfaces {
         Optional<LimelightRobotPose> getRobotPoseEstimate();
 
         default boolean hasRobotPoseEstimate() {
-            return getRobotPoseEstimate().isEmpty();
+            return getRobotPoseEstimate().isPresent();
         }
     }
 }

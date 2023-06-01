@@ -2,10 +2,10 @@ package frc.robot.commands;
 
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.lib.vision.BackLimelight;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.LightsSubsystem.LEDSegment;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.VisionSubsystem.LimelightMode;
 
 public class IndicateGridAimedCommand extends CommandBase {
     private VisionSubsystem visionSubsystem;
@@ -26,14 +26,14 @@ public class IndicateGridAimedCommand extends CommandBase {
 
     @Override
     public void initialize() {
-        visionSubsystem.setBackLimelightMode(LimelightMode.RETROREFLECTIVEHIGH);
+        visionSubsystem.getBackLimelight().setMode(BackLimelight.Mode.RETROREFLECTIVEHIGH);
 
         hasVisionMeasurement = false;
     }
 
     @Override
     public void execute() {
-        if (visionSubsystem.hasBackRetroreflectiveAngles() && visionSubsystem.isBackLimelightAtPipeline()) {
+        if (visionSubsystem.getBackLimelight().hasLimelightRawAngles()) {
             // Initialize the moving average
             if (!hasVisionMeasurement) {
                 initializeMovingAverage();
@@ -42,7 +42,7 @@ public class IndicateGridAimedCommand extends CommandBase {
             }
 
             var retroreflectiveAngles =
-                    visionSubsystem.getBackRetroreflectiveAngles().get();
+                    visionSubsystem.getBackLimelight().getLimelightRawAngles().get();
 
             double tx = txRollingAverage.calculate(retroreflectiveAngles.tx());
             double ta = retroreflectiveAngles.ta();
@@ -59,7 +59,7 @@ public class IndicateGridAimedCommand extends CommandBase {
 
     private void initializeMovingAverage() {
         // Fill the moving average filter to prevent averaging with 0
-        var initial = visionSubsystem.getBackRetroreflectiveAngles().get().tx();
+        var initial = visionSubsystem.getBackLimelight().getLimelightRawAngles().get().tx();
         for (int i = 0; i < taps; i++) txRollingAverage.calculate(initial);
     }
 

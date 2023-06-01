@@ -13,6 +13,8 @@ public class FrontLimelight implements CameraInterfaces.MachineLearning {
     private LoggedReceiver frontLimelightTYReceiver = Logger.receive("/limelight-ml/ty", 0.0);
     private LoggedReceiver frontLimelightPipelineReceiver = Logger.receive("/limelight-ml/getpipe", 0);
 
+    private Mode limelightMode = Mode.ML;
+
     public FrontLimelight() {
         NetworkTableInstance.getDefault()
                 .getTable("limelight-ml")
@@ -20,12 +22,22 @@ public class FrontLimelight implements CameraInterfaces.MachineLearning {
                 .setNumber(0); // 0 is the pipeline for ML
     }
 
+    public enum Mode {
+        ML(0);
+
+        public int pipelineNumber;
+
+        private Mode(int pipelineNumber) {
+            this.pipelineNumber = pipelineNumber;
+        }
+    }
+
     public void update() {
         backRetroreflectiveAngles = calculateAngles();
     }
 
     public Optional<LimelightRawAngles> calculateAngles() {
-        if (frontLimelightHasTargetReceiver.getInteger() != 1 || frontLimelightPipelineReceiver.getInteger() != 0) {
+        if (frontLimelightHasTargetReceiver.getInteger() != 1 || !isAtPipeline()) {
             return Optional.empty();
         }
 
@@ -37,5 +49,24 @@ public class FrontLimelight implements CameraInterfaces.MachineLearning {
 
     public Optional<LimelightRawAngles> getMLRawAngles() {
         return backRetroreflectiveAngles;
+    }
+
+    private boolean isAtPipeline() {
+        return frontLimelightPipelineReceiver.getInteger() == limelightMode.pipelineNumber;
+    }
+
+    public void setMode(Mode limelightMode) {
+        if (limelightMode == this.limelightMode) return;
+
+        NetworkTableInstance.getDefault()
+                .getTable("limelight")
+                .getEntry("pipeline")
+                .setNumber(limelightMode.pipelineNumber);
+
+        this.limelightMode = limelightMode;
+    }
+
+    public Mode getMode() {
+        return limelightMode;
     }
 }
