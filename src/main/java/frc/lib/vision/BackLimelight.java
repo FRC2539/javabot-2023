@@ -53,7 +53,8 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
         APRILTAG(0),
         RETROREFLECTIVEMID(1),
         RETROREFLECTIVEHIGH(2),
-        CONE(3);
+        CONE(3),
+        RETROREFLECTIVEALIGN(5);
 
         public int pipelineNumber;
 
@@ -71,6 +72,8 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
     /** this does NOT account for stuff being really wacky. use your own filtering to treat this */
 
     private Optional<LimelightRobotPose> calculateApriltagEstimate() {
+        if (!isAtPipeline()) return Optional.empty();
+
         if (limelightMode != Mode.APRILTAG) return Optional.empty();
 
         // double[] {x, y, z, roll, pitch, yaw, latency}
@@ -104,9 +107,12 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
     }
 
     private Optional<LimelightRawAngles> calculateLimelightRawAngles() {
+        if (!isAtPipeline()) return Optional.empty();
+        
         if (!(hasTargetReceiver.getInteger() == 1)
                 || (limelightMode != Mode.RETROREFLECTIVEMID
                         && limelightMode != Mode.RETROREFLECTIVEHIGH
+                        && limelightMode != Mode.RETROREFLECTIVEALIGN
                         && limelightMode != Mode.CONE)) return Optional.empty();
 
         double limelightTX = TXReceiver.getDouble();
@@ -127,6 +133,7 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
         if (!(hasTargetReceiver.getInteger() == 1)
                 || (limelightMode != Mode.RETROREFLECTIVEMID
                         && limelightMode != Mode.RETROREFLECTIVEHIGH
+                        && limelightMode != Mode.RETROREFLECTIVEALIGN
                         && limelightMode != Mode.CONE)) return new ArrayList<LimelightRawAngles>();
 
         var outputArray = new ArrayList<LimelightRawAngles>();

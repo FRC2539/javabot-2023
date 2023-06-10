@@ -24,6 +24,7 @@ public class AssistedLLAimCommand extends CommandBase {
     private VisionSubsystem visionSubsystem;
 
     private boolean hasSeenGoal = false;
+    private boolean atAngle = false;
     private double strafeingValue = 0;
 
     private static final TrapezoidProfile.Constraints angleConstraints = new TrapezoidProfile.Constraints(4, 4);
@@ -31,6 +32,9 @@ public class AssistedLLAimCommand extends CommandBase {
 
     private ProfiledPIDController angleController = new ProfiledPIDController(1.5, 0.0, 0.0, angleConstraints);
     private PIDController strafeController = new PIDController(0.05, 0.0, 0.1);
+
+    //this order is {kP rot, kI rot, kD rot, kP horiz, kI horiz, kD horiz, speed rot, accel rot}
+    private double[] configValues = new double[]{6,0.0,0.0,0.54,0.0,0.0546,4.0,4.0};
 
     private BackLimelight camera;
 
@@ -49,39 +53,46 @@ public class AssistedLLAimCommand extends CommandBase {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
         this.visionSubsystem = visionSubsystem;
 
-        addRequirements(swerveDriveSubsystem, visionSubsystem);
+        addRequirements(swerveDriveSubsystem, visionSubsystem, lightsSubsystem);
 
         this.forward = forward;
         this.strafe = strafe;
 
-        angleController.setGoal(0);
+        angleController.setGoal(Math.PI);
         angleController.enableContinuousInput(-Math.PI, Math.PI);
 
         strafeController.setSetpoint(0);
-        strafeController.setTolerance(1.3);
 
         camera = visionSubsystem.getBackLimelight();
     
         //this order is {kP rot, kI rot, kD rot, kP horiz, kI horiz, kD horiz, speed rot, accel rot}
-        pidValueReciever = Logger.tunable("/LLAimCommand/pid_values", new double[]{1.5,0.0,0.0,0.05,0.0,0.0,4.0,4.0});
+        pidValueReciever = Logger.tunable("/LLAimCommand/pid_values", configValues);
         this.isUsingNetPID = isUsingNetPID;
     }
 
     @Override
-    public void initialize() {
-        if (isUsingNetPID) {
-            double[] someValues = pidValueReciever.getDoubleArray();
+    public void initialize() { 
+        double[] someValues = pidValueReciever.getDoubleArray();
 
-            if (someValues.length != 8) someValues = new double[]{1.5,0.0,0.0,0.05,0.0,0.0,4.0,4.0};
+        if (someValues.length != 8 || !isUsingNetPID) someValues = configValues;
 
-            angleController = new ProfiledPIDController(someValues[0],someValues[1],someValues[2], new TrapezoidProfile.Constraints(someValues[6], someValues[7]));
+        angleController = new ProfiledPIDController(someValues[0],someValues[1],someValues[2], new TrapezoidProfile.Constraints(someValues[6], someValues[7]));
 
-            strafeController.setPID(someValues[3], someValues[4], someValues[5]);
-        }
+        angleController.setGoal(Math.PI);
+        angleController.enableContinuousInput(-Math.PI, Math.PI);
+        angleController.setTolerance(Math.toRadians(2));
 
-        camera.setMode(BackLimelight.Mode.RETROREFLECTIVEHIGH);
+        strafeController.setPID(someValues[3], someValues[4], someValues[5]);
+        strafeController.setTolerance(0.5);
+        strafeController.setSetpoint(0);
+
+        camera.setMode(BackLimelight.Mode.RETROREFLECTIVEALIGN);
 
         angleController.reset(swerveDriveSubsystem.getRotation().getRadians());
+
+        hasSeenGoal = false;
+        atAngle = false;
+        strafeingValue = 0;
     }
 
     @Override
@@ -89,7 +100,7 @@ public class AssistedLLAimCommand extends CommandBase {
         // var allVisionAngles = visionSubsystem.getBackAllRetroreflectiveAngles();
 
         if (camera.hasLimelightRawAngles()
-                && angleController.atGoal()) {
+                && atAngle) {
 
             LimelightRawAngles bestCurrentTarget =
                     camera.getLimelightRawAngles().get(); // allVisionAngles.get(0);
@@ -101,11 +112,12 @@ public class AssistedLLAimCommand extends CommandBase {
 
             Logger.log("/LLAimCommand/tx", bestCurrentTarget.tx());
 
-            strafeingValue = -MathUtils.ensureRange(
+            strafeingValue = MathUtils.ensureRange(
                     strafeController.calculate(bestCurrentTarget.tx()), -maxStrafeVelocity, maxStrafeVelocity);
 
-            if (strafeController.atSetpoint()) {
-                strafeingValue = 0;
+            if (strafeController.atSetpoint()) strafeingValue = 0;
+            
+            if (Math.abs(strafeController.getPositionError()) <= 1.0) {
                 LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
             } else {
                 LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.yellow);
@@ -120,7 +132,8 @@ public class AssistedLLAimCommand extends CommandBase {
                 swerveDriveSubsystem.getPose().getRotation().getRadians());
         double angularSpeed = angleController.getSetpoint().velocity + angularCorrection;
         if (angleController.atGoal()) {
-            angularSpeed = 0;
+            //angularSpeed = 0;
+            atAngle = true;
         }
 
         swerveDriveSubsystem.setVelocity(
