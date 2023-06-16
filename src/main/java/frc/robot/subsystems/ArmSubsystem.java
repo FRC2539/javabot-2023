@@ -6,6 +6,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.LinearFilter;
@@ -33,6 +34,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.logging.LoggedReceiver;
 import frc.lib.logging.Logger;
+import frc.lib.math.AdaptedTwoJointedArmFeedforward;
 import frc.lib.math.Conversions;
 import frc.lib.math.MathUtils;
 import frc.lib.math.TwoJointedFourBarArmFeedforward;
@@ -110,8 +112,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     private ArmState armState = ArmState.AWAITING_DEPLOYMENT;
 
-    private TwoJointedFourBarArmFeedforward simFeedforward;
-    private TwoJointedFourBarArmFeedforward feedforward;
+    private AdaptedTwoJointedArmFeedforward simFeedforward;
+    private AdaptedTwoJointedArmFeedforward feedforward;
     private ArmFeedforward gripperJointFeedforward;
 
     private SwerveDriveSubsystem swerveDriveSubsystem;
@@ -212,44 +214,30 @@ public class ArmSubsystem extends SubsystemBase {
 
         SmartDashboard.putData("Arm Mechanism", mechanism);
 
-        simFeedforward = new TwoJointedFourBarArmFeedforward(
+        simFeedforward = new AdaptedTwoJointedArmFeedforward(
                 ArmConstants.arm1Length,
                 ArmConstants.arm2Length,
                 ArmConstants.arm1CenterOfMass,
                 ArmConstants.arm2CenterOfMass,
                 ArmConstants.arm1Mass,
                 ArmConstants.arm2Mass,
-                ArmConstants.arm1MomentOfInertia,
-                ArmConstants.arm2MomentOfInertia,
-                ArmConstants.arm1GearRatio,
-                ArmConstants.arm2GearRatio,
-                1,
-                1,
-                ArmConstants.stallTorque,
-                ArmConstants.stallCurrent,
-                ArmConstants.freeSpeed,
                 9.81,
-                12);
+                DCMotor.getFalcon500(1).withReduction(ArmConstants.arm1GearRatio),
+                DCMotor.getFalcon500(1).withReduction(ArmConstants.arm2GearRatio)
+                );
 
         // for testing
-        feedforward = new TwoJointedFourBarArmFeedforward(
-                ArmConstants.arm1Length,
-                ArmConstants.arm2Length,
-                ArmConstants.arm1CenterOfMass,
-                ArmConstants.arm2CenterOfMass,
-                ArmConstants.arm1Mass,
-                ArmConstants.arm2Mass,
-                ArmConstants.arm1MomentOfInertia,
-                ArmConstants.arm2MomentOfInertia,
-                ArmConstants.arm1GearRatio,
-                ArmConstants.arm2GearRatio,
-                1,
-                1,
-                ArmConstants.stallTorque,
-                ArmConstants.stallCurrent,
-                ArmConstants.freeSpeed,
-                9.81,
-                12);
+        feedforward = new AdaptedTwoJointedArmFeedforward(
+            ArmConstants.arm1Length,
+            ArmConstants.arm2Length,
+            ArmConstants.arm1CenterOfMass,
+            ArmConstants.arm2CenterOfMass,
+            ArmConstants.arm1Mass,
+            ArmConstants.arm2Mass,
+            9.81,
+            DCMotor.getFalcon500(1).withReduction(ArmConstants.arm1GearRatio),
+            DCMotor.getFalcon500(1).withReduction(ArmConstants.arm2GearRatio)
+            );
 
         gripperJointFeedforward =
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
@@ -702,19 +690,19 @@ public class ArmSubsystem extends SubsystemBase {
         double gripperDesiredSpeed = gripperMotorController.getSetpoint().velocity;
 
         // Calculate feedforward voltages from dynamics
-        double[] ffVoltages = feedforward.calculateFeedforwardVoltages(
-                arm1Angle.getRadians(), arm2Angle.getRadians(), arm1DesiredSpeed, arm2DesiredSpeed, 0, 0);
+        Matrix<N2, N1> ffVoltages = feedforward.calculateFeedforwardVoltages(
+                arm1Angle.getRadians(), arm2Angle.getRadians());
 
         // Calculate the wrist motor feedforward voltage
         double gripperVoltage = gripperJointFeedforward.calculate(
                 gripperAngle.plus(arm1Angle).plus(arm2Angle).getRadians(), gripperDesiredSpeed, 0);
 
         // Combine pid corrections and feedforward, limiting the max voltage to prevent brownouts
-        double arm1VoltageOutput = calculateShockFeedforwardArm1Voltage(arm1VoltageCorrection, ffVoltages);
+        double arm1VoltageOutput = calculateShockFeedforwardArm1Voltage(arm1VoltageCorrection, ffVoltages.get(0,0));
 
         double arm2VoltageOutput = MathUtils.ensureRange(
                 applyKs(arm2VoltageCorrection, ArmConstants.arm2kS, ArmConstants.arm2kSDeadband)
-                        + ffVoltages[1]
+                        + ffVoltages.get(1,0)
                         + (armState == ArmState.HOVER_MANUAL ? .1 : 0)
                         + (armState == ArmState.SUBSTATION_PICKUP ? .4 : 0),
                 -ArmConstants.maxVoltage,
@@ -730,8 +718,8 @@ public class ArmSubsystem extends SubsystemBase {
         Logger.log("/ArmSubsystem/arm2AngleSetpoint", motor2Controller.getSetpoint().position);
         Logger.log("/ArmSubsystem/gripperPositionSetpoint", gripperMotorController.getSetpoint().position);
 
-        Logger.log("/ArmSubsystem/arm1VoltageFeedforward", ffVoltages[0]);
-        Logger.log("/ArmSubsystem/arm2VoltageFeedforward", ffVoltages[1]);
+        Logger.log("/ArmSubsystem/arm1VoltageFeedforward", ffVoltages.get(0,0));
+        Logger.log("/ArmSubsystem/arm2VoltageFeedforward", ffVoltages.get(1,0));
         Logger.log("/ArmSubsystem/gripperVoltageFeedforward", gripperVoltage);
 
         Logger.log("/ArmSubsystem/arm1VoltageCorrection", arm1VoltageCorrection);
@@ -759,11 +747,11 @@ public class ArmSubsystem extends SubsystemBase {
         return gasShockFeedforwardVoltage;
     }
 
-    private double calculateShockFeedforwardArm1Voltage(double arm1VoltageCorrection, double[] ffVoltages) {
+    private double calculateShockFeedforwardArm1Voltage(double arm1VoltageCorrection, double feedforwardVoltage) {
         double gasShockFeedforwardVoltage = shockFeedforward(arm1Angle);
 
         double arm1VoltageOutput = MathUtils.ensureRange(
-                arm1VoltageCorrection + ffVoltages[0] + gasShockFeedforwardVoltage,
+                arm1VoltageCorrection + feedforwardVoltage + gasShockFeedforwardVoltage,
                 -ArmConstants.maxVoltage,
                 ArmConstants.maxVoltage);
         return arm1VoltageOutput;
@@ -785,25 +773,12 @@ public class ArmSubsystem extends SubsystemBase {
                 joint1Motor.get() * GlobalConstants.targetVoltage, joint2Motor.get() * GlobalConstants.targetVoltage);
         Matrix<N2, N1> acceleration;
         if (armState == ArmState.COAST) {
-            acceleration = simFeedforward
-                    .calculateArmInertiaMatrix(angles)
-                    .inv()
-                    .times(simFeedforward
-                            .calculateGravityMatrix(angles)
-                            .plus(simFeedforward
-                                    .calculateCoriolisMatrix(speeds, angles)
-                                    .times(speeds))
-                            .times(-1));
+            var torque = simFeedforward.calculateNaturalArmTorques(arm1Angle.getRadians(), arm2Angle.getRadians());
+            acceleration = torque.div(ArmConstants.arm1MomentOfInertia);
         } else {
-            acceleration = simFeedforward
-                    .calculateArmInertiaMatrix(angles)
-                    .inv()
-                    .times((simFeedforward.calculateMotorTorqueMatrix().times(voltages))
-                            .minus(simFeedforward
-                                    .calculateCoriolisMatrix(speeds, angles)
-                                    .times(speeds))
-                            .minus(simFeedforward.calculateGravityMatrix(angles))
-                            .minus(simFeedforward.calculateBackEmfMatrix().times(speeds)));
+            var torque = simFeedforward.calculateNaturalArmTorques(arm1Angle.getRadians(), arm2Angle.getRadians());
+            var motorTorques = simFeedforward.calculateMotorTorquesFromVoltages(voltages.get(0,0), voltages.get(1,0));
+            acceleration = torque.plus(motorTorques).div(ArmConstants.arm1MomentOfInertia);
         }
 
         angles = angles.plus(speeds.times(0.02)).plus(acceleration.times(.5 * 0.02 * 0.02));
