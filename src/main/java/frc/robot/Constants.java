@@ -248,7 +248,7 @@ public final class Constants {
         public static final double arm2CenterOfMass = Units.inchesToMeters(20.5);
 
         public static final double arm1Mass = Units.lbsToKilograms(11.47);
-        public static final double arm2Mass = Units.lbsToKilograms(8.16);
+        public static final double arm2Mass = Units.lbsToKilograms(18); //Units.lbsToKilograms(8.16);
 
         public static final double arm1MomentOfInertia = 2.3;
         public static final double arm2MomentOfInertia = 2.44;
@@ -322,6 +322,11 @@ public final class Constants {
         // L2: distance from pivot to point where gas shock is mounted on the arm
         public static final double l1 = Units.inchesToMeters(12.5);
         public static final double l2 = Units.inchesToMeters(20.5);
+
+        // L3
+        // L4
+        public static final double l3 = Units.inchesToMeters(-19);
+        public static final double l4 = Units.inchesToMeters(6);
     }
 
     public static final class GripperConstants {

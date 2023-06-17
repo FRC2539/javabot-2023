@@ -6,7 +6,6 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.LinearFilter;
@@ -37,7 +36,6 @@ import frc.lib.logging.Logger;
 import frc.lib.math.AdaptedTwoJointedArmFeedforward;
 import frc.lib.math.Conversions;
 import frc.lib.math.MathUtils;
-import frc.lib.math.TwoJointedFourBarArmFeedforward;
 import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
@@ -119,13 +117,13 @@ public class ArmSubsystem extends SubsystemBase {
     private SwerveDriveSubsystem swerveDriveSubsystem;
 
     private double springConstant = 175;
+    private double springConstant2 = 120;
     private double arm1PValue;
 
     public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         // springConstant = Logger.tunable("/ArmSubsystem/springConstant", 160);
         // voltageOffset = Logger.tunable("/ArmSubsystem/voltageOffset", -1.0);
         // Arm P value tuning
-        arm1PValue = 8;
         // arm1PValueReceiver = Logger.tunable("/ArmSubsystem/arm1PValue", arm1PValue);
 
         this.swerveDriveSubsystem = swerveDriveSubsystem;
@@ -243,9 +241,9 @@ public class ArmSubsystem extends SubsystemBase {
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
         // motor1Controller = new ProfiledPIDController(12.8, 0, 0.12, motor1Constraints);
-        motor1Controller = new ProfiledPIDController(arm1PValue, 0, 0.15, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(6, 0, 0.15, motor2Constraints);
-        gripperMotorController = new ProfiledPIDController(4, 0, 0.1, gripperProfileConstraints);
+        motor1Controller = new ProfiledPIDController(8, 0, 0, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(16, 0, 0, motor2Constraints);
+        gripperMotorController = new ProfiledPIDController(4, 0, 0, gripperProfileConstraints);
 
         resetPIDControllers();
 
@@ -699,12 +697,7 @@ public class ArmSubsystem extends SubsystemBase {
 
         // Combine pid corrections and feedforward, limiting the max voltage to prevent brownouts
         double arm1VoltageOutput = calculateShockFeedforwardArm1Voltage(arm1VoltageCorrection, ffVoltages.get(0,0));
-
-        double arm2VoltageOutput = MathUtils.ensureRange(
-                applyKs(arm2VoltageCorrection, ArmConstants.arm2kS, ArmConstants.arm2kSDeadband)
-                        + ffVoltages.get(1,0),
-                -ArmConstants.maxVoltage,
-                ArmConstants.maxVoltage);
+        double arm2VoltageOutput = calculateShockFeedforwardArm2Voltage(arm2VoltageCorrection, ffVoltages.get(1,0));
         double gripperVoltageOutput = MathUtils.ensureRange(
                 wristVoltageCorrection + gripperVoltage, -ArmConstants.maxVoltage, ArmConstants.maxVoltage);
 
@@ -729,30 +722,42 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/gripperSpeedSetpoint", gripperMotorController.getSetpoint().velocity);
     }
 
-    private double shockFeedforward(Rotation2d armAngle) {
+    private double shockFeedforward(Rotation2d armAngle, double springConstant, double distanceOne, double distanceTwo) {
         double torque = springConstant
-                * (ArmConstants.l1 * ArmConstants.l2 * armAngle.getSin())
-                / Math.sqrt(Math.pow(ArmConstants.l1, 2)
-                        + Math.pow(ArmConstants.l2, 2)
-                        - 2 * ArmConstants.l1 * ArmConstants.l2 * armAngle.getCos());
+                * (distanceOne * distanceTwo * armAngle.getSin())
+                / Math.sqrt(Math.pow(distanceOne, 2)
+                        + Math.pow(distanceTwo, 2)
+                        - 2 * distanceOne * distanceTwo * armAngle.getCos());
 
         double gasShockFeedforwardVoltage = DCMotor.getFalcon500(1)
                 .withReduction(ArmConstants.arm1GearRatio)
                 .getVoltage(-torque, 0);
 
-        Logger.log("/ArmSubsystem/shockFeedforward", gasShockFeedforwardVoltage);
-
         return gasShockFeedforwardVoltage;
     }
 
     private double calculateShockFeedforwardArm1Voltage(double arm1VoltageCorrection, double feedforwardVoltage) {
-        double gasShockFeedforwardVoltage = shockFeedforward(arm1Angle);
+        double gasShockFeedforwardVoltage1 = shockFeedforward(arm1Angle, springConstant, ArmConstants.l1, ArmConstants.l2);
+
+        Logger.log("/ArmSubsystem/shock1Feedforward", gasShockFeedforwardVoltage1);
 
         double arm1VoltageOutput = MathUtils.ensureRange(
-                arm1VoltageCorrection + feedforwardVoltage + gasShockFeedforwardVoltage,
+                arm1VoltageCorrection + feedforwardVoltage + gasShockFeedforwardVoltage1,
                 -ArmConstants.maxVoltage,
                 ArmConstants.maxVoltage);
         return arm1VoltageOutput;
+    }
+
+    private double calculateShockFeedforwardArm2Voltage(double arm2VoltageCorrection, double feedforwardVoltage) {
+        double gasShockFeedforwardVoltage2 = shockFeedforward(arm2Angle, springConstant2, ArmConstants.l3, ArmConstants.l4);
+
+        Logger.log("/ArmSubsystem/shock2Feedforward", gasShockFeedforwardVoltage2);
+
+        double arm2VoltageOutput = MathUtils.ensureRange(
+                arm2VoltageCorrection + feedforwardVoltage + gasShockFeedforwardVoltage2,
+                -ArmConstants.maxVoltage,
+                ArmConstants.maxVoltage);
+        return arm2VoltageOutput;
     }
 
     private static double applyKs(double volts, double kS, double kSDeadband) {
