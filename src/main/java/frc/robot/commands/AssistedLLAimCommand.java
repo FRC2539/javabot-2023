@@ -2,6 +2,9 @@ package frc.robot.commands;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.CommandBase;
@@ -20,6 +23,9 @@ public class AssistedLLAimCommand extends CommandBase {
     private DoubleSupplier forward;
     private DoubleSupplier strafe;
 
+    private Debouncer isAimed = new Debouncer(0.2, DebounceType.kFalling);
+    private SlewRateLimiter strafeSlewer = new SlewRateLimiter(3);
+
     private SwerveDriveSubsystem swerveDriveSubsystem;
     private VisionSubsystem visionSubsystem;
 
@@ -34,12 +40,14 @@ public class AssistedLLAimCommand extends CommandBase {
     private PIDController strafeController = new PIDController(0.05, 0.0, 0.1);
 
     //this order is {kP rot, kI rot, kD rot, kP horiz, kI horiz, kD horiz, speed rot, accel rot}
-    private double[] configValues = new double[]{6,0.0,0.0,0.54,0.0,0.0546,4.0,4.0};
+    private double[] configValues = new double[]{6,0.0,0.0,0.15,0.0,0.0,4.0,4.0};
 
     private BackLimelight camera;
 
     private LoggedReceiver pidValueReciever;
     private boolean isUsingNetPID;
+
+    private double howCloseGotten;
 
     public AssistedLLAimCommand(
             SwerveDriveSubsystem swerveDriveSubsystem,
@@ -78,7 +86,7 @@ public class AssistedLLAimCommand extends CommandBase {
 
         angleController = new ProfiledPIDController(someValues[0],someValues[1],someValues[2], new TrapezoidProfile.Constraints(someValues[6], someValues[7]));
 
-        angleController.setGoal(Math.PI);
+        angleController.setGoal(0);
         angleController.enableContinuousInput(-Math.PI, Math.PI);
         angleController.setTolerance(Math.toRadians(2));
 
@@ -93,6 +101,9 @@ public class AssistedLLAimCommand extends CommandBase {
         hasSeenGoal = false;
         atAngle = false;
         strafeingValue = 0;
+
+        strafeSlewer.reset(0);
+        howCloseGotten = 40;
     }
 
     @Override
@@ -110,22 +121,27 @@ public class AssistedLLAimCommand extends CommandBase {
             //     }
             // }
 
-            Logger.log("/LLAimCommand/tx", bestCurrentTarget.tx());
+            if (Math.abs(bestCurrentTarget.tx()) < howCloseGotten + 10) {
+                Logger.log("/LLAimCommand/tx", bestCurrentTarget.tx());
 
-            strafeingValue = MathUtils.ensureRange(
-                    strafeController.calculate(bestCurrentTarget.tx()), -maxStrafeVelocity, maxStrafeVelocity);
+                strafeingValue = -MathUtils.ensureRange(
+                        deadband(strafeSlewer.calculate(strafeController.calculate(bestCurrentTarget.tx()))), -maxStrafeVelocity, maxStrafeVelocity);
 
-            if (strafeController.atSetpoint()) strafeingValue = 0;
-            
-            if (Math.abs(strafeController.getPositionError()) <= 1.0) {
-                LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
-            } else {
-                LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.yellow);
+                if (strafeController.atSetpoint()) strafeingValue = 0;
+                
+                if (Math.abs(strafeController.getPositionError()) <= 2.0) {
+                    LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
+                } else {
+                    LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.yellow);
+                }
+
+                hasSeenGoal = true;
+                howCloseGotten = Math.min(Math.abs(strafeController.getPositionError()), howCloseGotten);
             }
-
-            hasSeenGoal = true;
         } else if (!hasSeenGoal) {
             strafeingValue = strafe.getAsDouble();
+            strafeSlewer.reset(strafeingValue);
+            LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.blue);
         }
 
         double angularCorrection = angleController.calculate(
@@ -138,5 +154,11 @@ public class AssistedLLAimCommand extends CommandBase {
 
         swerveDriveSubsystem.setVelocity(
                 new ChassisSpeeds(forward.getAsDouble(), strafeingValue, angularSpeed), true, true);
+    }
+
+    private static double deadband(double value) {
+        if (Math.abs(value) < 0.05 * maxStrafeVelocity) return Math.copySign(0.05 * maxStrafeVelocity, value);
+
+        return value;
     }
 }
