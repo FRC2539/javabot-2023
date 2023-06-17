@@ -702,9 +702,7 @@ public class ArmSubsystem extends SubsystemBase {
 
         double arm2VoltageOutput = MathUtils.ensureRange(
                 applyKs(arm2VoltageCorrection, ArmConstants.arm2kS, ArmConstants.arm2kSDeadband)
-                        + ffVoltages.get(1,0)
-                        + (armState == ArmState.HOVER_MANUAL ? .1 : 0)
-                        + (armState == ArmState.SUBSTATION_PICKUP ? .4 : 0),
+                        + ffVoltages.get(1,0),
                 -ArmConstants.maxVoltage,
                 ArmConstants.maxVoltage);
         double gripperVoltageOutput = MathUtils.ensureRange(
