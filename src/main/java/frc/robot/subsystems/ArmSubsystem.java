@@ -118,7 +118,6 @@ public class ArmSubsystem extends SubsystemBase {
 
     private double springConstant = 175;
     private double springConstant2 = 120;
-    private double arm1PValue;
 
     public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         // springConstant = Logger.tunable("/ArmSubsystem/springConstant", 160);
@@ -241,9 +240,9 @@ public class ArmSubsystem extends SubsystemBase {
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
         // motor1Controller = new ProfiledPIDController(12.8, 0, 0.12, motor1Constraints);
-        motor1Controller = new ProfiledPIDController(8, 0, 0, motor1Constraints);
+        motor1Controller = new ProfiledPIDController(16, 0, 0, motor1Constraints);
         motor2Controller = new ProfiledPIDController(16, 0, 0, motor2Constraints);
-        gripperMotorController = new ProfiledPIDController(4, 0, 0, gripperProfileConstraints);
+        gripperMotorController = new ProfiledPIDController(8, 0, 0, gripperProfileConstraints);
 
         resetPIDControllers();
 
@@ -683,8 +682,6 @@ public class ArmSubsystem extends SubsystemBase {
         double wristVoltageCorrection = gripperMotorController.calculate(gripperAngle.getRadians());
 
         // Combine motion profile velocity setpoints with PID corrections
-        double arm1DesiredSpeed = motor1Controller.getSetpoint().velocity;
-        double arm2DesiredSpeed = motor2Controller.getSetpoint().velocity;
         double gripperDesiredSpeed = gripperMotorController.getSetpoint().velocity;
 
         // Calculate feedforward voltages from dynamics
