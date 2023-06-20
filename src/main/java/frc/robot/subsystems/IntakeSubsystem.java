@@ -43,7 +43,7 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeMotor.setNeutralMode(NeutralMode.Brake);
         intakeMotor.configVoltageCompSaturation(GlobalConstants.targetVoltage);
         intakeMotor.enableVoltageCompensation(true);
-        intakeMotor.setInverted(false); // true at worlds
+        intakeMotor.setInverted(true); // true at worlds //false after NCRC
 
         SupplyCurrentLimitConfiguration supplyLimit = new SupplyCurrentLimitConfiguration(true, 20, 30, 0.1);
 
