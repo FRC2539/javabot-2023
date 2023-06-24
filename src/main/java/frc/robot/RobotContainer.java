@@ -120,10 +120,10 @@ public class RobotContainer {
         //                         this::getDriveStrafeAxis,
         //                         this::getDriveRotationAxis)
         //                 .alongWith(intakeSubsystem.intakeModeCommand()));
-        leftDriveController
-                .getLeftThumb()
-                .whileTrue(new DoubleSubstationAssistCommand(swerveDriveSubsystem, visionSubsystem));
-        leftDriveController.nameLeftThumb("Substation");
+        // leftDriveController
+        //         .getLeftThumb()
+        //         .whileTrue(new DoubleSubstationAssistCommand(swerveDriveSubsystem, visionSubsystem));
+        // leftDriveController.nameLeftThumb("Substation");
 
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
         leftDriveController.nameBottomThumb("Drop Game Piece");
