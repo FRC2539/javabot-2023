@@ -18,6 +18,7 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
+import frc.robot.commands.AssistedLLAimCommand;
 import frc.robot.commands.DoubleSubstationAssistCommand;
 import frc.robot.commands.IndicateGridAimedCommand;
 import frc.robot.commands.IndicateSubstationAimedCommand;
@@ -106,8 +107,8 @@ public class RobotContainer {
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
 
-        leftDriveController.getRightThumb().whileTrue(new IndicateGridAimedCommand(visionSubsystem, lightsSubsystem));
-        leftDriveController.nameRightThumb("Aim to Grid");
+        leftDriveController.getRightThumb().whileTrue(new AssistedLLAimCommand(swerveDriveSubsystem, visionSubsystem, lightsSubsystem, this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, ()->false, true));
+        leftDriveController.nameRightThumb("Auto Align (TEST ME)");
 
         // leftDriveController
         //         .getLeftThumb()
@@ -128,7 +129,7 @@ public class RobotContainer {
         leftDriveController.nameBottomThumb("Drop Game Piece");
 
         /* Set right joystick bindings */
-        if (!Constants.competitionMode) {
+        if (!Constants.competitionMode) { //lol i like how we still have the death buttons enabled
             rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
             rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
             rightDriveController.nameRightBottomMiddle("Characterize Forwards");

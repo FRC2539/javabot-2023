@@ -6,11 +6,11 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.lib.math.MathUtils;
+import frc.lib.vision.LimelightRawAngles;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.VisionSubsystem.LimelightRawAngles;
 import java.util.function.DoubleSupplier;
 
 public class IntakingAimAssistCommand extends CommandBase {
@@ -73,9 +73,9 @@ public class IntakingAimAssistCommand extends CommandBase {
 
     @Override
     public void execute() {
-        if (visionSubsystem.hasFrontMLAngles() && visionSubsystem.isFrontLimelightAtPipeline()) {
+        if (visionSubsystem.getFrontLimelight().hasMLRawAngles()) {
             LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
-            LimelightRawAngles newRawAngles = visionSubsystem.getFrontMLAngles().get();
+            LimelightRawAngles newRawAngles = visionSubsystem.getFrontLimelight().getMLRawAngles().get();
             if (MathUtils.equalsWithinError(lastSeenLLAngles.tx(), newRawAngles.tx(), 3)
                     // && MathUtils.equalsWithinError(lastSeenLLAngles.ty(), newRawAngles.ty(), 3)
                     || timeSinceLastGoodVision.hasElapsed(0.35)
@@ -165,7 +165,7 @@ public class IntakingAimAssistCommand extends CommandBase {
     }
 
     private boolean shouldIntake() {
-        if (!visionSubsystem.hasFrontMLAngles()) return false;
+        if (!visionSubsystem.getFrontLimelight().hasMLRawAngles()) return false;
 
         if (getDistanceFromCube() / getVelocity() < (INTAKE_DOWN_DISTANCE * INTAKE_FACTOR)) {
             return true;
