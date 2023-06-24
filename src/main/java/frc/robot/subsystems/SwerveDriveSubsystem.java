@@ -494,11 +494,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         Logger.log("/SwerveDriveSubsystem/Roll", getGyroRotation3d().getX());
         Logger.log("/SwerveDriveSubsystem/Tilt", getTiltAmountInDegrees());
 
-        // Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
-        //     modules[0].getPosition().angle.getDegrees(),
-        //     modules[1].getPosition().angle.getDegrees(),
-        //     modules[2].getPosition().angle.getDegrees(),
-        //     modules[3].getPosition().angle.getDegrees()
+        // Logger.log("/SwerveDriveSubsystem/CANCoder Angles", new double[] {
+        //     modules[0].getCanCoder().getDegrees(),
+        //     modules[1].getCanCoder().getDegrees(),
+        //     modules[2].getCanCoder().getDegrees(),
+        //     modules[3].getCanCoder().getDegrees()
         // });
 
         // Logger.log("/SwerveDriveSubsystem/Wheel Amps", new double[] {
