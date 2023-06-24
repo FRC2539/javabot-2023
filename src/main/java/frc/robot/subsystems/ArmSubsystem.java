@@ -240,8 +240,8 @@ public class ArmSubsystem extends SubsystemBase {
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
         // motor1Controller = new ProfiledPIDController(12.8, 0, 0.12, motor1Constraints);
-        motor1Controller = new ProfiledPIDController(16, 0, 0, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(16, 0, 0, motor2Constraints);
+        motor1Controller = new ProfiledPIDController(16, 0, 1, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(16, 0, 1, motor2Constraints);
         gripperMotorController = new ProfiledPIDController(8, 0, 0, gripperProfileConstraints);
 
         resetPIDControllers();
