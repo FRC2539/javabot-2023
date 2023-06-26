@@ -43,6 +43,8 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
+
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -240,9 +242,9 @@ public class ArmSubsystem extends SubsystemBase {
                 new ArmFeedforward(GripperConstants.ks, GripperConstants.kg, GripperConstants.kv, GripperConstants.ka);
 
         // motor1Controller = new ProfiledPIDController(12.8, 0, 0.12, motor1Constraints);
-        motor1Controller = new ProfiledPIDController(16, 0, 1, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(16, 0, 1, motor2Constraints);
-        gripperMotorController = new ProfiledPIDController(8, 0, 0, gripperProfileConstraints);
+        motor1Controller = new ProfiledPIDController(12, 0, 1, motor1Constraints);
+        motor2Controller = new ProfiledPIDController(12, 0, 1, motor2Constraints);
+        gripperMotorController = new ProfiledPIDController(8, 0, 1, gripperProfileConstraints);
 
         resetPIDControllers();
 
@@ -309,6 +311,7 @@ public class ArmSubsystem extends SubsystemBase {
         return Commands.either(
                 Commands.sequence(
                         armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
+                        armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
                         armStateCommand(ArmState.AWAITING_DEPLOYMENT)),
                 Commands.sequence(
                         armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
@@ -395,11 +398,6 @@ public class ArmSubsystem extends SubsystemBase {
         } else {
             startMotors();
         }
-        if (state == ArmState.SUBSTATION_PICKUP) {
-            motor2Controller.setPID(5, 0, 0.3);
-        } else {
-            motor2Controller.setPID(6, 0, 0.15);
-        }
         updateArmDesiredPosition();
     }
 
@@ -475,6 +473,73 @@ public class ArmSubsystem extends SubsystemBase {
         motor1Controller.setGoal(joint1DesiredMotorPosition);
         motor2Controller.setGoal(joint2DesiredMotorPosition);
         gripperMotorController.setGoal(gripperDesiredMotorPosition);
+    }
+
+    public void updateArmDesiredPositionOneAngle(int arm, ArmState armState) {
+        // arm 0 is mast, 1 is boom, 2 is gripper
+
+        // this will only work when the armState is static
+
+        // Store the current desired end effector position (where the end of the arm should be)
+        if (armState.getType() instanceof Static) {
+            Static armType = (Static) armState.getType();
+            endEffector = armType.getEndEffector();
+            gripperEndAngle = armType.getGripperAngle();
+        } else if (armState.getType() instanceof Dynamic) {
+            Dynamic armType = (Dynamic) armState.getType();
+            endEffector = armType.getEndEffector(this);
+            gripperEndAngle = armType.getGripperAngle();
+        } else if (armState.getType() instanceof NetworkTablesAim) {
+            NetworkTablesAim armType = (NetworkTablesAim) armState.getType();
+            endEffector = armType.getEndEffector(this);
+            gripperEndAngle = armType.getGripperAngle(this);
+        }
+
+        Logger.log("/ArmSubsystem/desiredEndEffector", new double[] {endEffector.getX(), endEffector.getY()});
+
+        // Find the joint angles needed to reach the end effector
+        Matrix<N3, N1> armAndWristAngles = inverseKinematics(endEffector, gripperEndAngle);
+        switch (arm) {
+            case 0:
+                joint1DesiredMotorPosition = MathUtils.ensureRange(
+                    armAndWristAngles.get(0, 0), ArmConstants.arm1MinimumAngle, ArmConstants.arm1MaximumAngle);
+                break;
+            case 1:
+                joint2DesiredMotorPosition = MathUtils.ensureRange(
+                    armAndWristAngles.get(1, 0), ArmConstants.arm2MinimumAngle, ArmConstants.arm2MaximumAngle);
+                break;
+            case 2:
+                gripperDesiredMotorPosition = armAndWristAngles.get(2, 0);
+                break;
+        }
+        if (gripperDesiredMotorPosition > GripperConstants.maximumAngle
+                && gripperDesiredMotorPosition < GripperConstants.minimumAngle) {
+            if (Math.abs(gripperDesiredMotorPosition - GripperConstants.maximumAngle)
+                    < Math.abs(gripperDesiredMotorPosition - GripperConstants.minimumAngle)) {
+                gripperDesiredMotorPosition = GripperConstants.maximumAngle;
+            } else {
+                gripperDesiredMotorPosition = GripperConstants.minimumAngle;
+            }
+        }
+
+        // Calibrate integrated encoders each time we go to a new position
+        calibrateIntegratedEncoders();
+
+        // Update PID controllers
+        switch (arm) {
+            case 0:
+                motor1Controller.setGoal(joint1DesiredMotorPosition);
+                ghostArm1.setAngle(Math.toDegrees(armAndWristAngles.get(0, 0)));
+                break;
+            case 1:
+                motor2Controller.setGoal(joint2DesiredMotorPosition);
+                ghostArm2.setAngle(Math.toDegrees(armAndWristAngles.get(1, 0)));
+                break;
+            case 2:
+                gripperMotorController.setGoal(gripperDesiredMotorPosition);
+                ghostGripper.setAngle(Math.toDegrees(armAndWristAngles.get(2, 0)));
+                break;
+        }
     }
 
     public boolean isMastThroughBoreConnected() {
@@ -567,6 +632,7 @@ public class ArmSubsystem extends SubsystemBase {
         // && MathUtils.equalsWithinError(
         //         gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
     }
+
 
     private void passthroughMotorSpeeds(double shoulderPercent, double elbowPercent, double wristPercent) {
         joint1Motor.set(shoulderPercent);
@@ -863,6 +929,41 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command armStateApproximateCommand(ArmState armState) {
         return runOnce(() -> setState(armState)).andThen(Commands.waitUntil(this::isArmApproximatelyAtGoal));
+    }
+
+    public Command armStateSpeedCommand(ArmState armState, ArmState nextArmState) {
+        double originalArm1 = joint1DesiredMotorPosition;
+        double originalArm2 = joint2DesiredMotorPosition;
+        double originalGripper = gripperDesiredMotorPosition;
+        
+        Command updateFirstArm = runOnce(() -> updateArmDesiredPositionOneAngle(
+            0, nextArmState
+        ));
+        Command updateSecondArm = runOnce(() -> updateArmDesiredPositionOneAngle(
+            1, nextArmState
+        ));
+        Command updateGripper = runOnce(() -> updateArmDesiredPositionOneAngle(
+            2, nextArmState
+        ));
+
+        BooleanSupplier firstArmCorrect = () ->  MathUtils.equalsWithinError(arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
+        BooleanSupplier secondArmCorrect = () -> MathUtils.equalsWithinError(arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
+
+        BooleanSupplier firstArmRangeCorrect = () -> MathUtils.equalsWithinError(arm1Angle.getRadians(), MathUtils.ensureRange(arm1Angle.getRadians(), joint1DesiredMotorPosition, originalArm1), ArmConstants.angularTolerance * 2.5);
+        BooleanSupplier secondArmRangeCorrect = () -> MathUtils.equalsWithinError(arm2Angle.getRadians(), MathUtils.ensureRange(arm2Angle.getRadians(), joint2DesiredMotorPosition, originalArm2), ArmConstants.angularTolerance * 2.5);
+
+        return runOnce(() -> setState(armState)).andThen(
+            Commands.race(
+                Commands.waitUntil(firstArmCorrect).andThen(updateSecondArm).andThen(Commands.waitUntil(secondArmRangeCorrect)),
+                Commands.waitUntil(secondArmCorrect).andThen(updateFirstArm).andThen(Commands.waitUntil(firstArmRangeCorrect))
+            ));
+    }
+
+    public boolean isArmIntermediateAtGoal() {
+        return MathUtils.equalsWithinError(
+            arm1Angle.getRadians(), joint1DesiredMotorPosition, ArmConstants.angularTolerance * 2.5)
+            || MathUtils.equalsWithinError(
+            arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
     }
 
     public Command armSequence(ArmState... armStates) {
