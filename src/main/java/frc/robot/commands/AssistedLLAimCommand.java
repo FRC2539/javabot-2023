@@ -88,7 +88,7 @@ public class AssistedLLAimCommand extends CommandBase {
 
         angleController.setGoal(0);
         angleController.enableContinuousInput(-Math.PI, Math.PI);
-        angleController.setTolerance(Math.toRadians(2));
+        angleController.setTolerance(Math.toRadians(3));
 
         strafeController.setPID(someValues[3], someValues[4], someValues[5]);
         strafeController.setTolerance(0.5);
@@ -157,7 +157,7 @@ public class AssistedLLAimCommand extends CommandBase {
     }
 
     private static double deadband(double value) {
-        if (Math.abs(value) < 0.05 * maxStrafeVelocity) return Math.copySign(0.05 * maxStrafeVelocity, value);
+        if (Math.abs(value) < 0.075 * maxStrafeVelocity) return Math.copySign(0.075 * maxStrafeVelocity, value);
 
         return value;
     }
