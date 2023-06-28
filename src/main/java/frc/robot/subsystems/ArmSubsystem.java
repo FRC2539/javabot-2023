@@ -274,7 +274,7 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command highManualConeCommand() {
         return Commands.sequence(
-                armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL_CONE));
+                armStateSpeedCommand(ArmState.HIGH_MANUAL_1, ArmState.HIGH_MANUAL_CONE), armStateCommand(ArmState.HIGH_MANUAL_CONE));
     }
 
     public Command hoverCommand() {
@@ -284,7 +284,7 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command highManualCubeCommand() {
         return Commands.sequence(
-                armStateApproximateCommand(ArmState.HIGH_MANUAL_1), armStateCommand(ArmState.HIGH_MANUAL_CUBE));
+                armStateSpeedCommand(ArmState.HIGH_MANUAL_1, ArmState.HIGH_MANUAL_CUBE), armStateCommand(ArmState.HIGH_MANUAL_CUBE));
     }
 
     public Command handoffCommand() {
@@ -324,6 +324,7 @@ public class ArmSubsystem extends SubsystemBase {
         return Commands.either(
                 Commands.sequence(
                         armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
+                        armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
                         armStateCommand(ArmState.AWAITING_DEPLOYMENT)),
                 Commands.sequence(
                         armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
@@ -888,6 +889,10 @@ public class ArmSubsystem extends SubsystemBase {
 
     public Command armStateApproximateCommand(ArmState armState) {
         return runOnce(() -> setState(armState)).andThen(Commands.waitUntil(this::isArmApproximatelyAtGoal));
+    }
+
+    public Command armStateSpeedCommand(ArmState armState, ArmState nextArmState) {
+        throw new UnsupportedOperationException("not yet implemented");
     }
 
     public Command armSequence(ArmState... armStates) {
