@@ -104,7 +104,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         isSecondOrder = Logger.tunable("/SwerveDriveSubsystem/isSecondOrder", true);
         pidValueReciever = Logger.tunable(
                 "/SwerveDriveSubsystem/levelPIDValues",
-                new double[] {0.8 / 15, 0, .01, 8, 0.8}); // P I D stopAngle leveingMaxSpeed
+                new double[] {0.8 / 15, 0, .01, 8, 0.9}); // P I D stopAngle leveingMaxSpeed
         // [0.055,0,0.01,10,0.55]\][]
         // new double[] {0.75 / 15, 0, .02, 8, 0.85}
 
@@ -462,7 +462,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
             module.setDesiredState(desiredStates[module.moduleNumber], isOpenLoop, isSecondOrder.getBoolean());
         }
 
-        Logger.log("/SwerveDriveSubsystem/Wheel Setpoint", desiredStates[0].speedMetersPerSecond);
+        // Logger.log("/SwerveDriveSubsystem/Wheel Setpoints", new double[] {
+        //     desiredStates[0].angle.getDegrees(),
+        //     desiredStates[1].angle.getDegrees(),
+        //     desiredStates[2].angle.getDegrees(),
+        //     desiredStates[3].angle.getDegrees()
+        // });
     }
 
     private boolean isDriveSignalStopped(SwerveDriveSignal driveSignal) {
@@ -494,22 +499,36 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         Logger.log("/SwerveDriveSubsystem/Roll", getGyroRotation3d().getX());
         Logger.log("/SwerveDriveSubsystem/Tilt", getTiltAmountInDegrees());
 
-        Logger.log("/SwerveDriveSubsystem/CANCoder Angles", new double[] {
-            modules[0].getCanCoder().getDegrees(),
-            modules[1].getCanCoder().getDegrees(),
-            modules[2].getCanCoder().getDegrees(),
-            modules[3].getCanCoder().getDegrees()
-        });
+        // Logger.log("/SwerveDriveSubsystem/CANCoder Angles", new double[] {
+        //     modules[0].getCanCoder().getDegrees(),
+        //     modules[1].getCanCoder().getDegrees(),
+        //     modules[2].getCanCoder().getDegrees(),
+        //     modules[3].getCanCoder().getDegrees()
+        // });
 
-        // Logger.log("/SwerveDriveSubsystem/Wheel Amps", new double[] {
-        //     modules[0].getDriveCurrent(),
-        //     modules[1].getDriveCurrent(),
-        //     modules[2].getDriveCurrent(),
-        //     modules[3].getDriveCurrent()
+        // Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
+        //     modules[0].getState().angle.getDegrees(),
+        //     modules[1].getState().angle.getDegrees(),
+        //     modules[2].getState().angle.getDegrees(),
+        //     modules[3].getState().angle.getDegrees()
+        // });
+
+        // Logger.log("/SwerveDriveSubsystem/Angle Wheel Amps", new double[] {
+        //     modules[0].getAngleCurrent(),
+        //     modules[1].getAngleCurrent(),
+        //     modules[2].getAngleCurrent(),
+        //     modules[3].getAngleCurrent()
+        // });
+
+        // Logger.log("/SwerveDriveSubsystem/Angle Wheel Volts", new double[] {
+        //     modules[0].getAngleVoltage(),
+        //     modules[1].getAngleVoltage(),
+        //     modules[2].getAngleVoltage(),
+        //     modules[3].getAngleVoltage()
         // });
 
         Logger.log("/SwerveDriveSubsystem/Drive Temperatures", getDriveTemperatures());
-        // Logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());
+        Logger.log("/SwerveDriveSubsystem/Angle Temperatures", getAngleTemperatures());
 
         Logger.log("/SwerveDriveSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }

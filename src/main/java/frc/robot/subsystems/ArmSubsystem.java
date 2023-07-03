@@ -116,14 +116,14 @@ public class ArmSubsystem extends SubsystemBase {
 
     private SwerveDriveSubsystem swerveDriveSubsystem;
 
-    private double springConstant = 175;
+    private double springConstant = 150;//175;
     private double arm1PValue;
 
     public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         // springConstant = Logger.tunable("/ArmSubsystem/springConstant", 160);
         // voltageOffset = Logger.tunable("/ArmSubsystem/voltageOffset", -1.0);
         // Arm P value tuning
-        arm1PValue = 8;
+        arm1PValue = 7;
         // arm1PValueReceiver = Logger.tunable("/ArmSubsystem/arm1PValue", arm1PValue);
 
         this.swerveDriveSubsystem = swerveDriveSubsystem;
@@ -256,7 +256,7 @@ public class ArmSubsystem extends SubsystemBase {
 
         // motor1Controller = new ProfiledPIDController(12.8, 0, 0.12, motor1Constraints);
         motor1Controller = new ProfiledPIDController(arm1PValue, 0, 0.15, motor1Constraints);
-        motor2Controller = new ProfiledPIDController(6, 0, 0.15, motor2Constraints);
+        motor2Controller = new ProfiledPIDController(5, 0, 0.15, motor2Constraints);
         gripperMotorController = new ProfiledPIDController(4, 0, 0.1, gripperProfileConstraints);
 
         resetPIDControllers();
@@ -324,6 +324,8 @@ public class ArmSubsystem extends SubsystemBase {
         return Commands.either(
                 Commands.sequence(
                         armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
+                        armStateApproximateCommand(ArmState.MID_MANUAL_CONE),
+                        armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
                         armStateCommand(ArmState.AWAITING_DEPLOYMENT)),
                 Commands.sequence(
                         armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
@@ -912,18 +914,23 @@ public class ArmSubsystem extends SubsystemBase {
         // SLIDE_PICKUP_COMP(Static.fromWrist(0.21, 0.33, Rotation2d.fromDegrees(50))),
         HYBRID_MANUAL(new Static(0.97, -0.08, Rotation2d.fromDegrees(-10))),
         // HYBRID_MANUAL(new Static(0.8, -0.08, Rotation2d.fromDegrees(-10))), // experimental
-        TIPPED_CONE_MANUAL(new Static(0.8, -0.19, Rotation2d.fromDegrees(-100))),
+        TIPPED_CONE_MANUAL(new Static(0.8, -0.12, Rotation2d.fromDegrees(-90))),
         // MID_MANUAL(Static.fromBumper(
         //         FieldConstants.midX,
         //         FieldConstants.midConeZ + ArmConstants.placementHeightOffset,
         //         Rotation2d.fromDegrees(20))),
         SUBSTATION_PICKUP(Static.fromBumper(
                 FieldConstants.midX, FieldConstants.highConeZ - 0.07 + 0.0, Rotation2d.fromDegrees(0))), // -10
+        // MID_MANUAL_CONE(Static.fromBumper(
+        //         FieldConstant[\]s.midX + 0.12, FieldConstants.highConeZ - 0.09, Rotation2d.fromDegrees(60))),
+        // MID_MANUAL_CUBE_1(new Static(0.66, 0.70, Rotation2d.fromDegrees(55))),
+        // MID_MANUAL_CUBE(Static.fromBumper(
+        //         FieldConstants.midX + 0.10, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
         MID_MANUAL_CONE(Static.fromBumper(
-                FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.09, Rotation2d.fromDegrees(60))),
+            FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.05, Rotation2d.fromDegrees(60))),
         MID_MANUAL_CUBE_1(new Static(0.66, 0.70, Rotation2d.fromDegrees(55))),
         MID_MANUAL_CUBE(Static.fromBumper(
-                FieldConstants.midX + 0.10, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
+                FieldConstants.midX + 0.08, FieldConstants.midCubeZ + 0.35, Rotation2d.fromDegrees(-10))), // -20
         HIGH_MANUAL_1(new Static(0.9, 1.24, Rotation2d.fromDegrees(70))),
         // HIGH_MANUAL_1(new Static(0.9, 1.24, Rotation2d.fromDegrees(70))),
         // HIGH_MANUAL_1(new Static(0.9, 1.32, Rotation2d.fromDegrees(65))),
@@ -952,7 +959,7 @@ public class ArmSubsystem extends SubsystemBase {
                 FieldConstants.highX + 0.14, // gripper offset
                 FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior
                 Rotation2d.fromDegrees(-25))),
-        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(156))), // 179
+        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(160))), // 156
         COOL_HANDOFF_REVERSE(Static.fromWrist(0.4, 0.4, Rotation2d.fromDegrees(170))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())),
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())),
