@@ -184,7 +184,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     public Command defaultLimelightCommand() {
         return runOnce(() -> {
-            backLimelight.setMode(BackLimelight.Mode.APRILTAG);
+            backLimelight.setMode(BackLimelight.Mode.RETROREFLECTIVEALIGN);
             frontLimelight.setMode(FrontLimelight.Mode.ML);
         });
     }
