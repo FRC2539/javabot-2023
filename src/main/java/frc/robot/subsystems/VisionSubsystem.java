@@ -132,12 +132,16 @@ public class VisionSubsystem extends SubsystemBase {
         var aprilTagPose =
                 FieldConstants.APRIL_TAG_FIELD_LAYOUT.getTagPose(estimate.tagID.getAsInt());
 
+        Logger.log("/VisionSubsystem/Apriltag Added", aprilTagPose.isPresent());
+
         if (aprilTagPose.isPresent()) {
             var distanceFromPrimaryTag =
                     aprilTagPose.get().getTranslation().getDistance(estimate.estimatedPose.getTranslation());
 
             swerveDriveSubsystem.addVisionPoseEstimate(
                     estimatedPose, estimate.timestampSeconds, calculateVisionStdDevs(distanceFromPrimaryTag));
+
+            Logger.log("/VisionSubsystem/Apriltag Conf", translationStdDevCoefficient * Math.pow(distanceFromPrimaryTag, 2));
         }
     }
 
@@ -184,7 +188,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     public Command defaultLimelightCommand() {
         return runOnce(() -> {
-            backLimelight.setMode(BackLimelight.Mode.RETROREFLECTIVEALIGN);
+            backLimelight.setMode(BackLimelight.Mode.APRILTAG);
             frontLimelight.setMode(FrontLimelight.Mode.ML);
         });
     }
