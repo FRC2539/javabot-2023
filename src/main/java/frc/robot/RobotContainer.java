@@ -19,6 +19,7 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AssistedLLAimCommand;
+import frc.robot.commands.AssistedLLSubstationCommand;
 import frc.robot.commands.DoubleSubstationAssistCommand;
 import frc.robot.commands.IndicateGridAimedCommand;
 import frc.robot.commands.IndicateSubstationAimedCommand;
@@ -127,6 +128,8 @@ public class RobotContainer {
 
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
         leftDriveController.nameBottomThumb("Drop Game Piece");
+
+        leftDriveController.getLeftThumb().whileTrue(new AssistedLLSubstationCommand(swerveDriveSubsystem, visionSubsystem, lightsSubsystem, this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, ()->false, true));
 
         /* Set right joystick bindings */
         if (!Constants.competitionMode) { //lol i like how we still have the death buttons enabled

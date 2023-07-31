@@ -88,7 +88,7 @@ public class AssistedLLSubstationCommand extends CommandBase {
 
         angleController = new ProfiledPIDController(someValues[0],someValues[1],someValues[2], new TrapezoidProfile.Constraints(someValues[6], someValues[7]));
 
-        angleController.setGoal(0);
+        angleController.setGoal(DriverStation.getAlliance() == DriverStation.Alliance.Blue ? -Math.PI / 2 : Math.PI / 2);
         angleController.enableContinuousInput(-Math.PI, Math.PI);
         angleController.setTolerance(Math.toRadians(3));
 
