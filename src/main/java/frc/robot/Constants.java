@@ -1,6 +1,6 @@
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
@@ -479,8 +479,8 @@ public final class Constants {
         public static final double preciseDrivingModeSpeedMultiplier = 0.2;
 
         /* Neutral Modes */
-        public static final NeutralMode angleNeutralMode = NeutralMode.Brake;
-        public static final NeutralMode driveNeutralMode = NeutralMode.Brake;
+        public static final NeutralModeValue angleNeutralMode = NeutralModeValue.Brake;
+        public static final NeutralModeValue driveNeutralMode = NeutralModeValue.Brake;
 
         /* Drive Motor Inverts */
         public static final boolean driveMotorInvert = true;
