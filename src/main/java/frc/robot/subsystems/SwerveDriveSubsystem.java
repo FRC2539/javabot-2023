@@ -86,10 +86,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         calibrateIntegratedEncoders();
 
         // Add all motors to orchestra lol
-        for (SwerveModule module : modules) {
-            RobotContainer.orchestra.addInstrument(module.getDriveMotor());
-            RobotContainer.orchestra.addInstrument(module.getAngleMotor());
-        }
+        //TODO: Translate This
+        // for (SwerveModule module : modules) {
+        //     RobotContainer.orchestra.addInstrument(module.getDriveMotor());
+        //     RobotContainer.orchestra.addInstrument(module.getAngleMotor());
+        // }
 
         // Initialize the swerve drive pose estimator with access to the module positions.
         swervePoseEstimator = new SwerveDrivePoseEstimator(
@@ -280,12 +281,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 .beforeStarting(() -> isCharacterizing = true)
                 .finallyDo((boolean interrupted) -> isCharacterizing = false);
     }
-
+    
+    /** No longer needed. */
     public void calibrateIntegratedEncoders() {
-        // Reset each module using its absolute encoder
-        for (SwerveModule module : modules) {
-            module.resetToAbsolute();
-        }
+        // No longer needed
+        // for (SwerveModule module : modules) {
+        //     module.resetToAbsolute();
+        // }
     }
 
     public void setCustomMaxSpeedSupplier(DoubleSupplier maxSpeedSupplier) {
@@ -500,17 +502,17 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         Logger.log("/SwerveDriveSubsystem/Tilt", getTiltAmountInDegrees());
 
         Logger.log("/SwerveDriveSubsystem/CANCoder Angles", new double[] {
-            modules[0].getCanCoder().getDegrees(),
-            modules[1].getCanCoder().getDegrees(),
-            modules[2].getCanCoder().getDegrees(),
-            modules[3].getCanCoder().getDegrees()
+            modules[0].getCanCoderNoOffset().getDegrees(),
+            modules[1].getCanCoderNoOffset().getDegrees(),
+            modules[2].getCanCoderNoOffset().getDegrees(),
+            modules[3].getCanCoderNoOffset().getDegrees(),
         });
 
         // Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
-        //     modules[0].getState().angle.getDegrees(),
-        //     modules[1].getState().angle.getDegrees(),
-        //     modules[2].getState().angle.getDegrees(),
-        //     modules[3].getState().angle.getDegrees()
+        //     modules[0].getPosition().angle.getDegrees(),
+        //     modules[1].getPosition().angle.getDegrees(),
+        //     modules[2].getPosition().angle.getDegrees(),
+        //     modules[3].getPosition().angle.getDegrees()
         // });
 
         // Logger.log("/SwerveDriveSubsystem/Angle Wheel Amps", new double[] {
