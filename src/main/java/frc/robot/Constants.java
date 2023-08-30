@@ -27,7 +27,7 @@ public final class Constants {
 
     public static final class GlobalConstants {
         public static final String CANIVORE_NAME = "CANivore";
-        public static final int PCM_ID = 12; // 19;
+        public static final int PCM_ID = 19;
         public static final double targetVoltage = 12.0; // Used for voltage compensation
 
         public static final double batteryVoltageThreshold = 12.3;
