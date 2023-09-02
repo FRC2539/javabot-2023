@@ -1,6 +1,8 @@
 package frc.robot;
 
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
+
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
@@ -27,7 +29,7 @@ public final class Constants {
 
     public static final class GlobalConstants {
         public static final String CANIVORE_NAME = "CANivore";
-        public static final int PCM_ID = 12; // 19;
+        public static final int PCM_ID = 19;
         public static final double targetVoltage = 12.0; // Used for voltage compensation
 
         public static final double batteryVoltageThreshold = 12.3;
@@ -430,16 +432,14 @@ public final class Constants {
         public static final boolean driveEnableCurrentLimit = true;
 
         /* Angle Motor PID Values */
-        public static final double angleKP = 0.2;
+        public static final double angleKP = 200;
         public static final double angleKI = 0.0;
         public static final double angleKD = 0.0;
-        public static final double angleKF = 0.0;
 
         /* Drive Motor PID Values */
-        public static final double driveKP = 0.10;
+        public static final double driveKP = 0.1;
         public static final double driveKI = 0.0;
         public static final double driveKD = 0.0;
-        public static final double driveKF = 0.0;
 
         /* Motor Information */
         public static final double driveMotorFreeSpeed = 6380; // RPM of Falcon 500
@@ -492,7 +492,7 @@ public final class Constants {
         public static final boolean angleMotorInvert = false;
 
         /* Angle Encoder Invert */
-        public static final boolean canCoderInvert = false;
+        public static final SensorDirectionValue canCoderInvert = SensorDirectionValue.CounterClockwise_Positive;
 
         /* Module Specific Constants */
         // Note, bevel gears should face left (relative to back-to-front)
