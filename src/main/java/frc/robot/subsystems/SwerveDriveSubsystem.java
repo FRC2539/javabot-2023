@@ -70,6 +70,15 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     private PIDController omegaController = new PIDController(5.0, 0, 0.05);
     private final double maxCardinalVelocity = 4.5;
 
+    // Sketchy Single Substation Align
+    private double minimumXValue;
+
+    public double getLastMinimumXValue() {return minimumXValue;}
+
+    public void resetLastMinimumXValue() {minimumXValue = Double.MAX_VALUE;}
+
+    // Max Speed Supplier
+
     private DoubleSupplier maxSpeedSupplier = () -> Constants.SwerveConstants.maxSpeed;
 
     public SwerveDriveSubsystem() {
@@ -408,6 +417,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     public void update() {
         updateOdometry();
 
+        updateMinimumXValue();
+
         if (isCharacterizing) return;
 
         updateModules(driveSignal);
@@ -421,6 +432,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         velocity = Constants.SwerveConstants.swerveKinematics.toChassisSpeeds(moduleStates);
 
         pose = swervePoseEstimator.update(getGyroRotation(), modulePositions);
+    }
+
+    private void updateMinimumXValue() {
+        minimumXValue = Math.min(minimumXValue, pose.getX());
     }
 
     private void updateModules(SwerveDriveSignal driveSignal) {
