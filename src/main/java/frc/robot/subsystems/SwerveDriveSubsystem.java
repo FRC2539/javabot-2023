@@ -523,6 +523,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
             modules[3].getCanCoderNoOffset().getDegrees(),
         });
 
+        Logger.log("/SwerveDriveSubsystem/CANCoder Angles With Offset", new double[] {
+            modules[0].getCanCoderWithOffset().getDegrees(),
+            modules[1].getCanCoderWithOffset().getDegrees(),
+            modules[2].getCanCoderWithOffset().getDegrees(),
+            modules[3].getCanCoderWithOffset().getDegrees(),
+        });
+
         // Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
         //     modules[0].getPosition().angle.getDegrees(),
         //     modules[1].getPosition().angle.getDegrees(),

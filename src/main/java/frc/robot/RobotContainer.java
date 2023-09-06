@@ -132,6 +132,8 @@ public class RobotContainer {
 
         leftDriveController.getLeftThumb().whileTrue(new AssistedSubstationOdometryCommand(swerveDriveSubsystem, this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, 5));
 
+        var resetMinimumCommand = runOnce(swerveDriveSubsystem::resetLastMinimumXValue);
+
         /* Set right joystick bindings */
         if (!Constants.competitionMode) { //lol i like how we still have the death buttons enabled
             rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
@@ -221,6 +223,9 @@ public class RobotContainer {
         operatorController.nameDPadLeft("Awaiting Deployment");
         operatorController.nameDPadUp("High Manual");
         operatorController.nameDPadRight("Mid Manual");
+
+        operatorController.getY().onTrue(resetMinimumCommand);
+        operatorController.getA().onTrue(runOnce(() -> {AssistedSubstationOdometryCommand.offsetToStation = swerveDriveSubsystem.getPose().getX() - swerveDriveSubsystem.getLastMinimumXValue();}));
 
         operatorController
                 .getLeftBumper()

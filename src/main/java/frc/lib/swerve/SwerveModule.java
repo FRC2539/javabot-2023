@@ -191,7 +191,7 @@ public class SwerveModule {
     }
 
     public Rotation2d getCanCoderNoOffset() {
-        return Rotation2d.fromRotations(angleEncoder.getAbsolutePosition().getValue() + zeroedWheelCANCoderAngle/360);
+        return Rotation2d.fromRotations((angleEncoder.getAbsolutePosition().getValue() + zeroedWheelCANCoderAngle) % 1.0);
     }
 
     public TalonFX getDriveMotor() {

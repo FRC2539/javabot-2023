@@ -67,7 +67,7 @@ public class AssistedSubstationOdometryCommand extends CommandBase {
 
         omegaController.reset(robotPose.getRotation().getRadians(), robotVelocity.omegaRadiansPerSecond);
 
-        omegaController.setGoal(Math.PI);
+        omegaController.setGoal(-Math.PI / 2);
     }
 
     @Override
@@ -88,11 +88,6 @@ public class AssistedSubstationOdometryCommand extends CommandBase {
                         omegaSpeed),
                 true,
                 true);
-    }
-
-    @Override
-    public boolean isFinished() {
-        return driveController.atGoal() && omegaController.atGoal();
     }
 
     @Override
