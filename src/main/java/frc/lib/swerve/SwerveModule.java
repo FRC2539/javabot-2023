@@ -29,6 +29,7 @@ public class SwerveModule {
     private TalonFX driveMotor;
     private CANcoder angleEncoder;
     private double lastAngle;
+    private SwerveModuleState desiredSetpointState;
 
     private VoltageOut voltageRequestDrive = new VoltageOut(0).withEnableFOC(true);
 
@@ -74,6 +75,8 @@ public class SwerveModule {
     }
 
     public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop, boolean isSecondOrder) {
+        desiredSetpointState = desiredState;
+
         // Custom optimize command, since default WPILib optimize assumes continuous controller, which CTRE is not
         desiredState = CTREModuleState.optimize(desiredState, getState().angle);
 
@@ -210,6 +213,10 @@ public class SwerveModule {
         Rotation2d angle = Rotation2d.fromRotations(
                 BaseStatusSignal.getLatencyCompensatedValue(angleMotor.getPosition().refresh(), angleMotor.getVelocity().refresh()));
         return new SwerveModuleState(velocity, angle);
+    }
+
+    public SwerveModuleState getDesiredState() {
+        return desiredSetpointState;
     }
 
     public double getAngularVelocity() {
