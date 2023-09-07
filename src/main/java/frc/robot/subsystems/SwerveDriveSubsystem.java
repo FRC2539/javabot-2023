@@ -531,17 +531,17 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         });
 
         Logger.log("/SwerveDriveSubsystem/SwerveModuleStates/Measured", new double[] {
-            modules[0].getState().angle.getDegrees(), modules[0].getState().speedMetersPerSecond,
-            modules[1].getState().angle.getDegrees(), modules[1].getState().speedMetersPerSecond,
-            modules[2].getState().angle.getDegrees(), modules[2].getState().speedMetersPerSecond,
-            modules[3].getState().angle.getDegrees(), modules[3].getState().speedMetersPerSecond
+            modules[0].getState().angle.getRadians(), modules[0].getState().speedMetersPerSecond,
+            modules[1].getState().angle.getRadians(), modules[1].getState().speedMetersPerSecond,
+            modules[2].getState().angle.getRadians(), modules[2].getState().speedMetersPerSecond,
+            modules[3].getState().angle.getRadians(), modules[3].getState().speedMetersPerSecond
         });
 
         Logger.log("/SwerveDriveSubsystem/SwerveModuleStates/Setpoints", new double[] {
-            modules[0].getDesiredState().angle.getDegrees(), modules[0].getDesiredState().speedMetersPerSecond,
-            modules[1].getDesiredState().angle.getDegrees(), modules[1].getDesiredState().speedMetersPerSecond,
-            modules[2].getDesiredState().angle.getDegrees(), modules[2].getDesiredState().speedMetersPerSecond,
-            modules[3].getDesiredState().angle.getDegrees(), modules[3].getDesiredState().speedMetersPerSecond,
+            modules[0].getDesiredState().angle.getRadians(), modules[0].getDesiredState().speedMetersPerSecond,
+            modules[1].getDesiredState().angle.getRadians(), modules[1].getDesiredState().speedMetersPerSecond,
+            modules[2].getDesiredState().angle.getRadians(), modules[2].getDesiredState().speedMetersPerSecond,
+            modules[3].getDesiredState().angle.getRadians(), modules[3].getDesiredState().speedMetersPerSecond,
         });
 
         // Logger.log("/SwerveDriveSubsystem/Wheel Angles", new double[] {
