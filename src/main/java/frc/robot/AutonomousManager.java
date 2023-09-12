@@ -413,7 +413,7 @@ public class AutonomousManager {
     private enum AutonomousOption {
         OPEN_PLACE2HANDOFF(StartingLocation.OPEN, 2, true, "open_place2handoff", new PathConstraints(4, 3.6)),
         OPEN_PLACE3HANDOFF(
-                StartingLocation.OPEN, 3, false /*not yet ;)*/, "open_place3handoff", new PathConstraints(4, 3.6)),
+                StartingLocation.OPEN, 3, false /*not yet ;)*/, "open_place3handoff", new PathConstraints(3.5, 3.1)),
         OPEN_PLACE25HANDOFF(StartingLocation.OPEN, 25, false, "open_place25", new PathConstraints(4, 3.6)),
         // STATION_PLACE1ANDCLIMBSHORT(
         //         StartingLocation.STATIONOPEN, 0, true, "station_place1andclimb_short", new PathConstraints(2, 1.5)),
