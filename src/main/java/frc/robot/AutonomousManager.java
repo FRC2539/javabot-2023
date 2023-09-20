@@ -328,6 +328,9 @@ public class AutonomousManager {
                                 .andThen(gripperSubsystem.gripperShootHighCommand())
                                 .withTimeout(2))
                         .asProxy());
+        eventMap.put(
+                "prepareForHandoff", 
+                armSubsystem.handoffCommand().alongWith(gripperSubsystem.dropFromGripperCommand()).asProxy());
 
         autoBuilder = new SwerveAutoBuilder(
                 swerveDriveSubsystem::getPose,
