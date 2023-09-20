@@ -189,7 +189,11 @@ public class RobotContainer {
         operatorController.getDPadDown().and(shiftButton.negate()).onTrue(armSubsystem.pickupCommand());
         operatorController.getDPadDown().and(shiftButton).onTrue(armSubsystem.tippedPickupCommand());
 
-        operatorController.getDPadLeft().onTrue(armSubsystem.awaitingDeploymentCommand());
+        // Awaiting Deployment return
+        operatorController.getDPadLeft().and(shiftButton.negate()).onTrue(armSubsystem.awaitingDeploymentCommand());
+
+        // Handoff preparation position
+        operatorController.getDPadLeft().and(shiftButton).onTrue(armSubsystem.handoffCommand().alongWith(gripperSubsystem.dropFromGripperCommand()));
 
         // High commands
         // operatorController.getDPadUp().and(shiftButton.negate()).onTrue(armSubsystem.highManualConeCommand());
@@ -224,8 +228,8 @@ public class RobotContainer {
         operatorController.nameDPadUp("High Manual");
         operatorController.nameDPadRight("Mid Manual");
 
-        operatorController.getY().onTrue(resetMinimumCommand);
-        operatorController.getA().onTrue(runOnce(() -> {AssistedSubstationOdometryCommand.offsetToStation = swerveDriveSubsystem.getPose().getX() - swerveDriveSubsystem.getLastMinimumXValue();}));
+        // operatorController.getY().onTrue(resetMinimumCommand);
+        // operatorController.getA().onTrue(runOnce(() -> {AssistedSubstationOdometryCommand.offsetToStation = swerveDriveSubsystem.getPose().getX() - swerveDriveSubsystem.getLastMinimumXValue();}));
 
         operatorController
                 .getLeftBumper()
@@ -263,6 +267,8 @@ public class RobotContainer {
 
         operatorController.getBack().whileTrue(intakeSubsystem.reverseIntakeModeCommand());
         operatorController.nameBack("Reverse Intake");
+
+        operatorController.nameRightBumper("Shift Button");
 
         // Send all button names to network tables
         rightDriveController.sendButtonNamesToNT();
