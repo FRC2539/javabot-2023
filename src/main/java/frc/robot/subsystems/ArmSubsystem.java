@@ -346,8 +346,9 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Command midManualCubeCommand() {
-        return Commands.sequence(
-                armStateApproximateCommand(ArmState.MID_MANUAL_CUBE_1), armStateCommand(ArmState.MID_MANUAL_CUBE));
+        // return Commands.sequence(
+        //         armStateApproximateCommand(ArmState.MID_MANUAL_CUBE_1), armStateCommand(ArmState.MID_MANUAL_CUBE));
+        return armStateCommand(ArmState.MID_MANUAL_CUBE_NEW);
     }
 
     public boolean isCurrentLocationCone() {
@@ -583,6 +584,13 @@ public class ArmSubsystem extends SubsystemBase {
                         arm2Angle.getRadians(), joint2DesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
         // && MathUtils.equalsWithinError(
         //         gripperAngle.getRadians(), gripperDesiredMotorPosition, ArmConstants.angularTolerance * 2.5);
+    }
+
+    public boolean isArmWithinCustomTolerances(double toleranceMast, double toleranceBoom) {
+        return MathUtils.equalsWithinError(
+                        arm1Angle.getRadians(), joint1DesiredMotorPosition, toleranceMast)
+                && MathUtils.equalsWithinError(
+                        arm2Angle.getRadians(), joint2DesiredMotorPosition, toleranceBoom);
     }
 
     private void passthroughMotorSpeeds(double shoulderPercent, double elbowPercent, double wristPercent) {
@@ -931,6 +939,8 @@ public class ArmSubsystem extends SubsystemBase {
         MID_MANUAL_CUBE_1(new Static(0.66, 0.70, Rotation2d.fromDegrees(55))),
         MID_MANUAL_CUBE(Static.fromBumper(
                 FieldConstants.midX + 0.08, FieldConstants.midCubeZ + 0.35, Rotation2d.fromDegrees(-10))), // -20
+        MID_MANUAL_CUBE_NEW(Static.fromBumper(
+            FieldConstants.midX + 0.08, FieldConstants.midCubeZ + 0.45, Rotation2d.fromDegrees(-20))),
         HIGH_MANUAL_1(new Static(0.9, 1.24, Rotation2d.fromDegrees(70))),
         // HIGH_MANUAL_1(new Static(0.9, 1.24, Rotation2d.fromDegrees(70))),
         // HIGH_MANUAL_1(new Static(0.9, 1.32, Rotation2d.fromDegrees(65))),
