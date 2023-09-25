@@ -3,6 +3,7 @@ package frc.lib.swerve;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -118,7 +119,7 @@ public class SwerveModule {
         }
 
         angleMotor.setControl(positionVoltageRequestAngle.withPosition(
-                desiredAngle.getRadians()/360).withFeedForward(0));
+                desiredAngle.getRotations()).withFeedForward(0));
 
         lastAngle = 0;
 
@@ -225,11 +226,11 @@ public class SwerveModule {
 
     public SwerveModulePosition getPosition() {
         double encoder = Conversions.motorToMeters(
-                        driveMotor.getPosition().getValue(),
+                        BaseStatusSignal.getLatencyCompensatedValue(driveMotor.getPosition(), driveMotor.getVelocity()),
                         Constants.SwerveConstants.wheelCircumference,
                         Constants.SwerveConstants.driveGearRatio);
         Rotation2d angle = Rotation2d.fromRotations(
-                angleMotor.getPosition().getValue());
+                BaseStatusSignal.getLatencyCompensatedValue(angleMotor.getPosition(), angleMotor.getVelocity()));
         return new SwerveModulePosition(encoder, angle);
     }
 
