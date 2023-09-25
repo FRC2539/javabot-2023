@@ -323,7 +323,7 @@ public class ArmSubsystem extends SubsystemBase {
     public Command awaitingDeploymentCommand() {
         return Commands.either(
                 Commands.sequence(
-                        armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
+                        // armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
                         armStateApproximateCommand(ArmState.MID_MANUAL_CONE),
                         armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
                         armStateCommand(ArmState.AWAITING_DEPLOYMENT)),
