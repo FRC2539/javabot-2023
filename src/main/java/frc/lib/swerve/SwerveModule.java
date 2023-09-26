@@ -2,6 +2,9 @@ package frc.lib.swerve;
 
 
 import com.ctre.phoenix6.hardware.CANcoder;
+
+import javax.xml.transform.Templates;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -42,6 +45,21 @@ public class SwerveModule {
             Constants.SwerveConstants.calculatedDriveKV,
             Constants.SwerveConstants.calculatedDriveKA);
 
+    StatusSignal<Double> drivePositionSS;
+    StatusSignal<Double> driveVelocitySS;
+    StatusSignal<Double> driveRotorVelocitySS;
+    StatusSignal<Double> driveTemperatureSS;
+    StatusSignal<Double> driveVoltageSS;
+    StatusSignal<Double> driveCurrentSS;
+
+    StatusSignal<Double> anglePositionSS;
+    StatusSignal<Double> angleVelocitySS;
+    StatusSignal<Double> angleTemperatureSS;
+    StatusSignal<Double> angleVoltageSS;
+    StatusSignal<Double> angleCurrentSS;
+
+    StatusSignal<Double> encoderAbsoluteAngleSS;
+
     // Testing a calculation method
     // SimpleMotorFeedforward angleFeedforward = new SimpleMotorFeedforward(
     //         Constants.SwerveConstants.angleKS, Constants.SwerveConstants.angleKV, Constants.SwerveConstants.angleKA);
@@ -67,6 +85,21 @@ public class SwerveModule {
                 ? new TalonFX(moduleConstants.driveMotorID)
                 : new TalonFX(moduleConstants.driveMotorID, moduleConstants.canivoreName.get());
         configDriveMotor();
+
+        drivePositionSS = driveMotor.getPosition();
+        driveVelocitySS = driveMotor.getVelocity();
+        driveRotorVelocitySS = driveMotor.getRotorVelocity();
+        driveTemperatureSS = driveMotor.getDeviceTemp();
+        driveVoltageSS = driveMotor.getSupplyVoltage();
+        driveCurrentSS = driveMotor.getSupplyCurrent();
+
+        anglePositionSS = angleMotor.getPosition();
+        angleVelocitySS = angleMotor.getVelocity();
+        angleTemperatureSS = angleMotor.getDeviceTemp();
+        angleVoltageSS = angleMotor.getSupplyVoltage();
+        angleCurrentSS = angleMotor.getSupplyCurrent();
+
+        encoderAbsoluteAngleSS = angleEncoder.getAbsolutePosition();
 
         lastAngle = getState().angle.getDegrees();
     }
@@ -191,11 +224,11 @@ public class SwerveModule {
     }
 
     public Rotation2d getCanCoderWithOffset() {
-        return Rotation2d.fromRotations(angleEncoder.getAbsolutePosition().getValue());
+        return Rotation2d.fromRotations(encoderAbsoluteAngleSS.refresh().getValue());
     }
 
     public Rotation2d getCanCoderNoOffset() {
-        return Rotation2d.fromRotations((angleEncoder.getAbsolutePosition().getValue() + zeroedWheelCANCoderAngle) % 1.0);
+        return Rotation2d.fromRotations((encoderAbsoluteAngleSS.refresh().getValue() + zeroedWheelCANCoderAngle) % 1.0);
     }
 
     public TalonFX getDriveMotor() {
@@ -208,11 +241,11 @@ public class SwerveModule {
 
     public SwerveModuleState getState() {
         double velocity =
-                Conversions.motorRPSToMPS(driveMotor.getRotorVelocity().getValue(),
+                Conversions.motorRPSToMPS(driveRotorVelocitySS.refresh().getValue(),
                 Constants.SwerveConstants.wheelCircumference,
                 Constants.SwerveConstants.driveGearRatio);
         Rotation2d angle = Rotation2d.fromRotations(
-                BaseStatusSignal.getLatencyCompensatedValue(angleMotor.getPosition().refresh(), angleMotor.getVelocity().refresh()));
+                BaseStatusSignal.getLatencyCompensatedValue(anglePositionSS.refresh(), angleVelocitySS.refresh()));
         return new SwerveModuleState(velocity, angle);
     }
 
@@ -221,40 +254,40 @@ public class SwerveModule {
     }
 
     public double getAngularVelocity() {
-        return Conversions.motorRPSToRadPS(angleMotor.getVelocity().getValue(), Constants.SwerveConstants.angleGearRatio);
+        return Conversions.motorRPSToRadPS(angleVelocitySS.refresh().getValue(), Constants.SwerveConstants.angleGearRatio);
     }
 
     public SwerveModulePosition getPosition() {
         double encoder = Conversions.motorToMeters(
-                        BaseStatusSignal.getLatencyCompensatedValue(driveMotor.getPosition(), driveMotor.getVelocity()),
+                        BaseStatusSignal.getLatencyCompensatedValue(drivePositionSS.refresh(), driveVelocitySS.refresh()),
                         Constants.SwerveConstants.wheelCircumference,
                         Constants.SwerveConstants.driveGearRatio);
         Rotation2d angle = Rotation2d.fromRotations(
-                BaseStatusSignal.getLatencyCompensatedValue(angleMotor.getPosition(), angleMotor.getVelocity()));
+                BaseStatusSignal.getLatencyCompensatedValue(anglePositionSS.refresh(), angleVelocitySS.refresh()));
         return new SwerveModulePosition(encoder, angle);
     }
 
     public double getDriveTemperature() {
-        return driveMotor.getDeviceTemp().getValue();
+        return driveTemperatureSS.refresh().getValue();
     }
 
     public double getAngleTemperature() {
-        return angleMotor.getDeviceTemp().getValue();
+        return angleTemperatureSS.refresh().getValue();
     }
 
     public double getDriveVoltage() {
-        return driveMotor.getSupplyVoltage().getValue();
+        return driveVoltageSS.refresh().getValue();
     }
 
     public double getAngleVoltage() {
-        return angleMotor.getSupplyVoltage().getValue();
+        return angleVoltageSS.refresh().getValue();
     }
 
     public double getDriveCurrent() {
-        return driveMotor.getSupplyCurrent().getValue();
+        return driveCurrentSS.refresh().getValue();
     }
 
     public double getAngleCurrent() {
-        return angleMotor.getSupplyCurrent().getValue();
+        return angleCurrentSS.refresh().getValue();
     }
 }
