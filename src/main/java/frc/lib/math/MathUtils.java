@@ -24,4 +24,9 @@ public class MathUtils {
             return true;
         }
     }
+
+    public static double accomidateOverflow(double oldRotations, double newRotations) {
+        double result = (newRotations - oldRotations) % 1;
+        return (result > .5) ? result - 1 : result;
+    }
 }

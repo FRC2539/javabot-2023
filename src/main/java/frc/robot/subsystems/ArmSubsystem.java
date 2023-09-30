@@ -43,6 +43,8 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
+
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -118,6 +120,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     private double springConstant = 150;//175;
     private double arm1PValue;
+
+    private Optional<Double> lastAbsoluteGripper = Optional.empty();
 
     public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         // springConstant = Logger.tunable("/ArmSubsystem/springConstant", 160);
@@ -263,7 +267,6 @@ public class ArmSubsystem extends SubsystemBase {
 
         // Don't die when arm is backwards slightly
         motor2Controller.enableContinuousInput(-Math.PI, Math.PI);
-        gripperMotorController.enableContinuousInput(-Math.PI, Math.PI);
 
         motor1Controller.setTolerance(ArmConstants.angularTolerance);
         motor2Controller.setTolerance(ArmConstants.angularTolerance);
@@ -508,9 +511,11 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     private Rotation2d getGripperEncoderAngle() {
-        return putAngleInto180Scope(
-                ArmConstants.gripperEncoderMultiplier * gripperAbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI
-                        + ArmConstants.gripperEncoderOffset);
+        double currentEncoderAngle = gripperAbsoluteEncoder.getAbsolutePosition();
+        if (lastAbsoluteGripper.isEmpty()) lastAbsoluteGripper = Optional.of(currentEncoderAngle - 1);
+        Rotation2d result = new Rotation2d(ArmConstants.gripperEncoderMultiplier * MathUtils.accomidateOverflow(lastAbsoluteGripper.get(),currentEncoderAngle) * 2 * Math.PI+ ArmConstants.gripperEncoderOffset);
+        lastAbsoluteGripper = Optional.of(currentEncoderAngle);
+        return result;
     }
 
     private Rotation2d getJoint1EncoderAngle() {
