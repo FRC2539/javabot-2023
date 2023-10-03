@@ -121,7 +121,7 @@ public class ArmSubsystem extends SubsystemBase {
     private double springConstant = 150;//175;
     private double arm1PValue;
 
-    private Optional<Double> lastAbsoluteGripper = Optional.empty();
+    private double lastAbsoluteGripper = Math.PI/2;
 
     public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         // springConstant = Logger.tunable("/ArmSubsystem/springConstant", 160);
@@ -512,10 +512,13 @@ public class ArmSubsystem extends SubsystemBase {
 
     private Rotation2d getGripperEncoderAngle() {
         double currentEncoderAngle = gripperAbsoluteEncoder.getAbsolutePosition();
-        if (lastAbsoluteGripper.isEmpty()) lastAbsoluteGripper = Optional.of(currentEncoderAngle - 1);
-        Rotation2d result = new Rotation2d(ArmConstants.gripperEncoderMultiplier * MathUtils.accomidateOverflow(lastAbsoluteGripper.get(),currentEncoderAngle) * 2 * Math.PI+ ArmConstants.gripperEncoderOffset);
-        lastAbsoluteGripper = Optional.of(currentEncoderAngle);
-        return result;
+        //ready position is approximately 90 degrees default starting position of the gripper is 90 degrees. When booting, make sure gripper is between -90 and 270 degrees. (Not backwards.)
+        double result = MathUtils.accomidateOverflow(
+            lastAbsoluteGripper, 
+            ArmConstants.gripperEncoderMultiplier * currentEncoderAngle * 2 * Math.PI + ArmConstants.gripperEncoderOffset,
+            Math.PI * 2);
+        lastAbsoluteGripper = result;
+        return new Rotation2d(result);
     }
 
     private Rotation2d getJoint1EncoderAngle() {
