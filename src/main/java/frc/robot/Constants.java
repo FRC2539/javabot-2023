@@ -503,7 +503,7 @@ public final class Constants {
             public static final int driveMotorID = 0;
             public static final int angleMotorID = 4;
             public static final int canCoderID = 24;
-            public static final double angleOffset = 255.5; 
+            public static final double angleOffset = 132; 
             public static final String canivoreName = "CANivore";
             public static final SwerveModuleConstants constants =
                     new SwerveModuleConstants(driveMotorID, angleMotorID, canCoderID, angleOffset, canivoreName);
