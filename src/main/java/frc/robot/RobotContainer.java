@@ -135,12 +135,12 @@ public class RobotContainer {
         var resetMinimumCommand = runOnce(swerveDriveSubsystem::resetLastMinimumXValue);
 
         /* Set right joystick bindings */
-        if (!Constants.competitionMode) { //lol i like how we still have the death buttons enabled
-            rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
-            rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
-            rightDriveController.nameRightBottomMiddle("Characterize Forwards");
-            rightDriveController.nameRightBottomMiddle("Characterize Backwards");
-        }
+        // if (!Constants.competitionMode) { //lol i like how we still have the death buttons enabled
+        //     rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
+        //     rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
+        //     rightDriveController.nameRightBottomMiddle("Characterize Forwards");
+        //     rightDriveController.nameRightBottomMiddle("Characterize Backwards");
+        // }
 
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());

@@ -43,6 +43,8 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
+
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -118,6 +120,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     private double springConstant = 150;//175;
     private double arm1PValue;
+
+    private double lastAbsoluteGripper = Math.PI/2;
 
     public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         // springConstant = Logger.tunable("/ArmSubsystem/springConstant", 160);
@@ -263,7 +267,6 @@ public class ArmSubsystem extends SubsystemBase {
 
         // Don't die when arm is backwards slightly
         motor2Controller.enableContinuousInput(-Math.PI, Math.PI);
-        gripperMotorController.enableContinuousInput(-Math.PI, Math.PI);
 
         motor1Controller.setTolerance(ArmConstants.angularTolerance);
         motor2Controller.setTolerance(ArmConstants.angularTolerance);
@@ -508,9 +511,14 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     private Rotation2d getGripperEncoderAngle() {
-        return putAngleInto180Scope(
-                ArmConstants.gripperEncoderMultiplier * gripperAbsoluteEncoder.getAbsolutePosition() * 2 * Math.PI
-                        + ArmConstants.gripperEncoderOffset);
+        double currentEncoderAngle = gripperAbsoluteEncoder.getAbsolutePosition();
+        //ready position is approximately 90 degrees default starting position of the gripper is 90 degrees. When booting, make sure gripper is between -90 and 270 degrees. (Not backwards.)
+        double result = MathUtils.accomidateOverflow(
+            lastAbsoluteGripper, 
+            ArmConstants.gripperEncoderMultiplier * currentEncoderAngle * 2 * Math.PI + ArmConstants.gripperEncoderOffset,
+            Math.PI * 2);
+        lastAbsoluteGripper = result;
+        return new Rotation2d(result);
     }
 
     private Rotation2d getJoint1EncoderAngle() {
