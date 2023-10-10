@@ -326,7 +326,7 @@ public class ArmSubsystem extends SubsystemBase {
     public Command awaitingDeploymentCommand() {
         return Commands.either(
                 Commands.sequence(
-                        // armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
+                        armStateApproximateCommand(ArmState.HIGH_MANUAL_1),
                         armStateApproximateCommand(ArmState.MID_MANUAL_CONE),
                         armStateApproximateCommand(ArmState.AWAITING_DEPLOYMENT_1),
                         armStateCommand(ArmState.AWAITING_DEPLOYMENT)),
@@ -698,8 +698,9 @@ public class ArmSubsystem extends SubsystemBase {
         // Logger.log("/ArmSubsystem/arm1DesiredPosition", joint1DesiredMotorPosition);
         // Logger.log("/ArmSubsystem/arm2DesiredPosition", joint2DesiredMotorPosition);
         // Logger.log("/ArmSubsystem/gripperDesiredPosition", gripperDesiredMotorPosition);
-        // Logger.log("/ArmSubsystem/arm1EncoderPosition", getJoint1EncoderAngle().getRadians());
-        // Logger.log("/ArmSubsystem/arm2EncoderPosition", getJoint2EncoderAngle().getRadians());
+        Logger.log("/ArmSubsystem/encoders/gripperRaw", gripperAbsoluteEncoder.get() * 2 * Math.PI);
+        Logger.log("/ArmSubsystem/encoders/arm1Raw", joint1AbsoluteEncoder.get() * 2 * Math.PI);
+        Logger.log("/ArmSubsystem/encoders/arm2Raw", joint2AbsoluteEncoder.get() * 2 * Math.PI);
         // Logger.log("/ArmSubsystem/isBraking", brakingActivated);
         // Logger.log("/ArmSubsystem/isCoasting", armState == ArmState.COAST);
         Logger.log("/ArmSubsystem/isArmAtPosition", isArmAtGoal());
