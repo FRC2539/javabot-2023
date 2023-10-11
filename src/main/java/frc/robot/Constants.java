@@ -294,7 +294,7 @@ public final class Constants {
         // Store the channels for through bore encoders
         public static final int mastEncoderChannel = 0;
         public static final int boomEncoderChannel = 1;
-        public static final int gripperEncoderChannel = 2;
+        public static final int gripperEncoderChannel = 3;
 
         // Store offsets for the through bore encoders (measured + offset = absolute position)
         // Measurement Guide
@@ -306,8 +306,8 @@ public final class Constants {
         // When measuring values, replace the 0 in the offset with the value measured
         public static final double mastEncoderOffset = -2.2432 + (Math.PI / 2);
         // public static final double boomEncoderOffset = -(-1.865) + -Math.PI; 
-        public static final double boomEncoderOffset = -(0.21953073020993863 + Math.PI);
-        public static final double gripperEncoderOffset = -(0.907) + Math.PI;
+        public static final double boomEncoderOffset = -0.21953073020993863 - Math.PI;
+        public static final double gripperEncoderOffset = -0.907 + Math.PI;
 
         // Set these to -1 to invert the encoder measurements (find offsets again)
         public static final int mastEncoderMultiplier = 1;
