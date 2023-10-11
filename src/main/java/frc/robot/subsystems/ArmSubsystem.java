@@ -123,6 +123,8 @@ public class ArmSubsystem extends SubsystemBase {
 
     private double lastAbsoluteGripper = Math.PI/2;
 
+    private Optional<Double> desiredGripperSpeedOverride = Optional.empty();
+
     public ArmSubsystem(SwerveDriveSubsystem swerveDriveSubsystem) {
         // springConstant = Logger.tunable("/ArmSubsystem/springConstant", 160);
         // voltageOffset = Logger.tunable("/ArmSubsystem/voltageOffset", -1.0);
@@ -709,6 +711,16 @@ public class ArmSubsystem extends SubsystemBase {
         Logger.log("/ArmSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
 
+    public Command overrideGripper(double desiredSpeed) {
+        return runEnd(
+            () -> desiredGripperSpeedOverride = 
+                Optional.of(desiredSpeed), 
+            () -> {
+                desiredGripperSpeedOverride = Optional.empty();
+                lastAbsoluteGripper = Math.PI/2;
+            });
+    }
+
     private void executePIDFeedforward() {
         // Calculate PID outputs
         double arm1VoltageCorrection = motor1Controller.calculate(arm1Angle.getRadians());
@@ -740,6 +752,11 @@ public class ArmSubsystem extends SubsystemBase {
                 ArmConstants.maxVoltage);
         double gripperVoltageOutput = MathUtils.ensureRange(
                 wristVoltageCorrection + gripperVoltage, -ArmConstants.maxVoltage, ArmConstants.maxVoltage);
+
+        //this is hopefully temporary and should go away someday
+        if (desiredGripperSpeedOverride.isPresent()) {
+            gripperVoltageOutput = gripperJointFeedforward.calculate(0, desiredGripperSpeedOverride.get(), 0);
+        }
 
         joint1Motor.set(arm1VoltageOutput / GlobalConstants.targetVoltage);
         joint2Motor.set(arm2VoltageOutput / GlobalConstants.targetVoltage);
