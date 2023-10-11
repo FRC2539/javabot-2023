@@ -303,11 +303,12 @@ public final class Constants {
         // - Orient boom arm fully inside of mast arm (-180 degrees relative to mast arm)
         // - Orient gripper fully inside of boom arm (180 degrees relative to boom arm)
         //
-        // When measuring values, replace the 0 in the offset with the value measured
+        // When measuring values, replace the first number with the negative of the angle reported for the mechanism. first set the encoder offset to zero tho.
         public static final double mastEncoderOffset = -2.2432 + (Math.PI / 2);
         // public static final double boomEncoderOffset = -(-1.865) + -Math.PI; 
         public static final double boomEncoderOffset = -0.21953073020993863 - Math.PI;
-        public static final double gripperEncoderOffset = -0.907 + Math.PI;
+        // public static final double gripperEncoderOffset = -0.3180042079501052 + Math.PI;
+        public static final double gripperEncoderOffset = -1.9724213508515334 + Math.PI;
 
         // Set these to -1 to invert the encoder measurements (find offsets again)
         public static final int mastEncoderMultiplier = 1;

@@ -142,6 +142,11 @@ public class RobotContainer {
         //     rightDriveController.nameRightBottomMiddle("Characterize Backwards");
         // }
 
+        rightDriveController.getLeftTopRight().whileTrue(armSubsystem.overrideGripper(3));
+        rightDriveController.getLeftBottomRight().whileTrue(armSubsystem.overrideGripper(-3));
+        rightDriveController.nameLeftTopRight("Flip Gripper Up");
+        rightDriveController.nameLeftBottomRight("Flip Gripper Down");
+
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
         rightDriveController.getBottomThumb().whileTrue(gripperSubsystem.gripperShootHighCommand());
