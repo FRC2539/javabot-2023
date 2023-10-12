@@ -978,11 +978,12 @@ public class ArmSubsystem extends SubsystemBase {
                         - 0.10, // because of poor pid behavior
                 Rotation2d.fromDegrees(24))), // 18
         HIGH_MANUAL_CONE(Static.fromBumper(
-                FieldConstants.highX + 0.03, // + 0.1, // gripper offset
+                FieldConstants.highX + 0.01, // + 0.1, // gripper offset
                 FieldConstants.highConeZ
                         + ArmConstants.placementHeightOffset
                         + 0.3
-                        - 0.17, // because of poor pid behavior // -0.20
+                        - 0.17
+                        + 0.04, // because of poor pid behavior // -0.20
                 Rotation2d.fromDegrees(25))), // 18
         // HIGH_MANUAL_CONE(Static.fromBumper(
         //         FieldConstants.highX + 0.035 - 0.08, // + 0.1, // gripper offset

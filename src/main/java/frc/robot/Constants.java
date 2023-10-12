@@ -294,7 +294,7 @@ public final class Constants {
         // Store the channels for through bore encoders
         public static final int mastEncoderChannel = 0;
         public static final int boomEncoderChannel = 1;
-        public static final int gripperEncoderChannel = 3;
+        public static final int gripperEncoderChannel = 4;
 
         // Store offsets for the through bore encoders (measured + offset = absolute position)
         // Measurement Guide
