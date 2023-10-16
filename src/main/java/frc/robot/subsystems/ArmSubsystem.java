@@ -961,7 +961,7 @@ public class ArmSubsystem extends SubsystemBase {
         // MID_MANUAL_CUBE(Static.fromBumper(
         //         FieldConstants.midX + 0.10, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
         MID_MANUAL_CONE(Static.fromBumper(
-            FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.05, Rotation2d.fromDegrees(60))),
+            FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.05 - 0.08, Rotation2d.fromDegrees(60))),
         MID_MANUAL_CUBE_1(new Static(0.66, 0.70, Rotation2d.fromDegrees(55))),
         MID_MANUAL_CUBE(Static.fromBumper(
                 FieldConstants.midX + 0.08, FieldConstants.midCubeZ + 0.35, Rotation2d.fromDegrees(-10))), // -20
@@ -978,7 +978,7 @@ public class ArmSubsystem extends SubsystemBase {
                         - 0.10, // because of poor pid behavior
                 Rotation2d.fromDegrees(24))), // 18
         HIGH_MANUAL_CONE(Static.fromBumper(
-                FieldConstants.highX + 0.01, // + 0.1, // gripper offset
+                FieldConstants.highX + 0.01 + 0.02, // + 0.1, // gripper offset
                 FieldConstants.highConeZ
                         + ArmConstants.placementHeightOffset
                         + 0.3
