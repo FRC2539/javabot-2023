@@ -309,7 +309,7 @@ public class AutonomousManager {
                         .deadlineWith(gripperSubsystem.dropFromGripperCommand())
                         .andThen(gripperSubsystem
                                 .openGripperCommand()
-                                .deadlineWith(waitSeconds(0.15).andThen(intakeSubsystem.handoffCommand()))
+                                .deadlineWith(waitSeconds(0.45).andThen(intakeSubsystem.handoffCommand()))
                                 .withTimeout(1.6))
                         .andThen(armSubsystem.partialUndoHandoffCommand().asProxy())
                         .asProxy());
