@@ -395,7 +395,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     public void setVelocity(ChassisSpeeds velocity, boolean isFieldOriented, boolean isOpenLoop) {
-        driveSignal = new SwerveDriveSignal(velocity, isFieldOriented, isOpenLoop);
+        // create new chassis speeds with turning offset
+
+        var newVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(velocity, new Rotation2d(velocity.omegaRadiansPerSecond * 0.03));
+
+        driveSignal = new SwerveDriveSignal(newVelocity, isFieldOriented, isOpenLoop);
     }
 
     public void setVelocity(ChassisSpeeds velocity, boolean isFieldOriented) {
