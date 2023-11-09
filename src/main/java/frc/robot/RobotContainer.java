@@ -247,7 +247,7 @@ public class RobotContainer {
                                         .slowReverseIntakeModeCommand()
                                         .withTimeout(0.06)
                                         .andThen(waitSeconds(0.04).andThen(intakeSubsystem.handoffCommand()))))
-                        .andThen(intakeSubsystem.handoffCommand().withTimeout(0.10259743).deadlineWith(armSubsystem.undoHandoffCommand()))
+                        .andThen(intakeSubsystem.handoffCommand().withTimeout(0.15210259743).deadlineWith(armSubsystem.undoHandoffCommand()))
                         .until(operatorController.getLeftBumper().negate())
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
 
