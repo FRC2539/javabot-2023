@@ -19,10 +19,7 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
 import frc.robot.commands.AssistedLLAimCommand;
-import frc.robot.commands.AssistedLLSubstationCommand;
 import frc.robot.commands.AssistedSubstationOdometryCommand;
-import frc.robot.commands.DoubleSubstationAssistCommand;
-import frc.robot.commands.IndicateGridAimedCommand;
 import frc.robot.commands.IndicateSubstationAimedCommand;
 import frc.robot.subsystems.*;
 import frc.robot.subsystems.ArmSubsystem.ArmState;
@@ -109,7 +106,17 @@ public class RobotContainer {
         leftDriveController.nameLeftBottomLeft("Level Charge Station");
         leftDriveController.nameLeftBottomMiddle("Lock Wheels");
 
-        leftDriveController.getRightThumb().whileTrue(new AssistedLLAimCommand(swerveDriveSubsystem, visionSubsystem, lightsSubsystem, this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, ()->false, true));
+        leftDriveController
+                .getRightThumb()
+                .whileTrue(new AssistedLLAimCommand(
+                        swerveDriveSubsystem,
+                        visionSubsystem,
+                        lightsSubsystem,
+                        this::getDriveForwardAxis,
+                        this::getDriveStrafeAxis,
+                        this::getDriveRotationAxis,
+                        () -> false,
+                        true));
         leftDriveController.nameRightThumb("Auto Align (TEST ME)");
 
         // leftDriveController
@@ -130,14 +137,23 @@ public class RobotContainer {
         leftDriveController.getBottomThumb().whileTrue(gripperSubsystem.dropFromGripperCommand());
         leftDriveController.nameBottomThumb("Drop Game Piece");
 
-        leftDriveController.getLeftThumb().whileTrue(new AssistedSubstationOdometryCommand(swerveDriveSubsystem, this::getDriveForwardAxis, this::getDriveStrafeAxis, this::getDriveRotationAxis, 5));
+        leftDriveController
+                .getLeftThumb()
+                .whileTrue(new AssistedSubstationOdometryCommand(
+                        swerveDriveSubsystem,
+                        this::getDriveForwardAxis,
+                        this::getDriveStrafeAxis,
+                        this::getDriveRotationAxis,
+                        5));
 
         var resetMinimumCommand = runOnce(swerveDriveSubsystem::resetLastMinimumXValue);
 
         /* Set right joystick bindings */
         // if (!Constants.competitionMode) { //lol i like how we still have the death buttons enabled
-        //     rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true, true));
-        //     rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true, false));
+        //     rightDriveController.getRightBottomMiddle().whileTrue(swerveDriveSubsystem.characterizeCommand(true,
+        // true));
+        //     rightDriveController.getRightBottomRight().whileTrue(swerveDriveSubsystem.characterizeCommand(true,
+        // false));
         //     rightDriveController.nameRightBottomMiddle("Characterize Forwards");
         //     rightDriveController.nameRightBottomMiddle("Characterize Backwards");
         // }
@@ -198,7 +214,10 @@ public class RobotContainer {
         operatorController.getDPadLeft().and(shiftButton.negate()).onTrue(armSubsystem.awaitingDeploymentCommand());
 
         // Handoff preparation position
-        operatorController.getDPadLeft().and(shiftButton).onTrue(armSubsystem.handoffCommand().alongWith(gripperSubsystem.dropFromGripperCommand()));
+        operatorController
+                .getDPadLeft()
+                .and(shiftButton)
+                .onTrue(armSubsystem.handoffCommand().alongWith(gripperSubsystem.dropFromGripperCommand()));
 
         // High commands
         // operatorController.getDPadUp().and(shiftButton.negate()).onTrue(armSubsystem.highManualConeCommand());
@@ -234,7 +253,8 @@ public class RobotContainer {
         operatorController.nameDPadRight("Mid Manual");
 
         // operatorController.getY().onTrue(resetMinimumCommand);
-        // operatorController.getA().onTrue(runOnce(() -> {AssistedSubstationOdometryCommand.offsetToStation = swerveDriveSubsystem.getPose().getX() - swerveDriveSubsystem.getLastMinimumXValue();}));
+        // operatorController.getA().onTrue(runOnce(() -> {AssistedSubstationOdometryCommand.offsetToStation =
+        // swerveDriveSubsystem.getPose().getX() - swerveDriveSubsystem.getLastMinimumXValue();}));
 
         operatorController
                 .getLeftBumper()
@@ -247,7 +267,10 @@ public class RobotContainer {
                                         .slowReverseIntakeModeCommand()
                                         .withTimeout(0.06)
                                         .andThen(waitSeconds(0.04).andThen(intakeSubsystem.handoffCommand()))))
-                        .andThen(intakeSubsystem.handoffCommand().withTimeout(0.15210259743).deadlineWith(armSubsystem.undoHandoffCommand()))
+                        .andThen(intakeSubsystem
+                                .handoffCommand()
+                                .withTimeout(0.15210259743)
+                                .deadlineWith(armSubsystem.undoHandoffCommand()))
                         .until(operatorController.getLeftBumper().negate())
                         .andThen(armSubsystem.undoHandoffCommand().asProxy()));
 

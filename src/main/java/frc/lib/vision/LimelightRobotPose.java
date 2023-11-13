@@ -1,8 +1,7 @@
 package frc.lib.vision;
 
-import java.util.OptionalInt;
-
 import edu.wpi.first.math.geometry.Pose3d;
+import java.util.OptionalInt;
 
 public class LimelightRobotPose {
     public final Pose3d estimatedPose;

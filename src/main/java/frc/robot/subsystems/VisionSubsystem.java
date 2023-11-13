@@ -36,7 +36,7 @@ public class VisionSubsystem extends SubsystemBase {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
 
         getBackLimelight().setMode(BackLimelight.Mode.APRILTAG);
-        
+
         getFrontLimelight().setMode(FrontLimelight.Mode.ML);
 
         setDefaultCommand(defaultLimelightCommand());
@@ -92,7 +92,8 @@ public class VisionSubsystem extends SubsystemBase {
         Logger.log("/VisionSubsystem/Last Update", Timer.getFPGATimestamp() - lastApriltagUpdateTimestamp);
 
         Logger.log("/VisionSubsystem/Back Vision Mode", backLimelight.getMode().name());
-        Logger.log("/VisionSubsystem/Front Vision Mode", frontLimelight.getMode().name());
+        Logger.log(
+                "/VisionSubsystem/Front Vision Mode", frontLimelight.getMode().name());
 
         Logger.log("/VisionSubsystem/LoopDuration", Timer.getFPGATimestamp() * 1000 - startTimeMS);
     }
@@ -107,7 +108,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     private void addVisionPoseEstimate(EstimatedRobotPose estimate) {
         if (!isValidPose(estimate.estimatedPose)) return;
-        
+
         var estimatedPose = estimate.estimatedPose.toPose2d();
 
         double averageDistance = 0;
@@ -129,8 +130,7 @@ public class VisionSubsystem extends SubsystemBase {
 
         if (estimate.tagID.isEmpty()) return;
 
-        var aprilTagPose =
-                FieldConstants.APRIL_TAG_FIELD_LAYOUT.getTagPose(estimate.tagID.getAsInt());
+        var aprilTagPose = FieldConstants.APRIL_TAG_FIELD_LAYOUT.getTagPose(estimate.tagID.getAsInt());
 
         Logger.log("/VisionSubsystem/Apriltag Added", aprilTagPose.isPresent());
 
@@ -141,7 +141,9 @@ public class VisionSubsystem extends SubsystemBase {
             swerveDriveSubsystem.addVisionPoseEstimate(
                     estimatedPose, estimate.timestampSeconds, calculateVisionStdDevs(distanceFromPrimaryTag));
 
-            Logger.log("/VisionSubsystem/Apriltag Conf", translationStdDevCoefficient * Math.pow(distanceFromPrimaryTag, 2));
+            Logger.log(
+                    "/VisionSubsystem/Apriltag Conf",
+                    translationStdDevCoefficient * Math.pow(distanceFromPrimaryTag, 2));
         }
     }
 

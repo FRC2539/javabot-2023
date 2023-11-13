@@ -59,7 +59,8 @@ public class IndicateGridAimedCommand extends CommandBase {
 
     private void initializeMovingAverage() {
         // Fill the moving average filter to prevent averaging with 0
-        var initial = visionSubsystem.getBackLimelight().getLimelightRawAngles().get().tx();
+        var initial =
+                visionSubsystem.getBackLimelight().getLimelightRawAngles().get().tx();
         for (int i = 0; i < taps; i++) txRollingAverage.calculate(initial);
     }
 

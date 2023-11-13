@@ -73,9 +73,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     // Sketchy Single Substation Align
     private double minimumXValue;
 
-    public double getLastMinimumXValue() {return minimumXValue;}
+    public double getLastMinimumXValue() {
+        return minimumXValue;
+    }
 
-    public void resetLastMinimumXValue() {minimumXValue = Double.MAX_VALUE;}
+    public void resetLastMinimumXValue() {
+        minimumXValue = Double.MAX_VALUE;
+    }
 
     // Max Speed Supplier
 
@@ -95,7 +99,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         calibrateIntegratedEncoders();
 
         // Add all motors to orchestra lol
-        //TODO: Translate This
+        // TODO: Translate This
         // for (SwerveModule module : modules) {
         //     RobotContainer.orchestra.addInstrument(module.getDriveMotor());
         //     RobotContainer.orchestra.addInstrument(module.getAngleMotor());
@@ -290,7 +294,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 .beforeStarting(() -> isCharacterizing = true)
                 .finallyDo((boolean interrupted) -> isCharacterizing = false);
     }
-    
+
     /** No longer needed. */
     public void calibrateIntegratedEncoders() {
         // No longer needed
@@ -397,7 +401,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     public void setVelocity(ChassisSpeeds velocity, boolean isFieldOriented, boolean isOpenLoop) {
         // create new chassis speeds with turning offset
 
-        var newVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(velocity, new Rotation2d(velocity.omegaRadiansPerSecond * 0.03));
+        var newVelocity =
+                ChassisSpeeds.fromFieldRelativeSpeeds(velocity, new Rotation2d(velocity.omegaRadiansPerSecond * 0.03));
 
         driveSignal = new SwerveDriveSignal(newVelocity, isFieldOriented, isOpenLoop);
     }

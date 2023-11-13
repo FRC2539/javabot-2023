@@ -3,8 +3,8 @@ package frc.robot.commands;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -41,8 +41,8 @@ public class AssistedLLSubstationCommand extends CommandBase {
     private ProfiledPIDController angleController = new ProfiledPIDController(1.5, 0.0, 0.0, angleConstraints);
     private PIDController forwardController = new PIDController(0.05, 0.0, 0.1);
 
-    //this order is {kP rot, kI rot, kD rot, kP horiz, kI horiz, kD horiz, speed rot, accel rot}
-    private double[] configValues = new double[]{6,0.0,0.0,0.15,0.0,0.0,4.0,4.0};
+    // this order is {kP rot, kI rot, kD rot, kP horiz, kI horiz, kD horiz, speed rot, accel rot}
+    private double[] configValues = new double[] {6, 0.0, 0.0, 0.15, 0.0, 0.0, 4.0, 4.0};
 
     private BackLimelight camera;
 
@@ -71,24 +71,29 @@ public class AssistedLLSubstationCommand extends CommandBase {
         angleController.setGoal(Math.PI);
         angleController.enableContinuousInput(-Math.PI, Math.PI);
 
-        forwardController.setSetpoint(DriverStation.getAlliance() == Alliance.Blue ? -Math.PI / 2: Math.PI / 2);
+        forwardController.setSetpoint(DriverStation.getAlliance() == Alliance.Blue ? -Math.PI / 2 : Math.PI / 2);
 
         camera = visionSubsystem.getBackLimelight();
-    
-        //this order is {kP rot, kI rot, kD rot, kP horiz, kI horiz, kD horiz, speed rot, accel rot}
+
+        // this order is {kP rot, kI rot, kD rot, kP horiz, kI horiz, kD horiz, speed rot, accel rot}
         pidValueReciever = Logger.tunable("/LLAimCommand/pid_values_two", configValues);
         this.isUsingNetPID = isUsingNetPID;
     }
 
     @Override
-    public void initialize() { 
+    public void initialize() {
         double[] someValues = pidValueReciever.getDoubleArray();
 
         if (someValues.length != 8 || !isUsingNetPID) someValues = configValues;
 
-        angleController = new ProfiledPIDController(someValues[0],someValues[1],someValues[2], new TrapezoidProfile.Constraints(someValues[6], someValues[7]));
+        angleController = new ProfiledPIDController(
+                someValues[0],
+                someValues[1],
+                someValues[2],
+                new TrapezoidProfile.Constraints(someValues[6], someValues[7]));
 
-        angleController.setGoal(DriverStation.getAlliance() == DriverStation.Alliance.Blue ? -Math.PI / 2 : Math.PI / 2);
+        angleController.setGoal(
+                DriverStation.getAlliance() == DriverStation.Alliance.Blue ? -Math.PI / 2 : Math.PI / 2);
         angleController.enableContinuousInput(-Math.PI, Math.PI);
         angleController.setTolerance(Math.toRadians(3));
 
@@ -112,8 +117,7 @@ public class AssistedLLSubstationCommand extends CommandBase {
     public void execute() {
         // var allVisionAngles = visionSubsystem.getBackAllRetroreflectiveAngles();
 
-        if (camera.hasLimelightRawAngles()
-                && atAngle) {
+        if (camera.hasLimelightRawAngles() && atAngle) {
 
             LimelightRawAngles bestCurrentTarget =
                     camera.getLimelightRawAngles().get(); // allVisionAngles.get(0);
@@ -127,10 +131,12 @@ public class AssistedLLSubstationCommand extends CommandBase {
                 Logger.log("/LLAimCommand/tx", bestCurrentTarget.tx());
 
                 forwardValue = -MathUtils.ensureRange(
-                        deadband(forwardSlewer.calculate(forwardController.calculate(bestCurrentTarget.tx()))), -maxForwardVelocity, maxForwardVelocity);
+                        deadband(forwardSlewer.calculate(forwardController.calculate(bestCurrentTarget.tx()))),
+                        -maxForwardVelocity,
+                        maxForwardVelocity);
 
                 if (forwardController.atSetpoint()) forwardValue = 0;
-                
+
                 if (Math.abs(forwardController.getPositionError()) <= 2.0) {
                     LightsSubsystem.LEDSegment.MainStrip.setColor(LightsSubsystem.green);
                 } else {
@@ -150,7 +156,7 @@ public class AssistedLLSubstationCommand extends CommandBase {
                 swerveDriveSubsystem.getPose().getRotation().getRadians());
         double angularSpeed = angleController.getSetpoint().velocity + angularCorrection;
         if (angleController.atGoal()) {
-            //angularSpeed = 0;
+            // angularSpeed = 0;
             atAngle = true;
         }
 
