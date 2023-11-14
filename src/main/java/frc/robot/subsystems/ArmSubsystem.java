@@ -43,7 +43,6 @@ import frc.robot.Constants.GlobalConstants;
 import frc.robot.Constants.GripperConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Robot;
-
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
@@ -118,10 +117,10 @@ public class ArmSubsystem extends SubsystemBase {
 
     private SwerveDriveSubsystem swerveDriveSubsystem;
 
-    private double springConstant = 150;//175;
+    private double springConstant = 150; // 175;
     private double arm1PValue;
 
-    private double lastAbsoluteGripper = Math.PI/2;
+    private double lastAbsoluteGripper = Math.PI / 2;
 
     private Optional<Double> desiredGripperSpeedOverride = Optional.empty();
 
@@ -514,11 +513,13 @@ public class ArmSubsystem extends SubsystemBase {
 
     private Rotation2d getGripperEncoderAngle() {
         double currentEncoderAngle = gripperAbsoluteEncoder.getAbsolutePosition();
-        //ready position is approximately 90 degrees default starting position of the gripper is 90 degrees. When booting, make sure gripper is between -90 and 270 degrees. (Not backwards.)
+        // ready position is approximately 90 degrees default starting position of the gripper is 90 degrees. When
+        // booting, make sure gripper is between -90 and 270 degrees. (Not backwards.)
         double result = MathUtils.accomidateOverflow(
-            lastAbsoluteGripper, 
-            ArmConstants.gripperEncoderMultiplier * currentEncoderAngle * 2 * Math.PI + ArmConstants.gripperEncoderOffset,
-            Math.PI * 2);
+                lastAbsoluteGripper,
+                ArmConstants.gripperEncoderMultiplier * currentEncoderAngle * 2 * Math.PI
+                        + ArmConstants.gripperEncoderOffset,
+                Math.PI * 2);
         lastAbsoluteGripper = result;
         return new Rotation2d(result);
     }
@@ -597,10 +598,8 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public boolean isArmWithinCustomTolerances(double toleranceMast, double toleranceBoom) {
-        return MathUtils.equalsWithinError(
-                        arm1Angle.getRadians(), joint1DesiredMotorPosition, toleranceMast)
-                && MathUtils.equalsWithinError(
-                        arm2Angle.getRadians(), joint2DesiredMotorPosition, toleranceBoom);
+        return MathUtils.equalsWithinError(arm1Angle.getRadians(), joint1DesiredMotorPosition, toleranceMast)
+                && MathUtils.equalsWithinError(arm2Angle.getRadians(), joint2DesiredMotorPosition, toleranceBoom);
     }
 
     private void passthroughMotorSpeeds(double shoulderPercent, double elbowPercent, double wristPercent) {
@@ -712,13 +711,10 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public Command overrideGripper(double desiredSpeed) {
-        return runEnd(
-            () -> desiredGripperSpeedOverride = 
-                Optional.of(desiredSpeed), 
-            () -> {
-                desiredGripperSpeedOverride = Optional.empty();
-                lastAbsoluteGripper = Math.PI/2;
-            });
+        return runEnd(() -> desiredGripperSpeedOverride = Optional.of(desiredSpeed), () -> {
+            desiredGripperSpeedOverride = Optional.empty();
+            lastAbsoluteGripper = Math.PI / 2;
+        });
     }
 
     private void executePIDFeedforward() {
@@ -753,7 +749,7 @@ public class ArmSubsystem extends SubsystemBase {
         double gripperVoltageOutput = MathUtils.ensureRange(
                 wristVoltageCorrection + gripperVoltage, -ArmConstants.maxVoltage, ArmConstants.maxVoltage);
 
-        //this is hopefully temporary and should go away someday
+        // this is hopefully temporary and should go away someday
         if (desiredGripperSpeedOverride.isPresent()) {
             gripperVoltageOutput = gripperJointFeedforward.calculate(0, desiredGripperSpeedOverride.get(), 0);
         }
@@ -961,12 +957,12 @@ public class ArmSubsystem extends SubsystemBase {
         // MID_MANUAL_CUBE(Static.fromBumper(
         //         FieldConstants.midX + 0.10, FieldConstants.midCubeZ + 0.30, Rotation2d.fromDegrees(-20))),
         MID_MANUAL_CONE(Static.fromBumper(
-            FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.05, Rotation2d.fromDegrees(60))),
+                FieldConstants.midX + 0.12, FieldConstants.highConeZ - 0.05 - 0.08, Rotation2d.fromDegrees(60))),
         MID_MANUAL_CUBE_1(new Static(0.66, 0.70, Rotation2d.fromDegrees(55))),
         MID_MANUAL_CUBE(Static.fromBumper(
                 FieldConstants.midX + 0.08, FieldConstants.midCubeZ + 0.35, Rotation2d.fromDegrees(-10))), // -20
         MID_MANUAL_CUBE_NEW(Static.fromBumper(
-            FieldConstants.midX + 0.08, FieldConstants.midCubeZ + 0.45, Rotation2d.fromDegrees(-20))),
+                FieldConstants.midX + 0.08, FieldConstants.midCubeZ + 0.45, Rotation2d.fromDegrees(-20))),
         HIGH_MANUAL_1(new Static(0.9, 1.24, Rotation2d.fromDegrees(70))),
         // HIGH_MANUAL_1(new Static(0.9, 1.24, Rotation2d.fromDegrees(70))),
         // HIGH_MANUAL_1(new Static(0.9, 1.32, Rotation2d.fromDegrees(65))),
@@ -978,11 +974,12 @@ public class ArmSubsystem extends SubsystemBase {
                         - 0.10, // because of poor pid behavior
                 Rotation2d.fromDegrees(24))), // 18
         HIGH_MANUAL_CONE(Static.fromBumper(
-                FieldConstants.highX + 0.03, // + 0.1, // gripper offset
+                FieldConstants.highX + 0.01 + 0.02, // + 0.1, // gripper offset
                 FieldConstants.highConeZ
                         + ArmConstants.placementHeightOffset
                         + 0.3
-                        - 0.17, // because of poor pid behavior // -0.20
+                        - 0.17
+                        + 0.04, // because of poor pid behavior // -0.20
                 Rotation2d.fromDegrees(25))), // 18
         // HIGH_MANUAL_CONE(Static.fromBumper(
         //         FieldConstants.highX + 0.035 - 0.08, // + 0.1, // gripper offset
@@ -995,7 +992,7 @@ public class ArmSubsystem extends SubsystemBase {
                 FieldConstants.highX + 0.14, // gripper offset
                 FieldConstants.highCubeZ + ArmConstants.placementHeightOffset + 0.3, // because of poor pid behavior
                 Rotation2d.fromDegrees(-25))),
-        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(160))), // 156
+        COOL_HANDOFF(Static.fromWrist(0.091, 0.27, Rotation2d.fromDegrees(163))), // 156
         COOL_HANDOFF_REVERSE(Static.fromWrist(0.4, 0.4, Rotation2d.fromDegrees(170))),
         HYBRID(new Dynamic(sus -> sus.getDynamicArmPosition(), new Rotation2d())),
         MID(new Dynamic(sussy -> sussy.getDynamicArmPosition(), new Rotation2d())),

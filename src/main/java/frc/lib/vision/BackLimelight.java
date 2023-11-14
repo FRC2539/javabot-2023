@@ -1,23 +1,22 @@
 package frc.lib.vision;
-import frc.lib.logging.Logger;
-
-import java.util.ArrayList;
-import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import frc.lib.logging.LoggedReceiver;
+import frc.lib.logging.Logger;
 import frc.lib.vision.CameraInterfaces.*;
 import frc.robot.Constants.VisionConstants;
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class BackLimelight implements ApriltagEstimator, Retroreflective, RetroreflectiveArray {
     private final double FOVX = 29.8 * 2;
     private final double FOVY = 24.85 * 2;
-    
+
     private LoggedReceiver hasTargetReceiver = Logger.receive("/limelight/tv", 0);
     private LoggedReceiver TXReceiver = Logger.receive("/limelight/tx", 0.0);
     private LoggedReceiver TYReceiver = Logger.receive("/limelight/ty", 0.0);
@@ -38,7 +37,7 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
     private LoggedReceiver Tx2Receiver = Logger.receive("/limelight/tx2", 0.0);
     private LoggedReceiver Ty2Receiver = Logger.receive("/limelight/ty2", 0.0);
     private LoggedReceiver Ta2Receiver = Logger.receive("/limelight/ta2", 0.0);
-    
+
     private Mode limelightMode = Mode.APRILTAG;
 
     private Optional<LimelightRobotPose> apriltagEstimate = Optional.empty();
@@ -70,7 +69,6 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
     }
 
     /** this does NOT account for stuff being really wacky. use your own filtering to treat this */
-
     private Optional<LimelightRobotPose> calculateApriltagEstimate() {
         if (!isAtPipeline()) return Optional.empty();
 
@@ -79,7 +77,7 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
         // double[] {x, y, z, roll, pitch, yaw, latency}
         double[] botposeArray = DriverStation.getAlliance() == Alliance.Red
                 ? botposeRedReceiver.getDoubleArray()
-                : botposeBlueReceiver.getDoubleArray(); 
+                : botposeBlueReceiver.getDoubleArray();
 
         // if botpose exists and the limelight has an april tag, it returns it
 
@@ -108,7 +106,7 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
 
     private Optional<LimelightRawAngles> calculateLimelightRawAngles() {
         if (!isAtPipeline()) return Optional.empty();
-        
+
         if (!(hasTargetReceiver.getInteger() == 1)
                 || (limelightMode != Mode.RETROREFLECTIVEMID
                         && limelightMode != Mode.RETROREFLECTIVEHIGH
@@ -129,7 +127,7 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
 
     private ArrayList<LimelightRawAngles> calculateAllBackRetroreflectiveAngles() {
         if (!isAtPipeline()) return new ArrayList<LimelightRawAngles>();
-        
+
         if (!(hasTargetReceiver.getInteger() == 1)
                 || (limelightMode != Mode.RETROREFLECTIVEMID
                         && limelightMode != Mode.RETROREFLECTIVEHIGH
@@ -141,18 +139,18 @@ public class BackLimelight implements ApriltagEstimator, Retroreflective, Retror
         int MY_THRESHOLD = 1; // in percent (0-100)
 
         if (Ta0Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(new LimelightRawAngles(
-                    Tx0Receiver.getDouble() * FOVX / 2, Ty0Receiver.getDouble() * FOVY / 2));
+            outputArray.add(
+                    new LimelightRawAngles(Tx0Receiver.getDouble() * FOVX / 2, Ty0Receiver.getDouble() * FOVY / 2));
         }
 
         if (Ta1Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(new LimelightRawAngles(
-                    Tx1Receiver.getDouble() * FOVX / 2, Ty1Receiver.getDouble() * FOVY / 2));
+            outputArray.add(
+                    new LimelightRawAngles(Tx1Receiver.getDouble() * FOVX / 2, Ty1Receiver.getDouble() * FOVY / 2));
         }
 
         if (Ta2Receiver.getDouble() >= MY_THRESHOLD) {
-            outputArray.add(new LimelightRawAngles(
-                    Tx2Receiver.getDouble() * FOVX / 2, Ty2Receiver.getDouble() * FOVY / 2));
+            outputArray.add(
+                    new LimelightRawAngles(Tx2Receiver.getDouble() * FOVX / 2, Ty2Receiver.getDouble() * FOVY / 2));
         }
 
         // Store raw limelight angles
