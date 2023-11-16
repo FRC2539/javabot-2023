@@ -121,7 +121,6 @@ public class Conversions {
         return radians / (Math.PI * 2) * gearRatio;
     }
 
-
     /**
      * @param rotations Rotations from the Motor
      * @param gearRatio Gear Ratio between Motor and Mechanism
@@ -129,7 +128,7 @@ public class Conversions {
      * @return Meters of Movement of Mechanism
      */
     public static double motorToMeters(double rotations, double circumference, double gearRatio) {
-        return rotations * circumference / gearRatio ;
+        return rotations * circumference / gearRatio;
     }
 
     /**

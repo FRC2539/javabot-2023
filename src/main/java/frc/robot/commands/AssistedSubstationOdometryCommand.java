@@ -7,7 +7,6 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.SwerveDriveSubsystem;
-
 import java.util.function.DoubleSupplier;
 
 public class AssistedSubstationOdometryCommand extends CommandBase {
@@ -35,9 +34,12 @@ public class AssistedSubstationOdometryCommand extends CommandBase {
      * @param swerveDriveSubsystem
      * @param targetPoseSupplier
      */
-    public AssistedSubstationOdometryCommand(SwerveDriveSubsystem swerveDriveSubsystem, DoubleSupplier forward,
-    DoubleSupplier strafe,
-    DoubleSupplier rotate, double offsetToStation) {
+    public AssistedSubstationOdometryCommand(
+            SwerveDriveSubsystem swerveDriveSubsystem,
+            DoubleSupplier forward,
+            DoubleSupplier strafe,
+            DoubleSupplier rotate,
+            double offsetToStation) {
         this.swerveDriveSubsystem = swerveDriveSubsystem;
 
         this.strafe = strafe;
@@ -81,13 +83,7 @@ public class AssistedSubstationOdometryCommand extends CommandBase {
         if (driveController.atGoal()) driveSpeed = 0;
         if (omegaController.atGoal()) omegaSpeed = 0;
 
-        swerveDriveSubsystem.setVelocity(
-                new ChassisSpeeds(
-                        driveSpeed,
-                        strafe.getAsDouble(),
-                        omegaSpeed),
-                true,
-                true);
+        swerveDriveSubsystem.setVelocity(new ChassisSpeeds(driveSpeed, strafe.getAsDouble(), omegaSpeed), true, true);
     }
 
     @Override
