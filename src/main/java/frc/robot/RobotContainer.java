@@ -18,6 +18,7 @@ import frc.lib.logging.Logger;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.FieldConstants.PlacementLocation;
+import frc.robot.commands.AimAtLLCommand;
 import frc.robot.commands.AssistedLLAimCommand;
 import frc.robot.commands.AssistedSubstationOdometryCommand;
 import frc.robot.commands.IndicateSubstationAimedCommand;
@@ -162,6 +163,17 @@ public class RobotContainer {
         rightDriveController.getLeftBottomRight().whileTrue(armSubsystem.overrideGripper(-3));
         rightDriveController.nameLeftTopRight("Flip Gripper Up");
         rightDriveController.nameLeftBottomRight("Flip Gripper Down");
+
+        rightDriveController.getLeftTopLeft().toggleOnTrue(new AssistedLLAimCommand(
+                swerveDriveSubsystem,
+                visionSubsystem,
+                lightsSubsystem,
+                this::getDriveForwardAxis,
+                this::getDriveStrafeAxis,
+                this::getDriveRotationAxis,
+                () -> false,
+                true));
+        rightDriveController.nameLeftTopLeft("Aim At LL Demo");
 
         // Will only need two triggers for this once we have a sensor
         rightDriveController.getLeftThumb().whileTrue(intakeSubsystem.intakeModeCommand());
